@@ -172,19 +172,21 @@ function buildHelp() {
     ['좌측 화면', '가상 스틱으로 이동'],
     ['우측 화면', '드래그로 시야 회전'],
     ['사격 버튼', '발사 (조준 보정 적용)'],
-    ['조준 버튼', '정밀 조준'],
+    ['조준 버튼', '정밀 조준 (토글)'],
     ['재장전 버튼', '탄창 교체'],
-    ['전환 버튼', '무기 변경'],
+    ['획득 버튼', '보급/무기 줍기 (근처에 표시)'],
+    ['달리기 / 웅크리기', '토글 버튼'],
+    ['슬롯 탭', '무기 변경'],
   ] : [
     ['W A S D', '이동'],
     ['Shift', '전력 질주'],
     ['Ctrl / C', '앉기'],
     ['Space', '점프'],
     ['마우스 좌', '사격'],
-    ['마우스 우', '정밀 조준'],
+    ['마우스 우', '정밀 조준 (토글/길게 선택)'],
     ['R', '재장전'],
+    ['E / F', '보급·무기 획득'],
     ['1 ~ 5 / 휠', '무기 전환'],
-    ['F / E', '상호작용'],
     ['ESC', '일시정지'],
   ];
   $('#helpBody').innerHTML = rows
@@ -218,9 +220,13 @@ function buildSettings(game) {
   if (isTouchDevice) slider('touchSensitivity', '터치 감도', 0.3, 2.5, 0.05, (v) => v.toFixed(2));
   slider('adsSensitivity', '조준 시 감도', 0.2, 1.2, 0.05, (v) => v.toFixed(2));
   slider('fov', '시야각', 60, 110, 1, (v) => v + '°');
+  seg('adsToggle', '조준 방식', [[true, '토글'], [false, '길게']]);
   seg('invertY', 'Y축 반전', [[false, '끔'], [true, '켬']]);
   if (isTouchDevice) seg('autoFire', '자동 사격', [[false, '끔'], [true, '켬']]);
   seg('aimAssist', '조준 보정', [['auto', '자동'], ['on', '켬'], ['off', '끔']]);
+
+  group('전투');
+  seg('allyCount', 'AI 동료', [[0, '없음'], [1, '1명'], [2, '2명']]);
 
   group('그래픽');
   seg('quality', '품질', [['auto', '자동'], ['high', '높음'], ['medium', '보통'], ['low', '낮음']]);
@@ -254,7 +260,9 @@ function buildSettings(game) {
       row.querySelectorAll('button').forEach((b) => b.classList.remove('on'));
       btn.classList.add('on');
       let v = btn.dataset.v;
-      if (v === 'true') v = true; else if (v === 'false') v = false;
+      if (v === 'true') v = true;
+      else if (v === 'false') v = false;
+      else if (/^-?\d+$/.test(v)) v = parseInt(v, 10);
       applySetting(game, key, v);
     });
   });

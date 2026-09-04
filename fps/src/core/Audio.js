@@ -63,6 +63,7 @@ export class AudioEngine {
     this.noise = this._makeNoise(2.0);
     this.applyVolumes();
     this._buildMusic();
+    this._buildAmbient();
     this.ready = true;
   }
 
@@ -230,6 +231,42 @@ export class AudioEngine {
       dur: P.tail, gain: P.gain * 0.16, type: 'lowpass',
       freq: 1400, q: 0.5, attack: 0.02,
     });
+    // 5) 볼트액션 (저격총) — 발사 후 노리쇠 재장전 소리
+    if (P.bolt) {
+      setTimeout(() => {
+        if (!this._canPlay()) return;
+        this._noiseBurst({ dur: 0.07, gain: 0.14, type: 'bandpass', freq: 1500, q: 3.5, reverb: false });
+        this._tone({ type: 'square', freq: 230, freqTo: 120, dur: 0.06, gain: 0.06, reverb: false });
+      }, 280);
+    }
+  }
+
+  /** 보급/무기 획득 확인음 */
+  pickup(kind) {
+    if (!this._canPlay()) return;
+    if (kind === 'weapon') {
+      [523, 784, 1046].forEach((f, i) => this._tone({
+        type: 'triangle', freq: f, dur: 0.16, gain: 0.1, attack: 0.005, delay: i * 0.07,
+      }));
+    } else if (kind === 'medkit') {
+      this._tone({ type: 'sine', freq: 660, freqTo: 990, dur: 0.22, gain: 0.12, attack: 0.01 });
+    } else if (kind === 'armor') {
+      this._noiseBurst({ dur: 0.09, gain: 0.14, type: 'bandpass', freq: 2200, q: 3, reverb: false });
+      this._tone({ type: 'triangle', freq: 440, freqTo: 660, dur: 0.16, gain: 0.09, delay: 0.05 });
+    } else {
+      // ammo
+      this._noiseBurst({ dur: 0.06, gain: 0.12, type: 'bandpass', freq: 1400, q: 2.4, reverb: false });
+      this._tone({ type: 'square', freq: 520, freqTo: 700, dur: 0.1, gain: 0.07, delay: 0.04 });
+    }
+  }
+
+  /** 아군 사격음 — 3D 위치, 약간 억제된 톤 */
+  allyShot(x, y, z) {
+    if (!this._canPlay()) return;
+    const p = this._panner(x, y, z, 6, 60);
+    p.connect(this.sfx);
+    this._noiseBurst({ dur: 0.12, gain: 0.28, type: 'bandpass', freq: 1250, sweepTo: 300, q: 0.9, dest: p });
+    this._tone({ type: 'sine', freq: 100, freqTo: 44, dur: 0.14, gain: 0.14, dest: p });
   }
 
   dryFire() {
@@ -376,18 +413,27 @@ export class AudioEngine {
   footstep(surface, intensity) {
     if (!this._canPlay()) return;
     const now = this.ctx.currentTime;
-    if (now - this._lastFootstep < 0.12) return;
+    if (now - this._lastFootstep < 0.11) return;
     this._lastFootstep = now;
     const metal = surface === SURFACE.METAL;
+    const running = intensity > 0.72;
+    const crouch = intensity < 0.34;
+    const fmul = running ? 1.12 : crouch ? 0.82 : 1;
     this._noiseBurst({
       dur: metal ? 0.11 : 0.07,
-      gain: 0.055 + intensity * 0.05,
+      gain: (crouch ? 0.03 : 0.052) + intensity * 0.06,
       type: metal ? 'bandpass' : 'lowpass',
-      freq: metal ? 1900 : 460,
-      sweepTo: metal ? 700 : 150,
+      freq: (metal ? 1900 : 460) * fmul,
+      sweepTo: (metal ? 700 : 150) * fmul,
       q: metal ? 2.5 : 0.9,
       reverb: false,
     });
+    // 달릴 때는 뒤꿈치 긁힘 한 겹 더
+    if (running) {
+      this._noiseBurst({ dur: 0.05, gain: 0.04, type: 'highpass', freq: 3200, q: 0.8, attack: 0.001, reverb: false });
+    }
+    // 저역 발 딛는 무게감
+    this._tone({ type: 'sine', freq: 78 * fmul, freqTo: 42, dur: 0.08, gain: (0.04 + intensity * 0.05), reverb: false });
   }
 
   land(impact, surface) {
@@ -469,6 +515,33 @@ export class AudioEngine {
     this.heartRate = 1.5;
   }
 
+  /** 낮 야외 앰비언트: 바람 베드 + 가끔 새소리 */
+  _buildAmbient() {
+    const ctx = this.ctx;
+    const src = ctx.createBufferSource();
+    src.buffer = this.noise; src.loop = true;
+    const filt = ctx.createBiquadFilter();
+    filt.type = 'lowpass'; filt.frequency.value = 420; filt.Q.value = 0.5;
+    this.ambientGain = ctx.createGain();
+    this.ambientGain.gain.value = 0;
+    src.connect(filt); filt.connect(this.ambientGain); this.ambientGain.connect(this.master);
+    src.start();
+    this.birdTimer = rng.range(4, 9);
+  }
+
+  /** 지저귀는 새 — 짧은 주파수 워블 두세 번 */
+  _bird() {
+    if (!this._canPlay()) return;
+    const base = rng.range(2600, 4200);
+    const n = 2 + (Math.random() * 2 | 0);
+    for (let i = 0; i < n; i++) {
+      this._tone({
+        type: 'sine', freq: base * rng.range(0.85, 1.15), freqTo: base * rng.range(1.1, 1.4),
+        dur: 0.07, gain: 0.03, attack: 0.006, delay: i * 0.1, reverb: true,
+      });
+    }
+  }
+
   _heartbeat() {
     if (!this._canPlay()) return;
     const g = settings.musicVolume * 0.5;
@@ -519,6 +592,16 @@ export class AudioEngine {
         this._heartbeat();
       }
     }
+
+    // 낮 앰비언트: 위협이 낮을수록 바람/새가 살아나고 교전 시 잦아든다
+    if (this.ambientGain) {
+      const amb = this._musicOn ? Math.max(0, (0.032 - i * 0.024) * settings.sfxVolume) : 0;
+      this.ambientGain.gain.setTargetAtTime(amb, this.ctx.currentTime, 0.6);
+      if (this._musicOn && i < 0.4) {
+        this.birdTimer -= dt;
+        if (this.birdTimer <= 0) { this.birdTimer = rng.range(5, 12); this._bird(); }
+      }
+    }
   }
 
   setMuted(m) {
@@ -533,7 +616,7 @@ const GUN = {
   smg: { dur: 0.10, tail: 0.35, gain: 0.38, freq: 1900, q: 1.1, sub: 150, rate: 1.15 },
   shotgun: { dur: 0.26, tail: 0.85, gain: 0.78, freq: 900, q: 0.6, sub: 78, rate: 0.85 },
   rifle: { dur: 0.17, tail: 0.6, gain: 0.62, freq: 1300, q: 0.8, sub: 110, rate: 0.95 },
-  sniper: { dur: 0.34, tail: 1.25, gain: 0.9, freq: 780, q: 0.55, sub: 60, rate: 0.8 },
+  sniper: { dur: 0.34, tail: 1.25, gain: 0.9, freq: 780, q: 0.55, sub: 60, rate: 0.8, bolt: true },
 };
 
 const _fwd = { x: 0, y: 0, z: -1, set(x, y, z) { this.x = x; this.y = y; this.z = z; return this; },

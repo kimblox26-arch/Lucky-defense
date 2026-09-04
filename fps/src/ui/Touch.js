@@ -40,8 +40,11 @@ export class TouchControls {
     t.moveX = t.moveY = 0;
     t.lookX = t.lookY = 0;
     t.fire = t.ads = t.jump = t.reload = t.sprint = t.crouch = false;
+    t.sprintLock = t.crouchLock = false;
     this.moveId = this.lookId = -1;
     this.base.classList.remove('on');
+    $('#btnSprint')?.classList.remove('on');
+    $('#btnCrouch')?.classList.remove('on');
   }
 
   _bindStick() {
@@ -185,17 +188,38 @@ export class TouchControls {
       el.addEventListener('click', (e) => { e.preventDefault(); fn(); });
     };
 
+    const toggle = (id, key) => {
+      const el = $(id);
+      if (!el) return;
+      const fire = () => {
+        t[key] = !t[key];
+        t.active = true;
+        el.classList.toggle('on', t[key]);
+        this.game.audio?.init();
+      };
+      el.addEventListener('touchstart', (e) => { e.preventDefault(); fire(); }, { passive: false });
+      el.addEventListener('click', (e) => { e.preventDefault(); fire(); });
+    };
+
     hold('#btnFire', 'fire');
     hold('#btnAds', 'ads');
     tap('#btnReload', () => { t.reload = true; setTimeout(() => { t.reload = false; }, 80); });
     tap('#btnJump', () => { t.jump = true; setTimeout(() => { t.jump = false; }, 90); });
     tap('#btnSwap', () => { this.game.weapons.cycle(1); });
+    tap('#btnInteract', () => { t.interact = true; setTimeout(() => { t.interact = false; }, 100); });
+    toggle('#btnSprint', 'sprintLock');
+    toggle('#btnCrouch', 'crouchLock');
     tap('#btnPause', () => this.game.pause());
+    this._btnInteract = $('#btnInteract');
   }
 
   /** 자동 사격 설정이 켜져 있고 조준선에 적이 있으면 자동으로 발사 */
   update(dt) {
     const t = this.input.touch;
+    // 획득 버튼은 근처 보급이 있을 때만 노출
+    if (this._btnInteract) {
+      this._btnInteract.classList.toggle('hidden', !this.game.loot?._near);
+    }
     if (!t.active) return;
     if (settings.autoFire && this.game.state === 'playing') {
       const target = this._aimTarget();

@@ -73,7 +73,32 @@ export class HUD {
     this.slots.innerHTML = WEAPONS.map((w) =>
       `<div class="wslot locked" data-id="${w.id}"><i>${w.slot}</i>${w.short}</div>`).join('');
     this.slotEls = {};
-    for (const el of this.slots.children) this.slotEls[el.dataset.id] = el;
+    for (const el of this.slots.children) {
+      this.slotEls[el.dataset.id] = el;
+      // 탭/클릭으로 무기 전환 (모바일 편의)
+      el.addEventListener('click', () => {
+        const ws = this.game.weapons;
+        const idx = ws.list.findIndex((w) => w.def.id === el.dataset.id);
+        if (idx >= 0 && ws.list[idx].unlocked) ws.switchTo_(idx);
+      });
+    }
+  }
+
+  /** 아군 체력 표시 */
+  setAllies(list) {
+    if (!this.allyRow) this.allyRow = $('#allyRow');
+    if (list.length !== this._allyN) {
+      this._allyN = list.length;
+      this.allyRow.innerHTML = list.map((a, i) =>
+        `<div class="allyChip" data-i="${i}"><span class="an">${a.name}</span><div class="abar"><div class="afill"></div></div></div>`).join('');
+      this._allyFills = Array.from(this.allyRow.querySelectorAll('.afill'));
+      this._allyChips = Array.from(this.allyRow.querySelectorAll('.allyChip'));
+    }
+    for (let i = 0; i < list.length; i++) {
+      const a = list[i];
+      if (this._allyFills[i]) this._allyFills[i].style.width = clamp01(a.health / a.maxHealth) * 100 + '%';
+      if (this._allyChips[i]) this._allyChips[i].classList.toggle('down', a.downed);
+    }
   }
 
   refreshSlots() {
@@ -249,5 +274,6 @@ export class HUD {
     this.setPrep(null);
     this.setCompass([]);
     this.refreshSlots();
+    if (this.allyRow) { this.allyRow.innerHTML = ''; this._allyN = -1; }
   }
 }

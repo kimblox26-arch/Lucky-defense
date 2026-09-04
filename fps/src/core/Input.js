@@ -40,6 +40,7 @@ export class Input {
       lookX: 0, lookY: 0,
       fire: false, ads: false,
       jump: false, reload: false, sprint: false, crouch: false, interact: false,
+      sprintLock: false, crouchLock: false,   // 모바일 토글 버튼
       active: false,
     };
 
@@ -202,8 +203,8 @@ export class Input {
     this._prevAds = rawAds;
 
     it.reload = !!this.keys.reload || (usingTouch && t.reload);
-    it.sprint = !!this.keys.sprint || (usingTouch && t.sprint);
-    it.crouch = !!this.keys.crouch || (usingTouch && t.crouch);
+    it.sprint = !!this.keys.sprint || (usingTouch && (t.sprint || t.sprintLock));
+    it.crouch = !!this.keys.crouch || (usingTouch && (t.crouch || t.crouchLock));
     const interact = !!this.keys.interact || (usingTouch && t.interact);
     it.interact = interact;
     it.interactPressed = interact && !this._prevInteract;
