@@ -2,13 +2,14 @@
 
 import { Game, STATE } from './game/Game.js';
 import { $, $$ } from './ui/Screens.js';
-import { settings } from './core/Settings.js';
+import { settings, setSetting } from './core/Settings.js';
 import { isTouchDevice } from './core/Input.js';
+import { MAPS, mapById } from './world/Maps.js';
 
 const canvas = document.getElementById('cv');
 
 function fatal(msg, err) {
-  console.error('[DEAD WAVE]', msg, err || '');
+  console.error('[OverKill 1]', msg, err || '');
   $('#errorText').textContent = msg;
   $$('.screen').forEach((s) => s.classList.remove('active'));
   $('#scError').classList.add('active');
@@ -111,11 +112,22 @@ function wireMenu(game) {
     }
   });
 
-  $('#btnStart').addEventListener('click', () => game.beginRun());
+  // 선택 맵 상태
+  let selectedMap = settings.mapId || 'quarantine';
+  const refreshMapName = () => { $('#menuMapName').textContent = mapById(selectedMap).name; };
+  refreshMapName();
+
+  $('#btnStart').addEventListener('click', () => game.beginRun(selectedMap));
   $('#btnResume').addEventListener('click', () => game.resume());
   $('#btnQuit').addEventListener('click', () => game.quitToMenu());
   $('#btnMenu')?.addEventListener('click', () => game.quitToMenu());
-  $('#btnRetry')?.addEventListener('click', () => game.beginRun());
+  $('#btnRetry')?.addEventListener('click', () => game.beginRun(selectedMap));
+
+  $('#btnMaps').addEventListener('click', () => {
+    buildMaps(() => selectedMap, (id) => { selectedMap = id; refreshMapName(); });
+    s.push('scMaps');
+  });
+  $('#btnMapsBack').addEventListener('click', () => s.pop());
 
   $('#btnHelp').addEventListener('click', () => { buildHelp(); s.push('scHelp'); });
   $('#btnHelpBack').addEventListener('click', () => s.pop());
@@ -131,6 +143,28 @@ function wireMenu(game) {
   });
 
   if (isTouchDevice) $('#menuHint').textContent = '왼쪽으로 이동 · 오른쪽으로 시야 · 하단 버튼으로 사격';
+}
+
+function buildMaps(getSel, onSelect) {
+  const wrap = $('#mapCards');
+  wrap.innerHTML = MAPS.map((m) => `
+    <div class="mapCard ${m.id === getSel() ? 'sel' : ''}" data-id="${m.id}">
+      <div class="mapThumb" style="background:linear-gradient(160deg, ${m.thumb[0]}, ${m.thumb[1]})"></div>
+      <span class="selMark">선택됨</span>
+      <div class="mapBody">
+        <div class="mn">${m.name}</div>
+        <div class="md">${m.desc}</div>
+        <div class="mapMeta"><span>${m.size}</span><span>난이도 ${m.difficulty}</span></div>
+      </div>
+    </div>`).join('');
+  wrap.querySelectorAll('.mapCard').forEach((el) => {
+    el.addEventListener('click', () => {
+      onSelect(el.dataset.id);
+      setSetting('mapId', el.dataset.id);
+      wrap.querySelectorAll('.mapCard').forEach((c) => c.classList.remove('sel'));
+      el.classList.add('sel');
+    });
+  });
 }
 
 function buildHelp() {

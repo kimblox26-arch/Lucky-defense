@@ -280,7 +280,68 @@ html, body {
 .logo .logo-dead { display: block; font-size: 40px; color: var(--red); text-shadow: 0 0 28px rgba(255, 60, 40, .45); }
 .logo .logo-wave { display: block; font-size: 40px; color: var(--ink); }
 .logo.big .logo-dead, .logo.big .logo-wave { font-size: 62px; }
+
+/* OverKill 로고 락업 */
+.logo.lockup {
+  display: flex; align-items: baseline; justify-content: center; gap: 2px;
+  font-weight: 900; letter-spacing: -.01em; margin-bottom: 16px;
+}
+.logo.lockup .logo-over { font-size: 34px; color: var(--ink); text-shadow: var(--hud-shadow); }
+.logo.lockup .logo-kill {
+  font-size: 34px; color: var(--red);
+  text-shadow: 0 0 30px rgba(255, 60, 40, .5), var(--hud-shadow);
+}
+.logo.lockup .logo-mk {
+  align-self: flex-start; margin-left: 8px; margin-top: 2px;
+  font-size: 15px; font-weight: 800; letter-spacing: .1em;
+  color: var(--bg); background: var(--amber); padding: 2px 7px; border-radius: 3px;
+}
+.logo.lockup.big .logo-over, .logo.lockup.big .logo-kill { font-size: 66px; }
+.logo.lockup.big .logo-mk { font-size: 22px; padding: 3px 9px; margin-left: 12px; }
 .tagline { font-size: 12px; color: var(--dim); letter-spacing: .22em; margin-bottom: 26px; }
+
+/* 메인 메뉴: 배경 3D 씬이 비치도록 오버레이를 옅게 */
+.menu-hero {
+  background:
+    radial-gradient(ellipse at 50% 26%, rgba(20, 30, 44, .22), transparent 60%),
+    linear-gradient(180deg, rgba(6, 9, 12, .58), rgba(6, 9, 12, .78)) !important;
+  backdrop-filter: blur(2px) !important; -webkit-backdrop-filter: blur(2px) !important;
+}
+.menu-foot {
+  position: absolute; left: 0; right: 0; bottom: calc(14px + var(--safe-b));
+  text-align: center; font-size: 10.5px; letter-spacing: .18em; color: var(--dim); opacity: .7;
+}
+
+/* 맵 선택 카드 */
+#mapCards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 6px 0 4px; }
+.mapCard {
+  position: relative; cursor: pointer; text-align: left; overflow: hidden;
+  border: 1.5px solid var(--stroke-soft); border-radius: 5px;
+  background: rgba(14, 16, 18, .9);
+  transition: transform .12s, border-color .12s, box-shadow .12s;
+  animation: cardIn .3s backwards;
+}
+.mapCard:nth-child(2) { animation-delay: .06s; }
+.mapCard:nth-child(3) { animation-delay: .12s; }
+.mapCard:hover { transform: translateY(-4px); box-shadow: 0 8px 26px rgba(0, 0, 0, .5); }
+.mapCard.sel { border-color: var(--amber); box-shadow: 0 0 0 1px var(--amber), 0 8px 26px rgba(0, 0, 0, .5); }
+.mapThumb { height: 96px; position: relative; }
+.mapThumb::after {
+  content: ''; position: absolute; inset: 0;
+  background: repeating-linear-gradient(0deg, transparent 0 3px, rgba(0, 0, 0, .12) 3px 4px);
+}
+.mapBody { padding: 12px 14px 14px; }
+.mapBody .mn { font-size: 16px; font-weight: 800; color: var(--ink); }
+.mapBody .md { font-size: 11.5px; color: var(--dim); line-height: 1.5; margin-top: 5px; }
+.mapMeta { display: flex; gap: 6px; margin-top: 9px; }
+.mapMeta span {
+  font-size: 10px; padding: 3px 7px; border-radius: 2px; color: var(--amber);
+  background: rgba(255, 182, 72, .1); border: 1px solid rgba(255, 182, 72, .28);
+}
+.mapCard.sel .selMark {
+  position: absolute; right: 8px; top: 8px; font-size: 10px; letter-spacing: .1em;
+  color: var(--bg); background: var(--amber); padding: 2px 7px; border-radius: 2px;
+}
 
 .loadbar {
   width: 260px; height: 4px; margin: 0 auto; border-radius: 2px;
@@ -432,8 +493,12 @@ h2.over { color: var(--red); text-shadow: 0 0 26px rgba(255, 60, 40, .4); }
 
 @media (max-width: 720px) {
   .logo.big .logo-dead, .logo.big .logo-wave { font-size: 44px; }
+  .logo.lockup.big .logo-over, .logo.lockup.big .logo-kill { font-size: 46px; }
+  .logo.lockup.big .logo-mk { font-size: 16px; }
   h2 { font-size: 22px; }
   #upgradeCards { grid-template-columns: 1fr; gap: 9px; }
+  #mapCards { grid-template-columns: 1fr; gap: 9px; }
+  .mapThumb { height: 74px; }
   .ucard { padding: 14px 12px; display: grid; grid-template-columns: 44px 1fr; text-align: left; gap: 10px; align-items: center; }
   .ucard .uicon { margin: 0; font-size: 26px; }
   .ucard .uk { position: static; }
@@ -449,6 +514,7 @@ h2.over { color: var(--red); text-shadow: 0 0 26px rgba(255, 60, 40, .4); }
 
 @media (max-height: 480px) {
   .logo.big .logo-dead, .logo.big .logo-wave { font-size: 34px; }
+  .logo.lockup.big .logo-over, .logo.lockup.big .logo-kill { font-size: 38px; }
   .bestbox { margin-bottom: 14px; }
   .mbtn { padding: 10px 16px; font-size: 14px; }
 }

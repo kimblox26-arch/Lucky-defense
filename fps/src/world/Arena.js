@@ -12,6 +12,8 @@ import { SURFACE } from './Collision.js';
 import { box, boxRot, plane, cylinder, ramp, scaleBoxUV, setVertexColor } from './GeoUtil.js';
 import { Rng } from '../core/Util.js';
 
+// 맵 config가 채우는 활성 아레나 치수. 다른 모듈이 이 객체를 참조하므로
+// 맵 전환 시 프로퍼티를 제자리에서 갱신한다(바인딩은 const, 값은 가변).
 export const ARENA = {
   half: 30,          // 벽 중심선까지의 거리
   wallH: 7,
@@ -22,6 +24,20 @@ export const ARENA = {
   navMin: -42,
   navMax: 42,
 };
+
+/** 맵 config를 ARENA 전역에 반영 (Arena 생성/전환 시 호출) */
+export function applyArenaConfig(cfg = {}) {
+  ARENA.half = cfg.half ?? 30;
+  ARENA.wallH = cfg.wallH ?? 7;
+  ARENA.gateW = cfg.gateW ?? 9;
+  ARENA.wallT = 1;
+  ARENA.platHalf = 7;
+  ARENA.platH = 1.8;
+  const margin = 14;
+  ARENA.navMin = -(ARENA.half + margin);
+  ARENA.navMax = ARENA.half + margin;
+  return ARENA;
+}
 
 // 알베도(sRGB). 맵이 디테일만 담당하므로 여기가 실제 표면색이 된다.
 const COL = {
@@ -42,16 +58,38 @@ const COL = {
 };
 
 export class Arena {
-  constructor(engine, collision) {
+  constructor(engine, collision, mapConfig = {}) {
     this.engine = engine;
     this.collision = collision;
+    this.config = mapConfig;
+    applyArenaConfig(mapConfig);
+    this.S = ARENA.half / 30;                 // 기본 맵(half=30) 기준 스케일
+    this.density = mapConfig.density ?? 1.0;
+    this.palette = mapConfig.palette || null;
     this.group = new Group();
     this.group.name = 'arena';
     this.spawnPoints = [];
     this.gates = [];
     this.lights = [];
-    this.playerStart = new Vector3(0, 0, 16);
-    this._rng = new Rng(20260904);
+    this.playerStart = new Vector3(0, 0, Math.min(16, ARENA.half * 0.5));
+    this._rng = new Rng(20260904 + (mapConfig.half || 30));
+  }
+
+  /** 맵 전환 시 씬/조명 리소스 해제 */
+  dispose() {
+    this.engine.scene.remove(this.group);
+    this.group.traverse((o) => {
+      if (o.isMesh || o.isInstancedMesh) {
+        o.geometry?.dispose?.();
+        if (Array.isArray(o.material)) o.material.forEach((m) => m.dispose?.());
+        else o.material?.dispose?.();
+      }
+      if (o.isPointLight) o.dispose?.();
+    });
+    this.group.clear();
+    this.lights.length = 0;
+    this.gates.length = 0;
+    this.spawnPoints.length = 0;
   }
 
   _mat(surfaceSet, opts = {}) {
@@ -129,14 +167,15 @@ export class Arena {
   }
 
   _ground() {
-    const g = plane(0, 0, 0, 110, 110, COL.ground, 4);
+    const size = (ARENA.half + 22) * 2;
+    const g = plane(0, 0, 0, size, size, COL.ground, Math.max(4, Math.round(size / 28)));
     const mesh = new Mesh(g, this.matGround);
     mesh.receiveShadow = true;
     mesh.matrixAutoUpdate = false;
     mesh.name = 'ground';
     this.group.add(mesh);
     // 바닥 충돌: 아주 두꺼운 박스 (아래로 떨어지지 않게)
-    this.collision.addBox(0, -5, 0, 60, 5, 60, SURFACE.CONCRETE);
+    this.collision.addBox(0, -5, 0, size / 2, 5, size / 2, SURFACE.CONCRETE);
   }
 
   _walls(concrete, painted) {
@@ -265,8 +304,25 @@ export class Arena {
       [-2.5, 23, 0, 0, COL.containerB],
       [22.5, 3, Math.PI / 2, 0, COL.containerA],
     ];
+    const S = this.S;
+    // 큰 맵에서는 외곽 링에 컨테이너를 추가로 흩뿌려 공간을 채운다
+    if (this.density > 1.05) {
+      const r = this._rng;
+      const extra = Math.round((this.density - 1) * 16);
+      const colors = [COL.containerA, COL.containerB, COL.containerC, COL.containerD, COL.containerE];
+      for (let i = 0; i < extra; i++) {
+        const ang = r.range(0, Math.PI * 2);
+        const rad = r.range(ARENA.half * 0.42, ARENA.half * 0.82);
+        list.push([
+          Math.cos(ang) * rad / S, Math.sin(ang) * rad / S,
+          r.chance(0.5) ? Math.PI / 2 : 0,
+          r.chance(0.25) ? 2.62 : 0, r.pick(colors),
+        ]);
+      }
+    }
     const L = 6.1, H = 2.6, W = 2.45;
-    for (const [x, z, rot, y, color] of list) {
+    for (let [x, z, rot, y, color] of list) {
+      x *= S; z *= S;
       this._solidRot(painted, x, y + H / 2, z, L, H, W, rot, color, SURFACE.METAL, 2);
       // 골판 리브 — 실루엣에 디테일을 준다
       const ribs = 9;
@@ -293,7 +349,18 @@ export class Arena {
       [22, -21, -0.5], [-23, 20, 0.4], [4, 20, 0],
       [7.6, 20, 0], [-22, -6, Math.PI / 2],
     ];
-    for (const [x, z, rot] of spots) {
+    const S = this.S;
+    if (this.density > 1.05) {
+      const r = this._rng;
+      const extra = Math.round((this.density - 1) * 18);
+      for (let i = 0; i < extra; i++) {
+        const ang = r.range(0, Math.PI * 2);
+        const rad = r.range(ARENA.half * 0.25, ARENA.half * 0.7);
+        spots.push([Math.cos(ang) * rad / S, Math.sin(ang) * rad / S, r.chance(0.5) ? Math.PI / 2 : 0]);
+      }
+    }
+    for (let [x, z, rot] of spots) {
+      x *= S; z *= S;
       // 저지 배리어: 아래가 넓고 위가 좁은 2단
       this._solidRot(concrete, x, 0.28, z, 2.3, 0.56, 0.72, rot, COL.concrete, SURFACE.CONCRETE, 1.6);
       concrete.push(boxRot(x, 0.78, z, 2.3, 0.46, 0.4, rot, COL.concreteLight, 1.6));
@@ -308,7 +375,7 @@ export class Arena {
 
   _tower(concrete, metal) {
     // 남서 코너의 감시탑 — 위험/보상이 있는 저격 포인트
-    const tx = -22.5, tz = 22.5, topY = 3.5;
+    const tx = -22.5 * this.S, tz = 22.5 * this.S, topY = 3.5;
     for (const [ox, oz] of [[-2, -2], [2, -2], [-2, 2], [2, 2]]) {
       this._solid(concrete, tx + ox, topY / 2, tz + oz, 0.6, topY, 0.6, COL.concreteDark, SURFACE.CONCRETE, 2);
     }
@@ -336,9 +403,10 @@ export class Arena {
 
   _pipes(metal) {
     // 벽을 따라 흐르는 배관 — 공간에 산업적인 밀도를 준다
-    for (const [x, z, rot, len] of [
+    const S = this.S;
+    for (let [x, z, rot, len] of [
       [-29, -6, 0, 20], [29, 7, 0, 22], [-6, -29, Math.PI / 2, 18], [9, 29, Math.PI / 2, 20],
-    ]) {
+    ].map(([x, z, rot, len]) => [x * S, z * S, rot, len * S])) {
       for (let i = 0; i < 2; i++) {
         const y = 4.4 + i * 0.75;
         const g = cylinder(0, 0, 0, 0.16, 0.16, len, 10, COL.rust, 1.2);
@@ -361,10 +429,17 @@ export class Arena {
     // 나무 상자 — InstancedMesh 하나로 처리
     const crates = [];
     const r = this._rng;
+    const S = this.S;
     const clusters = [
       [-12, -6], [11, -8], [-6, 13], [20, 20], [-24, -22], [24, -24],
       [6, -12], [-19, 3], [3, 9], [-3, -9],
-    ];
+    ].map(([x, z]) => [x * S, z * S]);
+    const extraClusters = Math.round((this.density - 1) * 12);
+    for (let i = 0; i < extraClusters; i++) {
+      const ang = r.range(0, Math.PI * 2);
+      const rad = r.range(ARENA.half * 0.3, ARENA.half * 0.78);
+      clusters.push([Math.cos(ang) * rad, Math.sin(ang) * rad]);
+    }
     for (const [cx, cz] of clusters) {
       const n = r.irange(2, 4);
       for (let i = 0; i < n; i++) {
@@ -409,8 +484,16 @@ export class Arena {
 
   _makeBarrels() {
     const r = this._rng;
+    const S = this.S;
     const spots = [];
-    const zones = [[-14, -20], [15, -12], [-21, 8], [8, 17], [23, -18], [-25, -10], [0, -15], [-9, 20], [19, 8]];
+    const zones = [[-14, -20], [15, -12], [-21, 8], [8, 17], [23, -18], [-25, -10], [0, -15], [-9, 20], [19, 8]]
+      .map(([x, z]) => [x * S, z * S]);
+    const extraZones = Math.round((this.density - 1) * 10);
+    for (let i = 0; i < extraZones; i++) {
+      const ang = r.range(0, Math.PI * 2);
+      const rad = r.range(ARENA.half * 0.3, ARENA.half * 0.8);
+      zones.push([Math.cos(ang) * rad, Math.sin(ang) * rad]);
+    }
     for (const [cx, cz] of zones) {
       const n = r.irange(1, 3);
       for (let i = 0; i < n; i++) {
@@ -453,7 +536,9 @@ export class Arena {
   }
 
   _floodlights(metal) {
-    const spots = [[-20, -20], [20, -20], [-20, 20], [20, 20], [0, 0]];
+    const S = this.S;
+    const spots = [[-20, -20], [20, -20], [-20, 20], [20, 20], [0, 0]]
+      .map(([x, z]) => [x * S, z * S]);
     for (const [x, z] of spots) {
       const isCenter = x === 0 && z === 0;
       const baseY = isCenter ? ARENA.platH : 0;

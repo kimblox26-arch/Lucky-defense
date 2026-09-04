@@ -21,6 +21,9 @@ const DEFAULTS = {
   showFps: false,
   crosshair: true,
   damageNumbers: true,
+  mapId: 'quarantine',    // 선택 맵
+  adsToggle: true,        // 조준: true=토글(한 번 눌러 유지) / false=길게 누르기
+  allyCount: 1,           // AI 동료 수 0~2
 };
 
 function load() {

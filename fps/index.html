@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#0a0c0e">
-<meta name="description" content="DEAD WAVE — 격리 구역에서 밀려드는 감염체를 막아내는 3D 웨이브 생존 FPS">
-<title>DEAD WAVE — 데드 웨이브</title>
+<meta name="description" content="OverKill 1 — 거대 격리 구역에서 AI 동료와 함께 밀려드는 감염체를 막아내는 3D 웨이브 생존 FPS">
+<title>OverKill 1</title>
 <link rel="stylesheet" href="./style.css">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' fill='%230a0c0e'/><circle cx='32' cy='32' r='18' fill='none' stroke='%23e04a2f' stroke-width='4'/><rect x='30' y='6' width='4' height='14' fill='%23e04a2f'/><rect x='30' y='44' width='4' height='14' fill='%23e04a2f'/><rect x='6' y='30' width='14' height='4' fill='%23e04a2f'/><rect x='44' y='30' width='14' height='4' fill='%23e04a2f'/></svg>">
 <script type="importmap">
@@ -144,26 +144,39 @@
 
   <!-- 로딩 -->
   <section id="scLoad" class="screen active">
-    <div class="logo"><span class="logo-dead">DEAD</span><span class="logo-wave">WAVE</span></div>
+    <div class="logo lockup"><span class="logo-over">OVER</span><span class="logo-kill">KILL</span><span class="logo-mk">01</span></div>
     <div class="loadbar"><div id="loadFill"></div></div>
     <div id="loadText">시스템 초기화 중…</div>
   </section>
 
   <!-- 메인 메뉴 -->
-  <section id="scMenu" class="screen">
+  <section id="scMenu" class="screen menu-hero">
     <div class="menu-inner">
-      <div class="logo big"><span class="logo-dead">DEAD</span><span class="logo-wave">WAVE</span></div>
-      <div class="tagline">격리 구역 07 — 생존자 1명 확인</div>
+      <div class="logo lockup big"><span class="logo-over">OVER</span><span class="logo-kill">KILL</span><span class="logo-mk">01</span></div>
+      <div class="tagline">감염 구역 · 최후의 방어선</div>
       <div class="bestbox">
         <div><small>최고 점수</small><b id="bestScore">0</b></div>
         <div><small>최고 웨이브</small><b id="bestWave">0</b></div>
+        <div><small>선택 맵</small><b id="menuMapName">격리 구역</b></div>
       </div>
       <div class="menu-btns">
         <button id="btnStart" class="mbtn primary">작전 시작</button>
+        <button id="btnMaps" class="mbtn">맵 선택</button>
         <button id="btnSettings" class="mbtn">설정</button>
         <button id="btnHelp" class="mbtn">조작법</button>
       </div>
       <div class="hintline" id="menuHint">클릭하면 마우스가 잠깁니다 · ESC로 해제</div>
+    </div>
+    <div class="menu-foot">OverKill 1 · 프로시저럴 3D FPS</div>
+  </section>
+
+  <!-- 맵 선택 -->
+  <section id="scMaps" class="screen">
+    <div class="menu-inner wide">
+      <h2>작전 지역 선택</h2>
+      <div class="sub">투입할 맵을 선택하십시오</div>
+      <div id="mapCards"></div>
+      <div class="menu-btns"><button id="btnMapsBack" class="mbtn primary">확정</button></div>
     </div>
   </section>
 

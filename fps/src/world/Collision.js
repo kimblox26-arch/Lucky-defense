@@ -25,6 +25,16 @@ export class CollisionWorld {
     this.bounds = { minX: Infinity, minZ: Infinity, maxX: -Infinity, maxZ: -Infinity };
   }
 
+  /** 맵 전환 시 정적 지오메트리를 초기화 */
+  clear() {
+    this.data = [];
+    this.surface = [];
+    this.blocksNav = [];
+    this.count = 0;
+    this.grid = new Map();
+    this.bounds = { minX: Infinity, minZ: Infinity, maxX: -Infinity, maxZ: -Infinity };
+  }
+
   /** 중심 + 반크기로 박스 추가 */
   addBox(cx, cy, cz, hx, hy, hz, surface = SURFACE.CONCRETE, blocksNav = true) {
     const i = this.count++;

@@ -4,9 +4,10 @@ import { Vector3 } from 'three';
 import { Engine } from '../core/Engine.js';
 import { Time, FIXED_DT } from '../core/Time.js';
 import { Input, isTouchDevice } from '../core/Input.js';
-import { settings } from '../core/Settings.js';
+import { settings, setSetting } from '../core/Settings.js';
 import { CollisionWorld } from '../world/Collision.js';
 import { Arena, ARENA } from '../world/Arena.js';
+import { MAPS, mapById } from '../world/Maps.js';
 import { Lighting } from '../world/Lighting.js';
 import { Flowfield } from '../world/Flowfield.js';
 import { Enemies } from '../enemy/Enemies.js';
@@ -52,6 +53,7 @@ export class Game {
     this.enemies = null;      // C단계에서 주입
     this.elapsed = 0;
     this.running = false;
+    this.mapId = settings.mapId || 'quarantine';
 
     this._forward = new Vector3();
     this._hits = [];
@@ -77,7 +79,7 @@ export class Game {
     this.engine.setQuality(settings.quality);
 
     await step(0.06, '지형 데이터 해석 중…', () => {
-      this.arena = new Arena(this.engine, this.collision);
+      this.arena = new Arena(this.engine, this.collision, mapById(this.mapId));
     });
     await step(0.22, '표면 재질 합성 중…', () => {
       this.arena.build();
@@ -88,6 +90,7 @@ export class Game {
     });
     await step(0.48, '조명 배치 중…', () => {
       this.lighting = new Lighting(this.engine);
+      if (this.arena.palette) this.lighting.applyMapPalette(this.arena.palette);
     });
     await step(0.6, '환경 반사 계산 중…', () => {
       this.engine.bakeEnvironment();
@@ -290,7 +293,24 @@ export class Game {
 
   // ───────────────────────── 상태 전환 ─────────────────────────
 
-  beginRun() {
+  /** 맵 전환 — 아레나/충돌/경로/조명을 새 맵으로 재구축 */
+  switchMap(mapId) {
+    const cfg = mapById(mapId);
+    if (mapId === this.mapId && this.arena) return;
+    this.mapId = mapId;
+    setSetting('mapId', mapId);
+    this.arena.dispose();
+    this.collision.clear();
+    this.arena = new Arena(this.engine, this.collision, cfg);
+    this.arena.build();
+    this.flowfield = new Flowfield(this.collision, ARENA.navMin, ARENA.navMax, 1);
+    if (this.arena.palette) this.lighting.applyMapPalette(this.arena.palette);
+    if (this.enemies) this.enemies.flow = this.flowfield;
+    this.player.position.copy(this.arena.playerStart);
+  }
+
+  beginRun(mapId) {
+    if (mapId && mapId !== this.mapId) this.switchMap(mapId);
     this.elapsed = 0;
     this.player.reset(this.arena.playerStart.x, this.arena.playerStart.y, this.arena.playerStart.z, 0);
     this.rig.reset(0, 0);
@@ -467,7 +487,12 @@ export class Game {
     this._forward.copy(this.rig.flatForward);
     this.lighting.update(this.player.position, this._forward);
     this.arena.update(this.time.raw);
-    this.viewModel.update(d, this.player, this.rig, this.weapons);
+    if (this.state === STATE.MENU) {
+      this._menuCam(d);
+      this.viewModel.setVisible(false);
+    } else {
+      this.viewModel.update(d, this.player, this.rig, this.weapons);
+    }
 
     const scopeAds = this.weapons.def.id === 'sniper' ? this.weapons.ads : 0;
     this.postfx.update(d, this.player.health / this.player.maxHealth, scopeAds);
@@ -513,6 +538,21 @@ export class Game {
     if (key.endsWith('Volume')) this.audio?.applyVolumes();
     else if (key === 'bloom' || key === 'grain') this.postfx?.applyQuality(this.engine.quality);
     else if (key === 'showFps') this.hud?.reset();
+  }
+
+  /** 메인 메뉴용 3D 아레나 오빗 카메라 */
+  _menuCam(d) {
+    this._menuT = (this._menuT || 0) + d;
+    const cam = this.engine.camera;
+    const a = this._menuT * 0.11;
+    const r = 20;
+    cam.position.set(
+      Math.sin(a) * r,
+      8.2 + Math.sin(this._menuT * 0.32) * 1.4,
+      Math.cos(a) * r - 2,
+    );
+    cam.lookAt(0, 3.2, -2);
+    cam.updateMatrixWorld();
   }
 
   addSystem(sys) { this.systems.push(sys); return sys; }

@@ -36,7 +36,7 @@ const SKY_VERT = /* glsl */`
   }
 `;
 
-// 종말 이후의 황혼: 지평선 근처 호박색 헤이즈, 천정은 짙은 청록, 낮게 깔린 태양.
+// 청명한 대낮: 지평선의 옅은 헤이즈, 높고 파란 천정, 높이 뜬 태양.
 const SKY_FRAG = /* glsl */`
   varying vec3 vDir;
   uniform vec3 uSunDir;
@@ -101,14 +101,15 @@ export class Engine {
     this.maxAniso = this.renderer.capabilities.getMaxAnisotropy();
 
     this.scene = new Scene();
-    this.scene.background = new Color(0x0a0d10);
-    this.fogColor = new Color(0x453224);
-    this.scene.fog = new FogExp2(this.fogColor.getHex(), 0.0135);
+    this.scene.background = new Color(0x8fb4d6);
+    this.fogColor = new Color(0xaec3d4);
+    this.scene.fog = new FogExp2(this.fogColor.getHex(), 0.0072);
 
-    this.camera = new PerspectiveCamera(settings.fov, 1, 0.06, 500);
+    this.camera = new PerspectiveCamera(settings.fov, 1, 0.06, 600);
     this.camera.rotation.order = 'YXZ';
 
-    this.sunDir = new Vector3(-0.46, 0.47, -0.75).normalize();
+    // 높이 뜬 대낮 태양 — 짧고 선명한 그림자
+    this.sunDir = new Vector3(-0.36, 0.72, -0.58).normalize();
 
     this._buildSky();
 
@@ -142,12 +143,12 @@ export class Engine {
   _buildSky() {
     this.skyUniforms = {
       uSunDir: { value: this.sunDir.clone() },
-      uZenith: { value: new Color(0x4c7ba6).convertSRGBToLinear() },
-      uHorizon: { value: new Color(0xc9793a).convertSRGBToLinear() },
-      uGround: { value: new Color(0x3a2a1c).convertSRGBToLinear() },
-      uSunColor: { value: new Color(0xffd6a0).convertSRGBToLinear() },
-      uSunSize: { value: 0.0009 },
-      uHaze: { value: 1.0 },
+      uZenith: { value: new Color(0x3b78c4).convertSRGBToLinear() },
+      uHorizon: { value: new Color(0xd3e0e8).convertSRGBToLinear() },
+      uGround: { value: new Color(0x76705c).convertSRGBToLinear() },
+      uSunColor: { value: new Color(0xfff3d8).convertSRGBToLinear() },
+      uSunSize: { value: 0.0016 },
+      uHaze: { value: 0.72 },
     };
     const mat = new ShaderMaterial({
       uniforms: this.skyUniforms,
