@@ -338,7 +338,9 @@ html, body {
   font-size: 10px; padding: 3px 7px; border-radius: 2px; color: var(--amber);
   background: rgba(255, 182, 72, .1); border: 1px solid rgba(255, 182, 72, .28);
 }
+.selMark { display: none; }
 .mapCard.sel .selMark {
+  display: block;
   position: absolute; right: 8px; top: 8px; font-size: 10px; letter-spacing: .1em;
   color: var(--bg); background: var(--amber); padding: 2px 7px; border-radius: 2px;
 }
