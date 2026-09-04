@@ -308,7 +308,7 @@ export class Arena {
 
   _tower(concrete, metal) {
     // 남서 코너의 감시탑 — 위험/보상이 있는 저격 포인트
-    const tx = -22.5, tz = 22.5, topY = 4.2;
+    const tx = -22.5, tz = 22.5, topY = 3.5;
     for (const [ox, oz] of [[-2, -2], [2, -2], [-2, 2], [2, 2]]) {
       this._solid(concrete, tx + ox, topY / 2, tz + oz, 0.6, topY, 0.6, COL.concreteDark, SURFACE.CONCRETE, 2);
     }
@@ -319,14 +319,18 @@ export class Arena {
       metal.push(box(tx + ox, topY + 0.95, tz + oz, w, 1.1, d, COL.rust, 1.5));
       this.collision.addBox(tx + ox, topY + 0.95, tz + oz, w / 2, 0.55, d / 2, SURFACE.METAL);
     }
-    // 계단 (동쪽으로 내려감)
-    const steps = 14;
+    // 계단 (동쪽으로 내려감).
+    // 경사가 너무 가파르면 플로우 필드에서 통행 불가로 판정되어
+    // 감시탑이 안전한 캠핑 지점이 되어버린다. 1m당 상승을 0.5 미만으로 유지한다.
+    const run = 9.6;
+    const steps = 30;
     for (let i = 0; i < steps; i++) {
       const t = (i + 0.5) / steps;
-      const sx = tx + 2.7 + (1 - t) * 4.6;
+      const sx = tx + 2.7 + (1 - t) * run;
       const hh = topY * t + 0.2;
-      metal.push(box(sx, hh / 2, tz, 4.6 / steps + 0.02, hh, 1.5, COL.metal, 1.5));
-      this.collision.addBox(sx, hh / 2, tz, (4.6 / steps) / 2 + 0.01, hh / 2, 0.75, SURFACE.METAL);
+      const w = run / steps + 0.02;
+      metal.push(box(sx, hh / 2, tz, w, hh, 1.6, COL.metal, 1.5));
+      this.collision.addBox(sx, hh / 2, tz, w / 2, hh / 2, 0.8, SURFACE.METAL);
     }
   }
 
@@ -418,9 +422,11 @@ export class Arena {
         });
       }
     }
-    const geo = new CylinderGeometry(0.34, 0.34, 0.92, 14, 1);
+    // instanceColor로 폭발물/일반 드럼통을 구분한다.
+    // 머티리얼의 vertexColors는 켠 채로 두고 geometry에 흰색 color 속성을 넣어야
+    // 인스턴스 색이 그대로 곱해진다.
+    const geo = setVertexColor(new CylinderGeometry(0.34, 0.34, 0.92, 14, 1), '#ffffff');
     const mat = this.matMetal.clone();
-    mat.vertexColors = false;
     mat.roughness = 0.66;
     mat.metalness = 0.5;
     const mesh = new InstancedMesh(geo, mat, spots.length);

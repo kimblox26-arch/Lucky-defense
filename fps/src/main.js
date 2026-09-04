@@ -72,6 +72,26 @@ async function boot() {
       hp: Math.round(game.player.health),
     }),
     teleport: (x, y, z) => game.player.position.set(x, y, z),
+    look: (yaw, pitch = 0) => { game.rig.yaw = yaw; game.rig.pitch = pitch; },
+    /** 준비 시간을 건너뛰고 바로 다음 웨이브 */
+    skipPrep: () => { if (game.waves.phase === 'prep') game.waves.phaseT = 0.01; },
+    /** 특정 웨이브로 점프 */
+    setWave: (n) => { game.waves.wave = n - 1; game.waves.phase = 'prep'; game.waves.phaseT = 0.01; },
+    enemies: () => ({
+      alive: game.enemies.aliveCount,
+      active: game.enemies.active,
+      wave: game.waves.wave,
+      phase: game.waves.phase,
+      remaining: game.waves.remaining,
+    }),
+    spawn: (type, n = 1) => {
+      const g = game.arena.gates[0];
+      for (let i = 0; i < n; i++) {
+        game.enemies.spawn(type, g.spawns[1].x + i * 0.9, g.spawns[1].z, { health: 1, speed: 1, damage: 1 });
+      }
+    },
+    god: (on = true) => { game.player.invuln = on ? 1e9 : 0; },
+    unlockAll: () => { for (const w of game.weapons.list) game.weapons.unlock(w.def.id); game.hud.refreshSlots(); },
   };
   document.dispatchEvent(new CustomEvent('deadwave:ready'));
 }

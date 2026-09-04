@@ -6,6 +6,7 @@ import {
   Quaternion, Vector3, DynamicDrawUsage,
 } from 'three';
 import { QuadBatch } from './QuadBatch.js';
+import { setVertexColor } from '../world/GeoUtil.js';
 import { softDot, smokePuff, streak } from '../core/Textures.js';
 import { rng, clamp01 } from '../core/Util.js';
 
@@ -76,8 +77,10 @@ export class Particles {
 
     // ── 3D 파편 (탄피, 기브, 콘크리트 조각) ──
     this.debrisCap = capDebris;
-    const geo = new BoxGeometry(1, 1, 1);
-    const mat = new MeshStandardMaterial({ roughness: 0.72, metalness: 0.25, vertexColors: false });
+    // instanceColor를 쓰려면 vertexColors가 켜져 있어야 하고,
+    // geometry에도 흰색 color 속성이 있어야 한다 (없으면 vColor가 0이 된다).
+    const geo = setVertexColor(new BoxGeometry(1, 1, 1), '#ffffff');
+    const mat = new MeshStandardMaterial({ roughness: 0.72, metalness: 0.25, vertexColors: true });
     this.debrisMesh = new InstancedMesh(geo, mat, capDebris);
     this.debrisMesh.instanceMatrix.setUsage(DynamicDrawUsage);
     this.debrisMesh.castShadow = false;

@@ -8,6 +8,10 @@ import { settings } from '../core/Settings.js';
 import { CollisionWorld } from '../world/Collision.js';
 import { Arena, ARENA } from '../world/Arena.js';
 import { Lighting } from '../world/Lighting.js';
+import { Flowfield } from '../world/Flowfield.js';
+import { Enemies } from '../enemy/Enemies.js';
+import { Waves, PHASE } from './Waves.js';
+import { Score } from './Score.js';
 import { Player } from '../player/Player.js';
 import { CameraRig } from '../player/CameraRig.js';
 import { WeaponSystem } from '../player/Weapons.js';
@@ -16,7 +20,7 @@ import { PostFX } from '../fx/PostFX.js';
 import { Feedback } from '../fx/Feedback.js';
 import { HUD } from '../ui/HUD.js';
 import { Screens, $ } from '../ui/Screens.js';
-import { clamp, lerp } from '../core/Util.js';
+import { clamp, lerp, formatNumber, formatTime } from '../core/Util.js';
 
 export const STATE = {
   LOADING: 'loading',
@@ -76,6 +80,9 @@ export class Game {
       this.arena.build();
       this.player.position.copy(this.arena.playerStart);
     });
+    await step(0.36, '경로 그래프 생성 중…', () => {
+      this.flowfield = new Flowfield(this.collision, ARENA.navMin, ARENA.navMax, 1);
+    });
     await step(0.48, '조명 배치 중…', () => {
       this.lighting = new Lighting(this.engine);
     });
@@ -87,11 +94,18 @@ export class Game {
       this.viewModel.syncEnv();
       this.postfx = new PostFX(this.engine, this.viewModel);
     });
-    await step(0.82, '전투 시스템 연결 중…', () => {
+    await step(0.8, '전투 시스템 연결 중…', () => {
       this.fx = new Feedback(this);
       this.hud = new HUD(this);
       this._wireWeapons();
       this._wirePlayer();
+    });
+    await step(0.86, '감염체 데이터 로드 중…', () => {
+      this.enemies = new Enemies(this);
+      this.enemies.flow = this.flowfield;
+      this.score = new Score();
+      this.waves = new Waves(this, this.enemies);
+      this._wireWaves();
     });
     await step(0.93, '셰이더 컴파일 중…', () => {
       this.rig.update(FIXED_DT, this.player, 0);
@@ -130,6 +144,8 @@ export class Game {
     ws.onFire = (w, origin, dir, spread, anyHit) => {
       this.fx.onFire(w, dir, anyHit);
       this.audio?.gunshot(w.def);
+      this.score.shotsFired++;
+      if (anyHit) this.score.shotsHit++;
     };
     ws.onHit = (hit, damage, isCrit) => {
       if (hit.type === 'world') {
@@ -157,13 +173,59 @@ export class Game {
   _wirePlayer() {
     const p = this.player;
     p.onDamage = (dmg, angle) => {
+      this.score.damageTaken += dmg;
       this.fx.hurtVignette(clamp(dmg / 40, 0.15, 1));
       this.fx.damageDirection(angle);
       this.audio?.playerHurt();
     };
-    p.onDeath = () => this.onPlayerDeath?.();
+    p.onDeath = () => this.gameOver();
     p.onLand = (impact, surface) => this.audio?.land(impact, surface);
     p.onFootstep = (surface, intensity) => this.audio?.footstep(surface, intensity);
+  }
+
+  _wireWaves() {
+    const w = this.waves;
+    const e = this.enemies;
+
+    e.onKill = (z, headshot) => {
+      this.score.addKill(z.def.score, headshot);
+      this.hud.setScore(this.score.score);
+    };
+
+    w.onWaveStart = (n, total, boss) => {
+      this.hud.setPrep(null);
+      this.hud.setWave(n, total, total);
+      this.hud.banner_(boss ? `웨이브 ${n} · 대형 개체 접근` : `웨이브 ${n} 개시`);
+      this.lighting.setMood(w.intensity);
+      this.audio?.waveStart(boss);
+      // 강화 카드가 없을 때의 안전망 — 무기는 웨이브 도달로도 해금된다
+      const milestone = { 2: 'smg', 4: 'shotgun', 6: 'rifle', 9: 'sniper' }[n];
+      if (milestone && this.weapons.unlock(milestone)) {
+        const def = this.weapons.list.find((x) => x.def.id === milestone).def;
+        this.hud.banner_(`${def.name} 확보`);
+        this.hud.refreshSlots();
+      }
+    };
+
+    w.onPrepTick = (sec) => this.hud.setPrep(sec);
+
+    w.onWaveComplete = (n) => {
+      this.score.addBonus(220 + n * 90);
+      this.hud.setScore(this.score.score);
+      this.hud.banner_(`웨이브 ${n} 제압`);
+      this.audio?.waveClear();
+      this.weapons.giveAmmo(0.4);
+      this._onWaveCleared(n);
+    };
+  }
+
+  /** 웨이브 종료 후 강화 선택 → 준비 시간. D단계에서 Upgrades가 주입된다. */
+  _onWaveCleared(n) {
+    if (this.upgrades && this.upgrades.hasOffer(n)) {
+      this.openUpgrades(n);
+    } else {
+      this.waves.beginPrep();
+    }
   }
 
   // ───────────────────────── 명중 판정 ─────────────────────────
@@ -215,9 +277,69 @@ export class Game {
     this.viewModel.setWeapon(this.weapons.cur);
     this.lighting.setMood(0);
     this.fx.clear();
+    this.enemies.clear();
+    this.score.reset();
+    this.waves.reset();
+    this.upgrades?.reset();
     this.hud.reset();
     this.hud.setScore(0);
+    this.hud.setWave(1, 0, 0);
+    this.flowfield.rebuild(this.player.position.x, this.player.position.z);
+    this.waves.beginPrep(7);
     for (const s of this.systems) s.onRunStart?.();
+    this._enterPlaying();
+  }
+
+  gameOver() {
+    if (this.state === STATE.GAMEOVER) return;
+    this.state = STATE.GAMEOVER;
+    this.input.enabled = false;
+    this.input.exitLock();
+    this.time.setScale(0.25);
+    this.audio?.playerDeath();
+    const isBest = this.score.finish(this.waves.wave);
+    // 죽는 순간을 잠시 보여준 뒤 결과 화면으로
+    setTimeout(() => {
+      if (this.state !== STATE.GAMEOVER) return;
+      this.time.paused = true;
+      this.time.resetScale();
+      $('#hud').classList.add('hidden');
+      $('#touch').classList.add('hidden');
+      this._fillGameOver(isBest);
+      this.screens.show('scOver');
+    }, 2200);
+  }
+
+  _fillGameOver(isBest) {
+    const s = this.score;
+    const rows = [
+      ['최종 점수', formatNumber(s.score)],
+      ['도달 웨이브', String(this.waves.wave)],
+      ['처치', formatNumber(s.kills)],
+      ['헤드샷', formatNumber(s.headshots)],
+      ['명중률', Math.round(s.accuracy * 100) + '%'],
+      ['생존 시간', formatTime(s.duration)],
+    ];
+    $('#overStats').innerHTML = rows
+      .map(([k, v]) => `<div><small>${k}</small><b>${v}</b></div>`).join('');
+    $('#newBest').classList.toggle('hidden', !isBest);
+    $('#bestScore').textContent = formatNumber(s.best.score);
+    $('#bestWave').textContent = String(s.best.wave);
+  }
+
+  openUpgrades(wave) {
+    this.state = STATE.UPGRADE;
+    this.input.enabled = false;
+    this.input.exitLock();
+    this.time.paused = true;
+    $('#hud').classList.add('hidden');
+    $('#touch').classList.add('hidden');
+    this.upgrades.present(wave);
+    this.screens.show('scUpgrade');
+  }
+
+  closeUpgrades() {
+    this.waves.beginPrep();
     this._enterPlaying();
   }
 
@@ -308,6 +430,9 @@ export class Game {
 
     this.player.update(dt, intent, playing);
     this.weapons.update(dt, intent, this.player, playing);
+    this.enemies.update(dt, this.player.position, playing || this.state === STATE.GAMEOVER);
+    this.waves.update(dt, playing);
+    if (playing) this.score.update(dt);
     this.fx.update(dt);
 
     for (const s of this.systems) s.update?.(dt, intent, playing);
@@ -324,9 +449,33 @@ export class Game {
     const scopeAds = this.weapons.def.id === 'sniper' ? this.weapons.ads : 0;
     this.postfx.update(d, this.player.health / this.player.maxHealth, scopeAds);
 
+    this.enemies.preRender(this.time.alpha, this.time.raw);
     this.fx.preRender(d);
+    this._updateHudState(d);
     this.hud.update(d);
     for (const s of this.systems) s.preRender?.(d, this.time.raw);
+  }
+
+  _updateHudState() {
+    const w = this.waves;
+    if (w.phase === PHASE.ACTIVE || w.phase === PHASE.TELEGRAPH || w.phase === PHASE.CLEARED) {
+      this.hud.setWave(w.wave, w.total, w.remaining);
+    }
+    this.hud.setCombo(this.score.multiplier, this.score.comboRatio);
+    this.fx.setLowHealth(this.player.health / this.player.maxHealth < 0.3 && this.player.alive);
+
+    // 화면 밖 적 방향 표시
+    if (this._compassTick === undefined) this._compassTick = 0;
+    this._compassTick++;
+    if (this._compassTick % 6 === 0) {
+      this.hud.setCompass(this.enemies.compassAngles(this.player.position, this.rig.yaw, this._forward));
+    }
+
+    // 조준선 적대 표시 — 조준 대상이 적이면 붉게
+    const eye = this.player.eyePosition;
+    const f = this.rig.forward;
+    const target = this.enemies.findAimTarget(eye.x, eye.y, eye.z, f.x, f.y, f.z, 60, 0.03);
+    this.hud.setHostile(!!target);
   }
 
   addSystem(sys) { this.systems.push(sys); return sys; }
