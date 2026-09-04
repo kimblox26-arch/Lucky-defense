@@ -59,7 +59,11 @@ export class Enemies {
     this.onKill = null;               // (zombie, isCrit)
     this.onPlayerHit = null;          // (zombie, damage)
     this.killCount = 0;
+    this._threat = 0;
   }
+
+  /** 0..1 — 음악/긴장 연출용 위협도 */
+  get threat() { return clamp01(this._threat / 9); }
 
   // ───────────────────────── 렌더 자원 ─────────────────────────
 
@@ -199,6 +203,7 @@ export class Enemies {
     }
 
     this._buildSeparationGrid();
+    this._threat = 0;
 
     for (let i = 0; i < this.active; i++) {
       const z = this.list[i];
@@ -267,6 +272,8 @@ export class Enemies {
     const distSq = dx * dx + dz * dz;
     const dist = Math.sqrt(distSq);
     z.distToPlayer = dist;
+    // 음악 강도용 위협도 — 가깝고 무거운 개체일수록 크게
+    if (dist < 20) this._threat += (1 - dist / 20) * (0.5 + t.mass * 0.35);
 
     // ── 상태 전이 ──
     if (z.state === STATE.STAGGER) {

@@ -99,6 +99,18 @@ async function boot() {
 function wireMenu(game) {
   const s = game.screens;
 
+  const best = game.score.best;
+  $('#bestScore').textContent = best.score.toLocaleString('ko-KR');
+  $('#bestWave').textContent = String(best.wave);
+
+  // 어떤 버튼이든 첫 클릭에서 오디오 컨텍스트를 깨운다
+  document.addEventListener('pointerdown', () => game.audio?.init(), { once: true });
+  document.addEventListener('click', (e) => {
+    if (e.target instanceof HTMLElement && e.target.closest('.mbtn, .tbtn, .seg button')) {
+      game.audio?.uiClick();
+    }
+  });
+
   $('#btnStart').addEventListener('click', () => game.beginRun());
   $('#btnResume').addEventListener('click', () => game.resume());
   $('#btnQuit').addEventListener('click', () => game.quitToMenu());

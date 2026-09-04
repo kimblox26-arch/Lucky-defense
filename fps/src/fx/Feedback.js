@@ -119,6 +119,7 @@ export class Feedback {
       clamp01(damage / 60) * 0.8 + 0.4,
     );
     this.showHitmarker(isKill ? 'kill' : isCrit ? 'crit' : '');
+    this.game.audio?.hitmarker(isCrit, isKill);
     if (settings.damageNumbers) this.damageNumber(hit.x, hit.y, hit.z, damage, isCrit, isKill);
     if (isKill) {
       this.killFeed(enemyName || '감염체', isCrit);

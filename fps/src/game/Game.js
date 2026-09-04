@@ -12,6 +12,8 @@ import { Flowfield } from '../world/Flowfield.js';
 import { Enemies } from '../enemy/Enemies.js';
 import { Waves, PHASE } from './Waves.js';
 import { Score } from './Score.js';
+import { Upgrades } from './Upgrades.js';
+import { AudioEngine } from '../core/Audio.js';
 import { Player } from '../player/Player.js';
 import { CameraRig } from '../player/CameraRig.js';
 import { WeaponSystem } from '../player/Weapons.js';
@@ -105,6 +107,8 @@ export class Game {
       this.enemies.flow = this.flowfield;
       this.score = new Score();
       this.waves = new Waves(this, this.enemies);
+      this.upgrades = new Upgrades(this);
+      this.audio = new AudioEngine(this);
       this._wireWaves();
     });
     await step(0.93, '셰이더 컴파일 중…', () => {
@@ -190,6 +194,19 @@ export class Game {
     e.onKill = (z, headshot) => {
       this.score.addKill(z.def.score, headshot);
       this.hud.setScore(this.score.score);
+      const mods = this.weapons.mods;
+      if (mods.lifesteal > 0) {
+        this.player.heal(mods.lifesteal);
+        this.fx.particles.sparkle(
+          this.player.position.x, this.player.position.y + 1.2, this.player.position.z,
+          [0.5, 2.4, 1.0], 4,
+        );
+      }
+      if (mods.explosive > 0) {
+        // 자기 자신은 이미 죽었으므로 연쇄 폭발만 발생
+        e.explode(z.pos.x, z.pos.y + 0.8, z.pos.z,
+          2.2 + mods.explosive * 0.5, 26 * mods.explosive, z);
+      }
     };
 
     w.onWaveStart = (n, total, boss) => {
@@ -215,11 +232,12 @@ export class Game {
       this.hud.banner_(`웨이브 ${n} 제압`);
       this.audio?.waveClear();
       this.weapons.giveAmmo(0.4);
+      this.player.armor = this.player.armorMax;   // 보호막은 웨이브마다 재충전
       this._onWaveCleared(n);
     };
   }
 
-  /** 웨이브 종료 후 강화 선택 → 준비 시간. D단계에서 Upgrades가 주입된다. */
+  /** 웨이브 종료 후 강화 선택 → 준비 시간 */
   _onWaveCleared(n) {
     if (this.upgrades && this.upgrades.hasOffer(n)) {
       this.openUpgrades(n);
@@ -450,6 +468,13 @@ export class Game {
     this.postfx.update(d, this.player.health / this.player.maxHealth, scopeAds);
 
     this.enemies.preRender(this.time.alpha, this.time.raw);
+
+    // 음악 강도 = 웨이브 진행 + 근접 위협 + 저체력
+    const lowHp = 1 - this.player.health / this.player.maxHealth;
+    this.audio?.update(d, this.engine.camera, clamp(
+      this.waves.intensity * 0.35 + this.enemies.threat * 0.75 + lowHp * 0.3, 0, 1,
+    ));
+
     this.fx.preRender(d);
     this._updateHudState(d);
     this.hud.update(d);
@@ -476,6 +501,13 @@ export class Game {
     const f = this.rig.forward;
     const target = this.enemies.findAimTarget(eye.x, eye.y, eye.z, f.x, f.y, f.z, 60, 0.03);
     this.hud.setHostile(!!target);
+  }
+
+  /** 설정 변경 반영 (main.js에서 호출) */
+  onSettingChanged(key) {
+    if (key.endsWith('Volume')) this.audio?.applyVolumes();
+    else if (key === 'bloom' || key === 'grain') this.postfx?.applyQuality(this.engine.quality);
+    else if (key === 'showFps') this.hud?.reset();
   }
 
   addSystem(sys) { this.systems.push(sys); return sys; }

@@ -76,6 +76,15 @@ export class Player {
   }
 
   reset(x, y, z, yaw = 0) {
+    // 강화로 바뀐 수치를 전부 초기값으로 되돌린다
+    this.tuning = { ...PLAYER_TUNING };
+    this.maxHealth = PLAYER_TUNING.maxHealth;
+    this.armorMax = PLAYER_TUNING.armorMax;
+    this.speedMul = 1;
+    this._sinceDamage = 99;
+    this._stepDist = 0;
+    this._ads = false;
+
     this.position.set(x, y, z);
     this.velocity.set(0, 0, 0);
     this.health = this.maxHealth;
