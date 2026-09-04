@@ -21,6 +21,7 @@ import { ViewModel } from '../player/ViewModel.js';
 import { PostFX } from '../fx/PostFX.js';
 import { Feedback } from '../fx/Feedback.js';
 import { HUD } from '../ui/HUD.js';
+import { TouchControls, AimAssist } from '../ui/Touch.js';
 import { Screens, $ } from '../ui/Screens.js';
 import { clamp, lerp, formatNumber, formatTime } from '../core/Util.js';
 
@@ -109,6 +110,8 @@ export class Game {
       this.waves = new Waves(this, this.enemies);
       this.upgrades = new Upgrades(this);
       this.audio = new AudioEngine(this);
+      this.touch = new TouchControls(this);
+      this.aimAssist = new AimAssist(this);
       this._wireWaves();
     });
     await step(0.93, '셰이더 컴파일 중…', () => {
@@ -322,7 +325,7 @@ export class Game {
       this.time.paused = true;
       this.time.resetScale();
       $('#hud').classList.add('hidden');
-      $('#touch').classList.add('hidden');
+      this.touch?.enable(false);
       this._fillGameOver(isBest);
       this.screens.show('scOver');
     }, 2200);
@@ -351,7 +354,7 @@ export class Game {
     this.input.exitLock();
     this.time.paused = true;
     $('#hud').classList.add('hidden');
-    $('#touch').classList.add('hidden');
+    this.touch?.enable(false);
     this.upgrades.present(wave);
     this.screens.show('scUpgrade');
   }
@@ -368,7 +371,7 @@ export class Game {
     this.input.enabled = true;
     this.time.paused = false;
     this.time.resetScale();
-    if (isTouchDevice) $('#touch').classList.remove('hidden');
+    if (isTouchDevice) this.touch.enable(true);
     else this.input.requestLock();
     this.audio?.resume();
   }
@@ -380,7 +383,7 @@ export class Game {
     this.input.exitLock();
     this.time.paused = true;
     $('#hud').classList.add('hidden');
-    $('#touch').classList.add('hidden');
+    this.touch?.enable(false);
     this.screens.show('scPause');
     this.audio?.setPaused(true);
     for (const s of this.systems) s.onPause?.();
@@ -400,7 +403,7 @@ export class Game {
     this.time.paused = false;
     this.time.resetScale();
     $('#hud').classList.add('hidden');
-    $('#touch').classList.add('hidden');
+    this.touch?.enable(false);
     this.screens.show('scMenu');
     this.fx.clear();
     this.audio?.setPaused(false);
@@ -431,6 +434,8 @@ export class Game {
       const sens = lerp(1, settings.adsSensitivity, this.weapons.ads);
       this.rig.look(intent.lookX * sens, intent.lookY * sens);
     }
+    this.touch.update(this.time.rawFrameDt);
+    this.aimAssist.update(this.time.rawFrameDt);
 
     for (let i = 0; i < steps; i++) {
       this._fixedUpdate(FIXED_DT, intent);

@@ -77,7 +77,7 @@ export class Feedback {
     this.particles.muzzleSmoke(m.x, m.y, m.z, dirV.x, dirV.y, dirV.z, def.muzzleSize * 1.4);
 
     // 탄피 배출 — 카메라 오른쪽 위로 튀어나간다
-    if (!def.shellReload || true) {
+    {
       const e = vm.ejectWorld(cam, this._eject);
       const right = this.game.rig.right;
       const gy = this.game.collision.groundHeight(e.x, e.z, e.y) ;

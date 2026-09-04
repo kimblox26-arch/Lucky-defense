@@ -129,7 +129,8 @@ export class WeaponSystem {
   giveAmmo(fraction = 0.35) {
     for (const w of this.list) {
       if (!w.unlocked || w.def.reserveMax === Infinity) continue;
-      w.reserve = Math.min(w.def.reserveMax, w.reserve + Math.ceil(w.def.reserveMax * fraction));
+      const cap = Math.round(w.def.reserveMax * this.mods.ammoGain);
+      w.reserve = Math.min(cap, w.reserve + Math.ceil(cap * fraction));
     }
     this.onAmmoChange?.();
   }
@@ -138,7 +139,7 @@ export class WeaponSystem {
     for (const w of this.list) {
       if (!w.unlocked) continue;
       w.mag = this.maxMag(w);
-      if (w.def.reserveMax !== Infinity) w.reserve = w.def.reserveMax;
+      if (w.def.reserveMax !== Infinity) w.reserve = Math.round(w.def.reserveMax * this.mods.ammoGain);
     }
     this.reloading = false;
     this.onAmmoChange?.();

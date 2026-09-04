@@ -20,7 +20,7 @@ const ROSTER = [
   { type: TYPE.BRUTE, from: 9, weight: 0.35 },
 ];
 
-export const PREP_TIME = 18;
+export const PREP_TIME = 12;
 const TELEGRAPH_TIME = 2.6;
 
 export class Waves {

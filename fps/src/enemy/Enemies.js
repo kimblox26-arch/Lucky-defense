@@ -22,7 +22,7 @@ const RIG = {
   torso: { size: [0.52, 0.74, 0.32], centerY: 1.17 },
   head: { size: [0.30, 0.32, 0.30], centerY: 1.66 },
   arm: { size: [0.145, 0.64, 0.17], pivotY: 1.44, offX: 0.33 },
-  eye: { size: [0.055, 0.05, 0.03], offX: 0.075, y: 1.70, z: -0.155 },
+  eye: { size: [0.055, 0.05, 0.03], offX: 0.075, y: 1.70, z: 0.155 },   // 모델은 +Z를 바라본다
 };
 
 const _m = new Matrix4();
@@ -73,7 +73,8 @@ export class Enemies {
     // 그리고 geometry에 흰색 color 속성이 없으면 vColor가 0이 되므로 함께 넣는다.
     const skin = new MeshStandardMaterial({
       map: surf.map, normalMap: surf.normalMap, roughnessMap: surf.roughnessMap,
-      roughness: 0.92, metalness: 0.02, envMapIntensity: 0.75,
+      roughness: 0.9, metalness: 0.02, envMapIntensity: 1.35,
+      emissive: new Color(0x0b0d10), emissiveIntensity: 1,
       vertexColors: true,
     });
     const geo = setVertexColor(new BoxGeometry(1, 1, 1), '#ffffff');
@@ -344,6 +345,11 @@ export class Enemies {
       if (t.ranged && dist < t.ranged.keepDistance) {
         wishX = -wishX; wishZ = -wishZ;
         moveSpeed *= 0.8;
+      } else if (!t.ranged) {
+        // 사거리 안에 들어오면 멈춘다. 계속 밀고 들어오면 몸통이 카메라를 가린다.
+        const stop = t.attackRange * 0.72 + t.radius + 0.36;
+        if (dist < stop) moveSpeed = 0;
+        else if (dist < stop + 0.8) moveSpeed *= (dist - stop) / 0.8;
       }
       // 자폭체는 접근할수록 빨라진다
       if (t.explode && dist < 9) moveSpeed *= 1.35;
@@ -380,6 +386,31 @@ export class Enemies {
     if (hit.wall) {
       if (hit.wallNormalX) z.vel.x = 0;
       if (hit.wallNormalZ) z.vel.z = 0;
+    }
+
+    // ── 플레이어와의 겹침 해소 ──
+    // 이걸 하지 않으면 감염체가 플레이어를 통과해 카메라 안쪽까지 들어와
+    // 화면이 몸통으로 가려진다. 질량 비율로 서로를 밀어낸다.
+    {
+      const p = this.game.player;
+      const minD = t.radius + p.radius + 0.06;
+      const ddx = z.pos.x - p.position.x;
+      const ddz = z.pos.z - p.position.z;
+      const d2 = ddx * ddx + ddz * ddz;
+      const vertical = z.pos.y + t.height > p.position.y && z.pos.y < p.position.y + p.height;
+      if (vertical && d2 < minD * minD && d2 > 1e-6) {
+        const d = Math.sqrt(d2);
+        const push = minD - d;
+        const nx = ddx / d, nz = ddz / d;
+        // 무거운 개체일수록 플레이어를 더 밀어낸다
+        const zShare = clamp(1 / (1 + t.mass * 0.55), 0.25, 0.85);
+        z.pos.x += nx * push * zShare;
+        z.pos.z += nz * push * zShare;
+        // 밀림이 너무 세면 뒷걸음질만으로 영원히 도망칠 수 있으므로 약하게 제한
+        const pShare = Math.min((push * (1 - zShare)) / Math.max(dt, 1e-4), 1.6);
+        p.velocity.x -= nx * pShare;
+        p.velocity.z -= nz * pShare;
+      }
     }
 
     // 벽에 끼면 잠시 옆으로 비켜간다
