@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0a0c0e">
+<meta name="description" content="DEAD WAVE — 격리 구역에서 밀려드는 감염체를 막아내는 3D 웨이브 생존 FPS">
+<title>DEAD WAVE — 데드 웨이브</title>
+<link rel="stylesheet" href="./style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' fill='%230a0c0e'/><circle cx='32' cy='32' r='18' fill='none' stroke='%23e04a2f' stroke-width='4'/><rect x='30' y='6' width='4' height='14' fill='%23e04a2f'/><rect x='30' y='44' width='4' height='14' fill='%23e04a2f'/><rect x='6' y='30' width='14' height='4' fill='%23e04a2f'/><rect x='44' y='30' width='14' height='4' fill='%23e04a2f'/></svg>">
+<script type="importmap">
+{
+  "imports": {
+    "three": "./vendor/three/three.module.min.js",
+    "three/addons/": "./vendor/three/addons/"
+  }
+}
+</script>
+</head>
+<body>
+
+<canvas id="cv"></canvas>
+
+<!-- ══════════════════════ HUD ══════════════════════ -->
+<div id="hud" class="hidden">
+
+  <!-- 조준선 -->
+  <div id="crosshair">
+    <svg viewBox="-50 -50 100 100" aria-hidden="true">
+      <g id="chLines" stroke="currentColor" stroke-width="2.6" stroke-linecap="round">
+        <line id="chT" x1="0" y1="-10" x2="0" y2="-20"/>
+        <line id="chB" x1="0" y1="10"  x2="0" y2="20"/>
+        <line id="chL" x1="-10" y1="0" x2="-20" y2="0"/>
+        <line id="chR" x1="10" y1="0"  x2="20" y2="0"/>
+      </g>
+      <circle id="chDot" cx="0" cy="0" r="1.3" fill="currentColor"/>
+    </svg>
+    <div id="hitmarker">
+      <svg viewBox="-50 -50 100 100" aria-hidden="true">
+        <g stroke="currentColor" stroke-width="4.5" stroke-linecap="round">
+          <line x1="-9" y1="-9" x2="-19" y2="-19"/>
+          <line x1="9" y1="-9" x2="19" y2="-19"/>
+          <line x1="-9" y1="9" x2="-19" y2="19"/>
+          <line x1="9" y1="9" x2="19" y2="19"/>
+        </g>
+      </svg>
+    </div>
+  </div>
+
+  <!-- 피격 방향 표시 -->
+  <div id="dmgIndicators"></div>
+  <!-- 피격 비네트 -->
+  <div id="dmgVignette"></div>
+  <!-- 저체력 맥동 -->
+  <div id="lowHp"></div>
+  <!-- 화면 플래시 -->
+  <div id="flash"></div>
+
+  <!-- 좌상단: 웨이브 / 목표 -->
+  <div id="topLeft">
+    <div id="waveBadge"><span id="waveNum">1</span><small>웨이브</small></div>
+    <div id="waveInfo">
+      <div id="waveBarWrap"><div id="waveBar"></div></div>
+      <div id="waveText">남은 감염체 <b id="enemyLeft">0</b></div>
+    </div>
+  </div>
+
+  <!-- 상단 중앙: 준비 시간 / 알림 -->
+  <div id="topCenter">
+    <div id="prepTimer" class="hidden"><span id="prepLabel">다음 웨이브</span><b id="prepSec">0</b></div>
+    <div id="banner"></div>
+  </div>
+
+  <!-- 우상단: 점수 -->
+  <div id="topRight">
+    <div id="scoreVal">0</div>
+    <div id="comboWrap" class="hidden">
+      <span id="comboMul">x1.0</span>
+      <div id="comboBarWrap"><div id="comboBar"></div></div>
+    </div>
+    <div id="fpsMeter" class="hidden">60 FPS</div>
+  </div>
+
+  <!-- 좌하단: 체력 -->
+  <div id="botLeft">
+    <div id="hpRow">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-8-5.2-8-11a4.6 4.6 0 0 1 8-3 4.6 4.6 0 0 1 8 3c0 5.8-8 11-8 11z"/></svg>
+      <div id="hpBarWrap"><div id="hpBar"></div><div id="hpBarLag"></div></div>
+      <span id="hpVal">100</span>
+    </div>
+    <div id="armorRow" class="hidden">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l8 3v6c0 5-3.4 9.4-8 11-4.6-1.6-8-6-8-11V5z"/></svg>
+      <div id="armorBarWrap"><div id="armorBar"></div></div>
+    </div>
+    <div id="perkRow"></div>
+  </div>
+
+  <!-- 우하단: 탄약 / 무기 -->
+  <div id="botRight">
+    <div id="ammoBlock">
+      <div id="ammoMag">30</div>
+      <div id="ammoSep">/</div>
+      <div id="ammoRes">120</div>
+    </div>
+    <div id="weaponName">권총</div>
+    <div id="reloadWrap" class="hidden"><div id="reloadBar"></div><span>재장전</span></div>
+    <div id="weaponSlots"></div>
+  </div>
+
+  <!-- 킬 로그 -->
+  <div id="killfeed"></div>
+  <!-- 데미지 숫자 레이어 -->
+  <div id="dmgNumbers"></div>
+  <!-- 적 방향 나침반 -->
+  <div id="compass"></div>
+  <!-- 상호작용 프롬프트 -->
+  <div id="prompt" class="hidden"></div>
+</div>
+
+<!-- ══════════════════════ 터치 컨트롤 ══════════════════════ -->
+<div id="touch" class="hidden">
+  <div id="stickZone"><div id="stickBase"><div id="stickKnob"></div></div></div>
+  <div id="lookZone"></div>
+  <button id="btnFire" class="tbtn big" aria-label="사격"></button>
+  <button id="btnAds" class="tbtn" aria-label="조준">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4" stroke="currentColor" stroke-width="2"/></svg>
+  </button>
+  <button id="btnReload" class="tbtn" aria-label="재장전">
+    <svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.6-5.9" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M20 3v5h-5" fill="none" stroke="currentColor" stroke-width="2.2"/></svg>
+  </button>
+  <button id="btnJump" class="tbtn" aria-label="점프">
+    <svg viewBox="0 0 24 24"><path d="M12 4l6 7h-4v9h-4v-9H6z" fill="currentColor"/></svg>
+  </button>
+  <button id="btnSwap" class="tbtn small" aria-label="무기 전환">
+    <svg viewBox="0 0 24 24"><path d="M4 8h13l-3-3M20 16H7l3 3" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button>
+  <button id="btnPause" class="tbtn small" aria-label="일시정지">
+    <svg viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" fill="currentColor"/><rect x="14" y="5" width="4" height="14" fill="currentColor"/></svg>
+  </button>
+</div>
+
+<!-- ══════════════════════ 오버레이 ══════════════════════ -->
+<div id="overlay">
+
+  <!-- 로딩 -->
+  <section id="scLoad" class="screen active">
+    <div class="logo"><span class="logo-dead">DEAD</span><span class="logo-wave">WAVE</span></div>
+    <div class="loadbar"><div id="loadFill"></div></div>
+    <div id="loadText">시스템 초기화 중…</div>
+  </section>
+
+  <!-- 메인 메뉴 -->
+  <section id="scMenu" class="screen">
+    <div class="menu-inner">
+      <div class="logo big"><span class="logo-dead">DEAD</span><span class="logo-wave">WAVE</span></div>
+      <div class="tagline">격리 구역 07 — 생존자 1명 확인</div>
+      <div class="bestbox">
+        <div><small>최고 점수</small><b id="bestScore">0</b></div>
+        <div><small>최고 웨이브</small><b id="bestWave">0</b></div>
+      </div>
+      <div class="menu-btns">
+        <button id="btnStart" class="mbtn primary">작전 시작</button>
+        <button id="btnSettings" class="mbtn">설정</button>
+        <button id="btnHelp" class="mbtn">조작법</button>
+      </div>
+      <div class="hintline" id="menuHint">클릭하면 마우스가 잠깁니다 · ESC로 해제</div>
+    </div>
+  </section>
+
+  <!-- 일시정지 -->
+  <section id="scPause" class="screen">
+    <div class="menu-inner">
+      <h2>일시정지</h2>
+      <div class="statgrid" id="pauseStats"></div>
+      <div class="menu-btns">
+        <button id="btnResume" class="mbtn primary">계속하기</button>
+        <button id="btnPauseSettings" class="mbtn">설정</button>
+        <button id="btnQuit" class="mbtn danger">작전 포기</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 강화 선택 -->
+  <section id="scUpgrade" class="screen">
+    <div class="menu-inner wide">
+      <h2>보급 · 강화 선택</h2>
+      <div class="sub">웨이브 <b id="upWave">1</b> 완료 — 하나를 선택하십시오</div>
+      <div id="upgradeCards"></div>
+      <div class="hintline" id="upgradeHint">1 / 2 / 3 키 또는 클릭</div>
+    </div>
+  </section>
+
+  <!-- 게임 오버 -->
+  <section id="scOver" class="screen">
+    <div class="menu-inner">
+      <h2 class="over">교신 두절</h2>
+      <div class="statgrid" id="overStats"></div>
+      <div id="newBest" class="hidden">신기록 달성</div>
+      <div class="menu-btns">
+        <button id="btnRetry" class="mbtn primary">재투입</button>
+        <button id="btnMenu" class="mbtn">메인 메뉴</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 설정 -->
+  <section id="scSettings" class="screen">
+    <div class="menu-inner wide">
+      <h2>설정</h2>
+      <div id="settingsBody"></div>
+      <div class="menu-btns">
+        <button id="btnSettingsBack" class="mbtn primary">돌아가기</button>
+        <button id="btnSettingsReset" class="mbtn">기본값</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 조작법 -->
+  <section id="scHelp" class="screen">
+    <div class="menu-inner wide">
+      <h2>조작법</h2>
+      <div id="helpBody"></div>
+      <div class="menu-btns"><button id="btnHelpBack" class="mbtn primary">돌아가기</button></div>
+    </div>
+  </section>
+
+  <!-- 포인터락 재요청 -->
+  <section id="scResume" class="screen">
+    <div class="menu-inner tight">
+      <h2>클릭하여 계속</h2>
+      <div class="hintline">마우스 잠금이 해제되었습니다</div>
+    </div>
+  </section>
+
+  <!-- 치명적 오류 -->
+  <section id="scError" class="screen">
+    <div class="menu-inner">
+      <h2 class="over">실행 불가</h2>
+      <div id="errorText" class="sub"></div>
+    </div>
+  </section>
+</div>
+
+<noscript><div style="position:fixed;inset:0;display:grid;place-items:center;background:#0a0c0e;color:#e8e2d8;font:600 16px system-ui">이 게임을 실행하려면 자바스크립트가 필요합니다.</div></noscript>
+
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
