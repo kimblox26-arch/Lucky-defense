@@ -179,6 +179,8 @@ export class Engine {
     this._envRT = rt;
     pmrem.dispose();
     envScene.remove(skyClone);
+    // 뷰모델 등 별도 씬이 같은 환경맵을 다시 참조하도록 알린다
+    this.onEnvBaked?.(rt.texture);
   }
 
   setQuality(tier) {

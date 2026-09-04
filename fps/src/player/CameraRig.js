@@ -33,12 +33,18 @@ export class CameraRig {
     this.flatForward = new Vector3(0, 0, -1);
     this._euler = new Euler(0, 0, 0, 'YXZ');
     this._shakeSeed = Math.random() * 100;
+
+    this._accYaw = 0; this._accPitch = 0;
+    this.deltaYaw = 0; this.deltaPitch = 0;
   }
 
   look(dx, dy) {
     this.yaw -= dx;
-    this.pitch -= dy;
-    this.pitch = clamp(this.pitch, -PITCH_LIMIT, PITCH_LIMIT);
+    const before = this.pitch;
+    this.pitch = clamp(this.pitch - dy, -PITCH_LIMIT, PITCH_LIMIT);
+    // 뷰모델 스웨이가 참조하는 회전 델타 (프레임마다 감쇠)
+    this._accYaw -= dx;
+    this._accPitch += this.pitch - before;
   }
 
   /** 사격 반동. pitchKick은 위로(+), yawKick은 좌우. */
@@ -66,6 +72,12 @@ export class CameraRig {
   kickFov(amount) { this.fovKick.kick(amount); }
 
   update(dt, player, time) {
+    // 이번 프레임의 시야 회전량을 초당 값으로 환산 (뷰모델 스웨이용)
+    const inv = dt > 1e-5 ? 1 / dt : 0;
+    this.deltaYaw = damp(this.deltaYaw, this._accYaw * inv, 24, dt);
+    this.deltaPitch = damp(this.deltaPitch, this._accPitch * inv, 24, dt);
+    this._accYaw = 0; this._accPitch = 0;
+
     // ── 반동 감쇠 ──
     this.recoil.update(dt);
     this.recoilRecover.update(dt);

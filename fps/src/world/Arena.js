@@ -153,7 +153,6 @@ export class Arena {
     ];
 
     for (const d of dirs) {
-      const along = d.ax === 'z' ? 'x' : 'z';
       for (const s of [-1, 1]) {
         const centerAlong = s * (g + segLen / 2);
         const px = d.ax === 'z' ? centerAlong : d.sign * half;
@@ -333,7 +332,6 @@ export class Arena {
 
   _pipes(metal) {
     // 벽을 따라 흐르는 배관 — 공간에 산업적인 밀도를 준다
-    const r = this._rng;
     for (const [x, z, rot, len] of [
       [-29, -6, 0, 20], [29, 7, 0, 22], [-6, -29, Math.PI / 2, 18], [9, 29, Math.PI / 2, 20],
     ]) {
@@ -352,7 +350,6 @@ export class Arena {
         const bz = Math.abs(rot) > 0.1 ? z : z + t;
         metal.push(box(bx, 5.0, bz, 0.5, 0.12, 0.5, COL.metal, 1));
       }
-      void r;
     }
   }
 
