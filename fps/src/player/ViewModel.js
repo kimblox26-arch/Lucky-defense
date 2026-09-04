@@ -148,16 +148,36 @@ const BUILDERS = {
   rifle: buildRifle, sniper: buildSniper,
 };
 
+// 장갑 낀 손 + 팔뚝. 무기를 쥔 것처럼 보이게 하는 스타일라이즈드 로우폴리.
+const GLOVE = '#2a2c30';
+const SKIN = '#c98d63';
+function buildHand(side = 1) {
+  const g = new Group();
+  // 손등
+  b(g, 0, 0, 0, 0.058, 0.03, 0.075, GLOVE, 0.9, 0.04);
+  // 손가락 4개 — 아래로 말아 총을 감싼다
+  for (let i = 0; i < 4; i++) {
+    b(g, -0.02 + i * 0.013, -0.026, -0.03, 0.011, 0.03, 0.02, GLOVE, 0.9, 0.04);
+  }
+  // 엄지
+  b(g, side * 0.032, -0.006, 0.0, 0.014, 0.018, 0.032, GLOVE, 0.9, 0.04, [0, 0, side * -0.5]);
+  // 손목 + 팔뚝 (카메라 쪽으로)
+  b(g, 0, 0.004, 0.06, 0.05, 0.036, 0.06, GLOVE, 0.9, 0.04);
+  b(g, 0, 0.006, 0.14, 0.056, 0.05, 0.12, SKIN, 0.85, 0.02);
+  b(g, 0, 0.006, 0.24, 0.062, 0.058, 0.1, GLOVE, 0.85, 0.05);   // 소매
+  return g;
+}
+
 // 무기별 포즈. z는 "모델의 가장 뒤쪽 면"이 카메라에서 얼마나 떨어지는지를 뜻한다
 // (모델은 생성 후 뒷면이 z=0에 오도록 자동 정렬된다).
 // rotation.x가 양수면 총구가 위를 향한다(반동 방향). 기본 자세는 살짝 아래로.
 // rotation.y가 양수면 총구가 화면 중앙 쪽(왼쪽)으로 모인다.
 const POSE = {
-  pistol: { hip: [0.115, -0.135, -0.30], hipRot: [-0.030, 0.050, 0], adsZ: -0.26 },
-  smg: { hip: [0.135, -0.155, -0.38], hipRot: [-0.035, 0.040, 0], adsZ: -0.34 },
-  shotgun: { hip: [0.148, -0.168, -0.45], hipRot: [-0.040, 0.034, 0], adsZ: -0.41 },
-  rifle: { hip: [0.145, -0.165, -0.45], hipRot: [-0.038, 0.034, 0], adsZ: -0.41 },
-  sniper: { hip: [0.152, -0.175, -0.48], hipRot: [-0.035, 0.030, 0], adsZ: -0.46 },
+  pistol: { hip: [0.115, -0.118, -0.30], hipRot: [-0.030, 0.050, 0], adsZ: -0.26 },
+  smg: { hip: [0.135, -0.132, -0.38], hipRot: [-0.035, 0.040, 0], adsZ: -0.34 },
+  shotgun: { hip: [0.148, -0.142, -0.45], hipRot: [-0.040, 0.034, 0], adsZ: -0.41 },
+  rifle: { hip: [0.145, -0.138, -0.45], hipRot: [-0.038, 0.034, 0], adsZ: -0.41 },
+  sniper: { hip: [0.152, -0.150, -0.48], hipRot: [-0.035, 0.030, 0], adsZ: -0.46 },
 };
 
 /**
@@ -206,6 +226,13 @@ export class ViewModel {
     }
     this.current = null;
 
+    // 무기를 쥔 양손 — root에 붙어 무기 포즈를 따라간다
+    this.handR = buildHand(1);
+    this.handL = buildHand(-1);
+    this.root.add(this.handR, this.handL);
+    this._gripR = new Vector3();
+    this._gripL = new Vector3();
+
     // 애니메이션 상태
     this.swayX = 0; this.swayY = 0;
     this.bobPhase = 0; this.bobAmt = 0;
@@ -234,6 +261,13 @@ export class ViewModel {
     if (this.current) this.current.visible = true;
     this.pose = POSE[id] || POSE.rifle;
     this.scoped = !!this.current?.userData.scoped;
+    // 무기 길이에 맞춰 양손 그립 위치 산출
+    const len = this.current?.userData.length || 0.4;
+    this._gripR.set(0.012, -0.062, -Math.min(0.12, len * 0.18));
+    this._gripL.set(-0.006, -0.056, -Math.min(0.52, len * 0.56));
+    this.handR.position.copy(this._gripR);
+    this.handR.rotation.set(0.24, 0.08, 0.1);
+    this.handL.rotation.set(0.34, -0.1, -0.12);
   }
 
   /** 발사 반동 애니메이션 */
@@ -311,6 +345,18 @@ export class ViewModel {
     const rz = kr * 0.05 + reloadRoll * 0.5
       + this.sprintT * 0.34 - this.swayX * 1.6;
     this.root.rotation.set(rx, ry, rz);
+
+    // ── 지지 손(왼손) 재장전 동작: 탄창을 빼러 내려갔다가 삽입하며 복귀 ──
+    let magY = 0, magZ = 0;
+    if (weapons.isReloading) {
+      const t = clamp01(weapons.reloadT / weapons.reloadDur);
+      const phase = t < 0.5
+        ? Math.sin(clamp01(t / 0.5) * Math.PI * 0.5)          // 0→1: 탄창 분리
+        : 1 - Math.sin(clamp01((t - 0.5) / 0.5) * Math.PI * 0.5); // 1→0: 삽입
+      magY = -0.11 * phase;
+      magZ = 0.06 * phase;
+    }
+    this.handL.position.set(this._gripL.x, this._gripL.y + magY, this._gripL.z + magZ);
 
     // 스코프 사용 시 완전 조준 상태에서는 무기를 숨기고 스코프 오버레이로 대체
     if (this.scoped) this.root.visible = ads < 0.92;

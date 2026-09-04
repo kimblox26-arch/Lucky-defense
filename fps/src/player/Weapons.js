@@ -69,6 +69,7 @@ export const WEAPONS = [
     adsFov: 0.32, adsTime: 0.28, adsSpreadMul: 0.02,
     tracerEvery: 1, tracerTint: [3.2, 2.2, 1.2], tracerWidth: 0.038,
     muzzleSize: 0.8, shellSize: 1.8, kickFov: 3.4, knockback: 3.0,
+    scoped: true, boltAction: true,   // 재장전 중 조준 해제 → 완료 후 재조준
   },
 ];
 
@@ -252,7 +253,9 @@ export class WeaponSystem {
     }
 
     // ── 조준 ──
-    const wantAds = playing && !!intent.ads && this.switching === 0;
+    // 저격총 등 스코프 무기는 재장전 중 조준을 잠시 해제하고, 완료되면 자동 재조준한다
+    const scopedReloadBlock = this.reloading && d.scoped;
+    const wantAds = playing && !!intent.ads && this.switching === 0 && !scopedReloadBlock;
     this.adsHeld = wantAds;
     const adsSpeed = dt / Math.max(0.02, d.adsTime / this.mods.fireRate ** 0.2);
     this.ads = clamp(this.ads + (wantAds ? adsSpeed : -adsSpeed * 1.4), 0, 1);

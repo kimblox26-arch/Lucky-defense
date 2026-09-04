@@ -58,6 +58,9 @@ export class Input {
     };
 
     this._prev = { fire: false, jump: false };
+    this._prevAds = false;
+    this._adsToggle = false;      // 조준 토글 모드에서 유지되는 상태
+    this._prevInteract = false;
     this._onPointerLockChange = this._onPointerLockChange.bind(this);
     this._bind();
   }
@@ -138,6 +141,9 @@ export class Input {
     this._lookX = this._lookY = 0;
   }
 
+  /** 조준 토글 해제 (무기 전환 등) */
+  resetAds() { this._adsToggle = false; this._prevAds = false; }
+
   /** 렌더 프레임 시작 시 1회 호출 — intent를 갱신하고 델타를 소비한다. */
   update() {
     const it = this.intent;
@@ -149,9 +155,10 @@ export class Input {
       it.moveX = it.moveY = 0;
       it.lookX = it.lookY = 0;
       it.fire = it.firePressed = it.ads = it.jump = it.jumpPressed = false;
-      it.reload = it.sprint = it.crouch = it.interact = false;
+      it.reload = it.sprint = it.crouch = it.interact = it.interactPressed = false;
       it.weaponSlot = -1; it.weaponCycle = 0;
       this._lookX = this._lookY = 0;
+      this._adsToggle = false; this._prevAds = false; this._prevInteract = false;
       return it;
     }
 
@@ -184,11 +191,23 @@ export class Input {
     it.firePressed = fire && !this._prev.fire;
     it.jump = jump;
     it.jumpPressed = jump && !this._prev.jump;
-    it.ads = this.mouse.right || (usingTouch && t.ads);
+    // 조준: 토글 모드면 누를 때마다 상태 반전, 아니면 길게 누르기
+    const rawAds = this.mouse.right || (usingTouch && t.ads);
+    if (settings.adsToggle) {
+      if (rawAds && !this._prevAds) this._adsToggle = !this._adsToggle;
+      it.ads = this._adsToggle;
+    } else {
+      it.ads = rawAds;
+    }
+    this._prevAds = rawAds;
+
     it.reload = !!this.keys.reload || (usingTouch && t.reload);
     it.sprint = !!this.keys.sprint || (usingTouch && t.sprint);
     it.crouch = !!this.keys.crouch || (usingTouch && t.crouch);
-    it.interact = !!this.keys.interact || (usingTouch && t.interact);
+    const interact = !!this.keys.interact || (usingTouch && t.interact);
+    it.interact = interact;
+    it.interactPressed = interact && !this._prevInteract;
+    this._prevInteract = interact;
 
     if (this.keys.cyclePrev) { it.weaponCycle -= 1; this.keys.cyclePrev = false; }
     it.weaponCycle = clamp(it.weaponCycle, -3, 3);

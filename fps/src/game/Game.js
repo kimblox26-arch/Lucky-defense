@@ -10,6 +10,8 @@ import { Arena, ARENA } from '../world/Arena.js';
 import { MAPS, mapById } from '../world/Maps.js';
 import { Lighting } from '../world/Lighting.js';
 import { Flowfield } from '../world/Flowfield.js';
+import { Loot } from '../world/Loot.js';
+import { Allies } from './Ally.js';
 import { Enemies } from '../enemy/Enemies.js';
 import { Waves, PHASE } from './Waves.js';
 import { Score } from './Score.js';
@@ -115,6 +117,8 @@ export class Game {
       this.audio = new AudioEngine(this);
       this.touch = new TouchControls(this);
       this.aimAssist = new AimAssist(this);
+      this.loot = this.addSystem(new Loot(this));
+      this.allies = this.addSystem(new Allies(this));
       this._wireWaves();
     });
     await step(0.93, '셰이더 컴파일 중…', () => {
@@ -175,6 +179,7 @@ export class Game {
       this.viewModel.switchAnim();
       this.hud?.refreshSlots();
       this.audio?.weaponSwitch();
+      this.input.resetAds();     // 무기 전환 시 조준 토글 해제
     };
     ws.onDryFire = () => this.audio?.dryFire();
     ws.onAmmoChange = () => { /* HUD가 매 프레임 읽으므로 별도 처리 불필요 */ };
@@ -239,6 +244,7 @@ export class Game {
       this.audio?.waveClear();
       this.weapons.giveAmmo(0.4);
       this.player.armor = this.player.armorMax;   // 보호막은 웨이브마다 재충전
+      this.loot?.restock();
       this._onWaveCleared(n);
     };
   }

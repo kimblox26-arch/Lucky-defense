@@ -130,6 +130,19 @@ export class Enemies {
 
   get totalActive() { return this.active; }
 
+  /** 지정 지점에서 maxDist 이내 가장 가까운 살아있는 적 (아군 AI 타게팅용) */
+  nearestEnemy(x, z, maxDist = 40) {
+    let best = null, bestD = maxDist * maxDist;
+    for (let i = 0; i < this.active; i++) {
+      const e = this.list[i];
+      if (e.state === STATE.DEAD || e.health <= 0) continue;
+      const dx = e.pos.x - x, dz = e.pos.z - z;
+      const d = dx * dx + dz * dz;
+      if (d < bestD) { bestD = d; best = e; }
+    }
+    return best;
+  }
+
   spawn(typeId, x, z, buff = null) {
     if (this.active >= MAX) return null;
     const t = TYPES[typeId];
