@@ -11,7 +11,8 @@
     st: {   // 설정
       quality: 1, sizeScale: 1, trails: true, trailLen: 260, labels: true, marble: true,
       substeps: 4, gmul: 1, maxBodies: 220, colMode: 'realistic', debris: true,
-      selfGrav: false, accretion: true, tidal: true, sound: true, showFps: true, glow: true
+      selfGrav: false, accretion: true, tidal: true, sound: true, showFps: true, glow: true,
+      evolution: true, evoRate: 1e5, bloom: true
     }
   };
   window.G = G;
@@ -165,6 +166,18 @@
       else if (e.type === 'swallow') { G.ren.boom(e.x, e.y, e.z, e.r * 2, 0xff6040, 1.0); toast('🕳 ' + I18N.t('ev_swallow')); }
       else if (e.type === 'moonborn') { G.ren.boom(e.x, e.y, e.z, e.r * 6, 0x5ff0ff, 1.2); beep(660, .35, 'sine', .06); toast('🌙 ' + I18N.t('ev_moonborn')); }
       else if (e.type === 'shatter') { G.ren.boom(e.x, e.y, e.z, e.r * 1.6, 0xffa060, 0.9); }
+      else if (e.type === 'tde') {
+        G.ren.boom(e.x, e.y, e.z, e.r * 4, 0x9fd8ff, 1.4); beep(140, .6, 'sawtooth', .07);
+        toast('🕳 ' + I18N.t('ev_tde'));
+      }
+      else if (e.type === 'supernova') {
+        G.ren.shockwave(e.x, e.y, e.z, e.r * 2.2, 3.4);
+        G.ren.boom(e.x, e.y, e.z, e.r * 5, 0xffffff, 1.8);
+        beep(60, 1.4, 'sawtooth', .09); setTimeout(() => beep(40, 1.8, 'square', .06), 120);
+        toast('💥 ' + I18N.t('ev_supernova') + ' — ' + e.m.toFixed(1) + ' M☉', 3200);
+      }
+      else if (e.type === 'giant') { toast('🔴 ' + I18N.t('ev_giant') + ' — ' + bodyName(e.body), 2600); }
+      else if (e.type === 'accrete' && Math.random() < 0.25) { G.ren.boom(e.x, e.y, e.z, e.r * 5, 0xffd0a0, 0.4); }
     }
   }
 
@@ -253,6 +266,9 @@
     r.sizeScale = s.sizeScale; r.showTrails = s.trails; r.trailLen = s.trailLen; r.marbleMode = s.marble;
     sim.substeps = s.substeps; sim.gmul = s.gmul; sim.maxBodies = s.maxBodies; sim.colMode = s.colMode;
     sim.debrisOn = s.debris; sim.selfGrav = s.selfGrav; sim.accretion = s.accretion; sim.tidalHeat = s.tidal;
+    sim.evolution = s.evolution; sim.evoRate = s.evoRate;
+    sim.rocheOn = true;                       // 로슈 한계 물리는 항상 적용
+    r.bloomOn = s.bloom && s.quality > 0;
     try { localStorage.setItem('mc_st', JSON.stringify(s)); } catch (e) {}
   }
   function loadSettings() {
@@ -346,7 +362,9 @@
       btn('i_dup', '⧉ ' + I18N.t('duplicate')) + btn('i_ring', '💫 ' + I18N.t('addring')) +
       btn('i_frag', '🪨 ' + I18N.t('fragment')) + btn('i_boom', '💥 ' + I18N.t('explode')) +
       btn('i_orbit', '🌀 ' + I18N.t('orbitit')) + btn('i_del', '🗑 ' + I18N.t('del'), 'warn') +
-      '</div>';
+      '</div>' +
+      (b.isStar() && b.cat !== 'bh' ? '<div class="grid2" style="margin-top:4px">' +
+        btn('i_giant', '🔴 ' + I18N.t('redgiant')) + btn('i_sn', '💥 ' + I18N.t('supernova'), 'warn') + '</div>' : '');
     const g = id => document.getElementById(id);
     g('i_name').oninput = e => { b.label = e.target.value; $('#insp_name').textContent = e.target.value; };
     g('i_mass').oninput = e => { b.m = Math.pow(10, +e.target.value); };
@@ -397,6 +415,16 @@
       b.vx = v.x; b.vy = v.y; b.vz = v.z; toast('🌀 ' + bodyName(P));
     };
     g('i_del').onclick = () => { G.sim.remove(b); showInspector(null); toast(I18N.t('ev_del')); };
+    if (g('i_sn')) g('i_sn').onclick = () => {
+      G.ren.focus(b, false);
+      const rem = G.sim.supernova(b);
+      showInspector(rem || null);
+    };
+    if (g('i_giant')) g('i_giant').onclick = () => {
+      b.phase = 'giant'; b.r0 = b.r0 || b.r; b.T0 = b.T0 || b.T;
+      b.stellarAge = G.sim.stellarLifetime(b) * 0.83;
+      toast('🔴 ' + I18N.t('ev_giant'));
+    };
     refreshInspLive();
   }
   function row(label, id, min, max, val) {
@@ -472,6 +500,7 @@
       srow(I18N.t('trailLen'), '', '<input type="range" id="o_trail" min="20" max="900" step="10" value="' + s.trailLen + '">') +
       srow(I18N.t('labels'), '', sw('o_lab', s.labels)) +
       srow(I18N.t('marble'), '', sw('o_marb', s.marble)) +
+      srow(I18N.t('bloom'), '', sw('o_bloom', s.bloom)) +
       srow(I18N.t('showfps'), '', sw('o_fps', s.showFps)) +
       srow(I18N.t('sound'), '', sw('o_snd', s.sound)) +
       '<div class="sec">' + I18N.t('physics') + '</div>' +
@@ -483,6 +512,8 @@
       srow(I18N.t('accretion'), '', sw('o_acc', s.accretion)) +
       srow(I18N.t('selfgrav'), '', sw('o_sg', s.selfGrav)) +
       srow(I18N.t('tidal'), '', sw('o_tid', s.tidal)) +
+      srow(I18N.t('evolution'), '', sw('o_evo', s.evolution)) +
+      srow(I18N.t('evorate'), '×1 ~ ×10⁹', '<input type="range" id="o_evor" min="0" max="9" step="0.1" value="' + Math.log10(s.evoRate) + '"><b id="o_evorv" style="min-width:52px;text-align:right">×10^' + Math.log10(s.evoRate).toFixed(1) + '</b>') +
       '<div class="row"><button class="b" id="o_reset" style="width:100%">' + I18N.t('reset') + '</button></div>';
     modal('⚙ ' + I18N.t('settings'), html, w => {
       const q = w.querySelector('#o_q'); q.value = s.quality;
@@ -502,14 +533,20 @@
         const el = w.querySelector('#' + id);
         el.onclick = () => { s[key] = !s[key]; el.classList.toggle('on', s[key]); applySettings(); if (after) after(); };
       };
+      w.querySelector('#o_evor').oninput = e => {
+        s.evoRate = Math.pow(10, +e.target.value);
+        w.querySelector('#o_evorv').textContent = '×10^' + (+e.target.value).toFixed(1);
+        applySettings();
+      };
       tog('o_lab', 'labels'); tog('o_marb', 'marble', () => rebuildAll()); tog('o_fps', 'showFps');
+      tog('o_evo', 'evolution'); tog('o_bloom', 'bloom');
       tog('o_snd', 'sound'); tog('o_deb', 'debris'); tog('o_acc', 'accretion');
       tog('o_sg', 'selfGrav'); tog('o_tid', 'tidal');
       w.querySelector('#o_reset').onclick = () => {
         Object.assign(s, {
           quality: 1, sizeScale: 1, trails: true, trailLen: 260, labels: true, marble: true, substeps: 4,
           gmul: 1, maxBodies: 220, colMode: 'realistic', debris: true, selfGrav: false, accretion: true,
-          tidal: true, sound: true, showFps: true, glow: true
+          tidal: true, sound: true, showFps: true, glow: true, evolution: true, evoRate: 1e5, bloom: true
         });
         applySettings(); rebuildAll(); w.remove(); openSettings();
       };
@@ -531,6 +568,7 @@
     ['preset_solar', '☀️', 'solar'], ['preset_em', '🌍', 'earthMoon'], ['preset_jup', '🪐', 'jupiter'],
     ['preset_sat', '💫', 'saturn'], ['preset_binary', '✨', 'binary'], ['preset_bh', '🕳', 'blackhole'],
     ['preset_roche', '🌀', 'roche'], ['preset_moonmake', '🌙', 'moonmake'], ['preset_trappist', '🔴', 'trappist'],
+    ['preset_sn', '💥', 'supernova'], ['preset_tde', '🕳', 'tde'],
     ['preset_chaos', '🌌', 'chaos'], ['preset_marble', '🔮', 'marble'], ['randomSys', '🎲', 'random'],
     ['preset_empty', '⬛', 'empty']
   ];
@@ -696,6 +734,10 @@
     $('#spawn_close').onclick = () => $('#spawn').classList.add('hide');
     $('#insp_close').onclick = () => { $('#insp').classList.add('hide'); G.sel = null; };
     $('#spawn_search').oninput = e => { spawnQ = e.target.value; buildSpawnPanel(); };
+    $('#btn_view').onclick = () => {
+      const p = $('#bottom'); p.classList.toggle('hide');
+      $('#btn_view').classList.toggle('on', !p.classList.contains('hide'));
+    };
     $('#btn_presets').onclick = openPresets;
     $('#btn_settings').onclick = openSettings;
 

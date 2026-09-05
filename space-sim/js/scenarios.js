@@ -213,6 +213,48 @@
       return { focus: null, dist: 1150 };
     },
 
+    /* 초신성: 수명이 거의 다한 거대 항성 + 주변 행성계 */
+    supernova(sim) {
+      sim.clear();
+      sim.evolution = true;
+      const st = make('rigel', { m: 21 * 1988400, r: 78.9 * 696.34 });
+      st.r0 = st.r; st.T0 = st.T;
+      st.stellarAge = sim.stellarLifetime(st) * 0.9985;   // 곧 폭발
+      sim.add(st);
+      [['c_gas', 4], ['c_terra', 7], ['c_ice', 11], ['c_rock', 15]].forEach(([id, au], i) =>
+        add(sim, id, st, au * AU, { incl: (Math.random() - .5) * .1, phase: i * 1.6 }));
+      return { focus: st, dist: 3.2 * AU };
+    },
+
+    /* 블랙홀 조석 파괴: 별이 블랙홀에 다가가 찢기며 강착 원반이 된다 */
+    tde(sim) {
+      sim.clear();
+      const bh = add(sim, 'bh_stellar', null, 0, { over: { m: 12 * 1988400 } });
+      bh.r = bh.schwarzschild(); bh.fixed = true;
+      // 조석 반경 근처를 지나는 타원 궤도의 항성
+      const star = make('c_star', { m: 0.8 * 1988400, r: 0.9 * 696.34, T: 5200 });
+      const Rt = star.r * Math.pow(2 * bh.m / star.m, 1 / 3);
+      const r0 = Rt * 1.9;
+      star.px = r0; star.py = 0; star.pz = 0;
+      const vc = Math.sqrt(sim.G() * bh.m / r0);
+      star.vz = vc * 0.55; star.vx = -vc * 0.35;   // 근점이 조석 반경 안쪽인 타원 궤도
+      sim.add(star);
+      // 이미 존재하는 파편 원반 (강착 진행 중)
+      for (let i = 0; i < 260; i++) {
+        const rr = bh.r * (6 + Math.pow(Math.random(), 0.6) * 90);
+        const ph = Math.random() * 6.2832, h = (Math.random() - 0.5) * rr * 0.04;
+        const d = new PHYS.Body({
+          cat: 'debris', deb: true, cid: 'debris', m: 1e-10, r: bh.r * 0.09,
+          T: 6000, tex: 'lava', col: 0xffb060, x: { hot: 1, irr: 1 },
+          px: Math.cos(ph) * rr, py: h, pz: Math.sin(ph) * rr
+        });
+        const v = sim.circularVel(bh, d.px, d.py, d.pz, 0);
+        d.vx = v.x * (0.98 + Math.random() * 0.04); d.vy = v.y; d.vz = v.z * (0.98 + Math.random() * 0.04);
+        sim.add(d);
+      }
+      return { focus: bh, dist: bh.r * 220 };
+    },
+
     random(sim) {
       sim.clear();
       const starIds = ['sun', 'proxima', 'siriusA', 'alphacenA', 'barnard', 'vega', 'kepler452', 'trappist1'];

@@ -16,8 +16,8 @@
 
 <!-- ============ HUD ============ -->
 <div id="hud" class="hide">
-  <div id="stats" class="panel" style="padding:7px 10px">
-    <div><b id="s_fps">60</b> FPS</div>
+  <div id="stats" class="panel">
+    <div>FPS <b id="s_fps">60</b></div>
     <div><span data-t="bodies">천체</span> <b id="s_bodies">0</b></div>
     <div><span data-t="debrisN">파편</span> <b id="s_deb">0</b></div>
     <div><span data-t="scale">배율</span> <b id="s_scale">1</b></div>
@@ -25,10 +25,12 @@
 
   <div id="top" class="panel">
     <button class="b ic" id="t_rev" title="Reverse">⏪</button>
-    <button class="b ic" id="t_slow">◀</button>
+    <button class="b ic" id="t_slow">◀◀</button>
     <button class="b ic" id="t_pause">⏸</button>
-    <button class="b ic" id="t_fast">▶</button>
-    <div class="clock"><span id="t_speed">1 일/초</span><small id="t_elapsed">T+0</small></div>
+    <button class="b ic" id="t_fast">▶▶</button>
+    <div class="vr"></div>
+    <div class="clock"><span id="t_speed">1 d/s</span><small id="t_elapsed">T+0</small></div>
+    <div class="vr"></div>
     <button class="b ic" id="t_menu">☰</button>
   </div>
 
@@ -38,21 +40,25 @@
     <button class="b ic" id="tool_launch" title="발사">🚀</button>
     <button class="b ic" id="tool_spray" title="구슬 뿌리기">✨</button>
     <button class="b ic" id="tool_measure" title="측정">📐</button>
+    <div class="sep"></div>
     <button class="b ic" id="btn_spawn" title="소환">🪐</button>
+    <button class="b ic" id="btn_view" title="표시">👁</button>
     <button class="b ic" id="btn_presets" title="시나리오">🌌</button>
     <button class="b ic" id="btn_settings" title="설정">⚙</button>
   </div>
 
-  <div id="bottom" class="panel">
-    <button class="b sm on" id="g_trails" data-t="trails">궤적</button>
-    <button class="b sm on" id="g_roche" data-t="roche">로슈 한계</button>
-    <button class="b sm on" id="g_labels" data-t="labels">이름표</button>
-    <button class="b sm" id="g_grid" data-t="grid">중력장</button>
-    <button class="b sm" id="g_hz" data-t="hz">거주가능</button>
-    <button class="b sm" id="g_vec" data-t="vectors">속도 벡터</button>
-    <button class="b sm on" id="g_marble" data-t="marble">구슬 모드</button>
-    <button class="b sm on" id="g_col" data-t="collide">충돌</button>
-    <button class="b sm warn" id="g_clear" data-t="clearAll">전체 삭제</button>
+  <div id="bottom" class="panel hide">
+    <div class="hd" data-t="viewOpts">표시 옵션</div>
+    <button class="b sm on" id="g_trails">〰 <span data-t="trails">궤적</span></button>
+    <button class="b sm on" id="g_roche">◎ <span data-t="rocheShow">로슈 한계 표시</span></button>
+    <button class="b sm on" id="g_labels">🏷 <span data-t="labels">이름표</span></button>
+    <button class="b sm" id="g_grid">▦ <span data-t="grid">중력장</span></button>
+    <button class="b sm" id="g_hz">🌱 <span data-t="hz">거주가능영역</span></button>
+    <button class="b sm" id="g_vec">➜ <span data-t="vectors">속도 벡터</span></button>
+    <button class="b sm on" id="g_marble">🔮 <span data-t="marble">구슬 모드</span></button>
+    <button class="b sm on" id="g_col">💥 <span data-t="collide">충돌</span></button>
+    <button class="b sm warn" id="g_clear">🗑 <span data-t="clearAll">전체 삭제</span></button>
+    <div class="note" data-t="physicsAlways">물리 효과는 항상 적용됩니다</div>
   </div>
 
   <div id="help" data-t="hint_cam"></div>
@@ -97,6 +103,7 @@
 <div id="toast"></div>
 
 <script src="js/lib/three.min.js"></script>
+<script src="js/lib/three.post.js"></script>
 <script src="js/i18n.js"></script>
 <script src="js/catalog.js"></script>
 <script src="js/textures.js"></script>

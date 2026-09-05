@@ -28,6 +28,13 @@
     this.tilt = o.tilt != null ? o.tilt : (this.x.tilt || 0);
     this.age = 0;
     this.tidal = 0;                     // 조석 가열량 (표시용)
+    this.tdir = [1, 0, 0];              // 조석 변형 방향 (주 천체 방향)
+    this.stellarAge = o.stellarAge || 0; // 항성 나이 (년)
+    this.phase = o.phase || 'ms';       // ms | giant | remnant
+    this.r0 = o.r || 1;                 // 초기 반지름 (적색거성 팽창 기준)
+    this.T0 = this.T;
+    this.flare = 0;                     // 항성 표면 활동도 0~1
+    this.dead = false;
     this.trail = [];
     this.mesh = null;
     this.fixed = !!o.fixed;
@@ -69,7 +76,9 @@
     this.selfGrav = false;
     this.accretion = true;
     this.tidalHeat = true;
-    this.rocheOn = true;
+    this.rocheOn = true;          // 로슈 한계 물리는 항상 적용 (표시 토글과 별개)
+    this.evolution = true;        // 항성 진화·초신성
+    this.evoRate = 1e5;           // 항성 진화 가속 배율
     this.events = [];             // {type, body, pos}
     this.softening = 1e-3;
   }
@@ -422,6 +431,7 @@
           const s = Math.pow(rl / Math.max(d, M.r * 0.5), 3);
           m.tidal = Math.min(1, m.tidal + s * 0.004);
           m.T += s * 0.02;
+          m.tdir = [dx / d, dy / d, dz / d];
         }
         const rigid = this.rocheLimit(M, m, true);
         if (d < rigid * 1.02 && d > M.r + m.r) {
@@ -443,6 +453,181 @@
         }
       }
     }
+  };
+
+  /* 블랙홀 조석 파괴(TDE): 조석 반경 안으로 들어온 천체는 국수처럼 늘어나
+     찢겨 파편이 되고, 각운동량을 유지한 채 블랙홀 주위를 도는 강착 원반이 된다 */
+  Sim.prototype.checkBlackHoles = function () {
+    const B = this.bodies;
+    for (let i = 0; i < B.length; i++) {
+      const bh = B[i];
+      if (bh.cat !== 'bh' || !bh.alive) continue;
+      for (let j = B.length - 1; j >= 0; j--) {
+        const m = B[j];
+        if (m === bh || !m.alive || m.cat === 'bh') continue;
+        const dx = m.px - bh.px, dy = m.py - bh.py, dz = m.pz - bh.pz;
+        const d = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        // 조석 반경 R_t = r_m (2 M_bh / m)^(1/3)
+        const Rt = m.r * Math.pow(2 * bh.m / Math.max(1e-12, m.m), 1 / 3);
+        if (d > Rt) { m.tidal *= 0.97; continue; }
+        m.tidal = Math.min(1, m.tidal + 0.05);
+        m.tdir = [dx / d, dy / d, dz / d];
+        if (d > Rt * 0.55) continue;                    // 서서히 늘어나다가
+        // 완전 파괴 → 파편 원반
+        const n = Math.max(14, Math.min(70, Math.round(18 + m.r * 3)));
+        const vorb = Math.sqrt(this.G() * bh.m / Math.max(d, bh.r));
+        const parts = this.tidalStream(m, bh, n, vorb);
+        this.events.push({ type: 'tde', x: m.px, y: m.py, z: m.pz, r: m.r, bh: bh });
+        this.remove(m);
+        return;
+      }
+    }
+  };
+
+  /* 조석 흐름(tidal stream): 궤도 진행 방향으로 길게 늘어선 파편 띠 */
+  Sim.prototype.tidalStream = function (m, M, n, vorb) {
+    const out = [];
+    const dx = m.px - M.px, dy = m.py - M.py, dz = m.pz - M.pz;
+    const d = Math.hypot(dx, dy, dz) || 1;
+    const rx = dx / d, ry = dy / d, rz = dz / d;
+    const sp = Math.hypot(m.vx - M.vx, m.vy - M.vy, m.vz - M.vz) || 1;
+    const tx = (m.vx - M.vx) / sp, ty = (m.vy - M.vy) / sp, tz = (m.vz - M.vz) / sp;
+    const rho = Math.max(400, m.density());
+    const each = m.m / n;
+    for (let i = 0; i < n; i++) {
+      const k = (i / (n - 1) - 0.5) * 2;              // -1..1 : 앞쪽/뒤쪽 조각
+      // 안쪽 조각은 더 빠르게, 바깥 조각은 더 느리게 (조석 분산)
+      const dr = k * m.r * 2.2;
+      const rr = d + dr;
+      const vk = Math.sqrt(this.G() * M.m / Math.max(rr, M.r)) * (0.94 + Math.random() * 0.12);
+      const rad = Math.pow(each * 1e24 / (rho * (4 / 3) * Math.PI), 1 / 3) / 1e6;
+      const jx = (Math.random() - 0.5) * 0.06, jy = (Math.random() - 0.5) * 0.06, jz = (Math.random() - 0.5) * 0.06;
+      const p = new Body({
+        cat: 'debris', deb: true, cid: 'debris', m: each, r: Math.max(rad, m.r * 0.03),
+        T: Math.max(m.T, 3000), tex: m.tex, col: m.col, x: { irr: 1, hot: 1 },
+        px: M.px + rx * rr + tx * k * m.r * 6,
+        py: M.py + ry * rr + ty * k * m.r * 6,
+        pz: M.pz + rz * rr + tz * k * m.r * 6,
+        vx: M.vx + (tx + jx) * vk, vy: M.vy + (ty + jy) * vk, vz: M.vz + (tz + jz) * vk
+      });
+      this.add(p); out.push(p);
+    }
+    return out;
+  };
+
+  /* 파편이 블랙홀·항성에 닿으면 흡수 + 강착 가열 */
+  Sim.prototype.accreteDebris = function () {
+    const B = this.bodies, D = this.debris;
+    for (let i = 0; i < B.length; i++) {
+      const b = B[i];
+      if (b.cat !== 'bh' && !b.isStar()) continue;
+      const R = b.cat === 'bh' ? b.r * 1.02 : b.r;
+      for (let k = D.length - 1; k >= 0; k--) {
+        const d = D[k];
+        const dd = Math.hypot(d.px - b.px, d.py - b.py, d.pz - b.pz);
+        if (dd < R) {
+          b.m += d.m;
+          if (b.cat === 'bh') b.r = Math.max(b.r, b.schwarzschild());
+          this.events.push({ type: 'accrete', x: d.px, y: d.py, z: d.pz, r: d.r, host: b });
+          this.remove(d);
+        } else if (dd < R * 60) {
+          // 강착 원반 가열 (안쪽일수록 뜨겁다)
+          d.T = Math.min(2e6, 1500 * Math.pow(R * 8 / Math.max(dd, R), 0.75) + 600);
+          d.x.hot = 1;
+        }
+      }
+    }
+  };
+
+  /* ---------- 항성 진화 & 초신성 ---------- */
+  const YEAR = 3.15576e7;
+  Sim.prototype.stellarLifetime = function (b) {          // 년
+    const Msun = b.m / 1988400;
+    return 1e10 * Math.pow(Math.max(0.08, Msun), -2.5);
+  };
+  Sim.prototype.evolveStars = function (dtSec) {
+    if (!this.evolution) return;
+    const rate = this.evoRate || 1e5;
+    for (const b of this.bodies) {
+      if (!b.isStar() || b.cat === 'ns' || b.cat === 'wd' || b.phase === 'remnant') continue;
+      b.stellarAge += Math.abs(dtSec) / YEAR * rate;
+      const L = this.stellarLifetime(b);
+      const f = b.stellarAge / L;
+      if (f > 0.82 && b.phase === 'ms') { b.phase = 'giant'; this.events.push({ type: 'giant', body: b }); }
+      if (b.phase === 'giant') {
+        // 적색거성: 반지름 팽창, 표면 온도 하강
+        const g = Math.min(1, (f - 0.82) / 0.18);
+        const Msun = b.m / 1988400;
+        const maxExp = Msun > 8 ? 400 : Msun > 2 ? 120 : 60;
+        b.r = b.r0 * (1 + (maxExp - 1) * g * g);
+        b.T = b.T0 * (1 - 0.55 * g);
+        b.flare = 0.3 + 0.7 * g;
+        if (f >= 1) this.supernova(b);
+      } else {
+        b.flare = 0.15 + 0.35 * Math.min(1, b.m / 1988400 / 3);
+      }
+    }
+  };
+
+  /* 초신성 폭발: 외피를 날려버리고 중성자별/블랙홀/백색왜성 잔해를 남긴다 */
+  Sim.prototype.supernova = function (b) {
+    const MS = 1988400;
+    const Msun = b.m / MS;
+    const R0 = b.r;
+    this.events.push({ type: 'supernova', x: b.px, y: b.py, z: b.pz, r: R0, m: Msun, body: b });
+
+    let remnant = null;
+    if (Msun >= 20) {                       // 블랙홀
+      remnant = new Body({
+        cid: 'bh_stellar', cat: 'bh', m: Math.max(3 * MS, b.m * 0.32), r: 1, T: 0,
+        tex: 'bh', col: 0x000000, x: { disk: 1 },
+        px: b.px, py: b.py, pz: b.pz, vx: b.vx, vy: b.vy, vz: b.vz
+      });
+      remnant.r = remnant.schwarzschild();
+    } else if (Msun >= 8) {                 // 중성자별
+      remnant = new Body({
+        cid: 'ns_generic', cat: 'ns', m: 1.4 * MS, r: 0.011, T: 6e5,
+        tex: 'ns', col: 0xdfe9ff, x: { glow: 3, pulsar: 1 },
+        px: b.px, py: b.py, pz: b.pz, vx: b.vx, vy: b.vy, vz: b.vz
+      });
+    } else if (Msun >= 0.5) {               // 백색왜성 (행성상 성운)
+      remnant = new Body({
+        cid: 'siriusB', cat: 'wd', m: Math.min(1.35 * MS, b.m * 0.55), r: 0.009 * 696.34, T: 25000,
+        tex: 'wd', col: 0xeaf2ff, x: { glow: 2.4 },
+        px: b.px, py: b.py, pz: b.pz, vx: b.vx, vy: b.vy, vz: b.vz
+      });
+    }
+    // 외피 방출: 실제 초신성 팽창 속도 ~ 3,000 ~ 10,000 km/s
+    const vej = Msun >= 8 ? 5.0 : 0.03;      // Mm/s
+    const shed = b.m - (remnant ? remnant.m : 0);
+    const n = Math.min(200, Math.max(40, Math.round(Msun * 8)));
+    const rho = 900;
+    for (let i = 0; i < n; i++) {
+      const u = Math.random() * 2 - 1, th = Math.random() * 6.2832, rr = Math.sqrt(1 - u * u);
+      const dx = rr * Math.cos(th), dy = u, dz = rr * Math.sin(th);
+      const sp = vej * (0.55 + Math.random() * 0.9);
+      const em = Math.max(1e-9, shed / n);
+      const rad = Math.pow(em * 1e24 / (rho * (4 / 3) * Math.PI), 1 / 3) / 1e6;
+      this.add(new Body({
+        cat: 'debris', deb: true, cid: 'debris', m: em, r: Math.max(rad, R0 * 0.01),
+        T: 1e5, tex: 'lava', col: 0xffd8a0, x: { irr: 1, hot: 1, ejecta: 1 },
+        px: b.px + dx * R0 * 1.2, py: b.py + dy * R0 * 1.2, pz: b.pz + dz * R0 * 1.2,
+        vx: b.vx + dx * sp, vy: b.vy + dy * sp, vz: b.vz + dz * sp
+      }));
+    }
+    // 충격파가 주변 천체를 밀어내고 가열한다
+    for (const o of this.bodies) {
+      if (o === b || !o.alive) continue;
+      const dx = o.px - b.px, dy = o.py - b.py, dz = o.pz - b.pz;
+      const d = Math.max(R0, Math.hypot(dx, dy, dz));
+      const imp = Math.min(0.4, 4e4 * Msun / (d * d));
+      o.vx += dx / d * imp; o.vy += dy / d * imp; o.vz += dz / d * imp;
+      o.T += Math.min(8000, 4e6 * Msun / (d * d));
+      if (d < R0 * 1.5 && o.m < b.m * 0.5) this.shatter(o, 5, imp * 2, 'shatter');
+    }
+    this.remove(b);
+    if (remnant) { remnant.phase = 'remnant'; this.add(remnant); }
+    return remnant;
   };
 
   /* 항성 복사 → 평형 온도 */
@@ -487,6 +672,9 @@
     this.t += dtTot;
     this.collide();
     this.checkRoche();
+    this.checkBlackHoles();
+    this.accreteDebris();
+    this.evolveStars(dtTot);
     if (this.tCounter === undefined) this.tCounter = 0;
     if (++this.tCounter % 10 === 0) this.updateTemps();
   };

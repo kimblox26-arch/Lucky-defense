@@ -365,6 +365,79 @@
     const t = new THREE.CanvasTexture(c); cache[key] = t; return t;
   }
 
+  /* 불꽃(홍염·용암 분출) 스프라이트 */
+  function flameTex(seed) {
+    const key = 'flame_' + (seed | 0);
+    if (cache[key]) return cache[key];
+    const n = 256, c = makeCanvas(n, n), ctx = c.getContext('2d');
+    const img = ctx.createImageData(n, n), d = img.data;
+    const S = (seed || 1) * 7.7;
+    for (let y = 0; y < n; y++) {
+      for (let x = 0; x < n; x++) {
+        const u = x / n - 0.5, v = 1 - y / n;          // v: 0(아래) ~ 1(위)
+        const spread = 0.06 + v * 0.30;
+        const wob = (vnoise(v * 5 + S, S, 2.3) - 0.5) * 0.28 * v;
+        let a = Math.exp(-Math.pow((u - wob) / spread, 2)) * Math.pow(1 - v, 0.55);
+        a *= 0.55 + 0.75 * fbm(u * 9 + S, v * 5, 1.7, 4);
+        a = cl(a, 0, 1);
+        const t = cl(v * 1.25 + (1 - a) * 0.35, 0, 1);
+        const col = ramp([[0, [255, 250, 225]], [.25, [255, 205, 120]], [.6, [255, 120, 40]], [1, [150, 30, 10]]], t);
+        const i = (y * n + x) * 4;
+        d[i] = col[0]; d[i + 1] = col[1]; d[i + 2] = col[2]; d[i + 3] = a * 255;
+      }
+    }
+    ctx.putImageData(img, 0, 0);
+    const t = new THREE.CanvasTexture(c);
+    if (THREE.sRGBEncoding !== undefined) t.encoding = THREE.sRGBEncoding;
+    cache[key] = t; return t;
+  }
+
+  /* 코로나 헤일로 (부드러운 방사형 감쇠 — 경계선이 생기지 않는다) */
+  function coronaTex() {
+    if (cache.corona) return cache.corona;
+    const n = 256, c = makeCanvas(n, n), ctx = c.getContext('2d');
+    const img = ctx.createImageData(n, n), d = img.data;
+    for (let y = 0; y < n; y++) {
+      for (let x = 0; x < n; x++) {
+        const dx = (x + 0.5) / n - 0.5, dy = (y + 0.5) / n - 0.5;
+        const r = Math.sqrt(dx * dx + dy * dy) * 2;          // 0~1
+        // 별 표면(0.42) 부근에서 최대, 바깥으로 지수 감쇠
+        let a = 0;
+        if (r < 1) {
+          const inner = cl((r - 0.30) / 0.09, 0, 1);
+          const outer = Math.exp(-Math.pow((r - 0.40) / 0.20, 2));
+          const th = Math.atan2(dy, dx);
+          const streak = 0.86 + 0.14 * Math.sin(th * 43 + r * 26) * Math.sin(th * 11 + 1.3);
+          a = inner * outer * streak;
+        }
+        const t = cl((r - 0.3) / 0.6, 0, 1);
+        const col = ramp([[0, [255, 250, 232]], [.35, [255, 214, 150]], [.7, [255, 140, 60]], [1, [140, 40, 20]]], t);
+        const i = (y * n + x) * 4;
+        d[i] = col[0]; d[i + 1] = col[1]; d[i + 2] = col[2]; d[i + 3] = cl(a, 0, 1) * 255;
+      }
+    }
+    ctx.putImageData(img, 0, 0);
+    const t = new THREE.CanvasTexture(c);
+    if (THREE.sRGBEncoding !== undefined) t.encoding = THREE.sRGBEncoding;
+    cache.corona = t; return t;
+  }
+
+  /* 충격파 링 (초신성) */
+  function shockTex() {
+    if (cache.shock) return cache.shock;
+    const n = 256, c = makeCanvas(n, n), ctx = c.getContext('2d');
+    const g = ctx.createRadialGradient(n / 2, n / 2, 0, n / 2, n / 2, n / 2);
+    g.addColorStop(0, 'rgba(255,255,255,0)');
+    g.addColorStop(0.62, 'rgba(180,220,255,0.05)');
+    g.addColorStop(0.84, 'rgba(255,240,220,0.85)');
+    g.addColorStop(0.93, 'rgba(255,150,80,0.55)');
+    g.addColorStop(1, 'rgba(255,80,40,0)');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, n, n);
+    const t = new THREE.CanvasTexture(c);
+    if (THREE.sRGBEncoding !== undefined) t.encoding = THREE.sRGBEncoding;
+    cache.shock = t; return t;
+  }
+
   /* 강착 원반 (반경 방향 그라데이션: 내부 청백색 → 외부 주황) */
   function diskTex() {
     if (cache.disk) return cache.disk;
@@ -467,5 +540,5 @@
     const t = new THREE.CanvasTexture(c); cache[key] = t; return t;
   }
 
-  root.TEX = { surface, clouds, ringTex, diskTex, galaxy, glowTex, fbm, vnoise, clearCache: () => { for (const k in cache) delete cache[k]; } };
+  root.TEX = { surface, clouds, ringTex, diskTex, flameTex, shockTex, coronaTex, galaxy, glowTex, fbm, vnoise, clearCache: () => { for (const k in cache) delete cache[k]; } };
 })(window);

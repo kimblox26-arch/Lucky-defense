@@ -104,6 +104,13 @@
     this.debInst.count = 0;
     this.debInst.frustumCulled = false;
     this.scene.add(this.debInst);
+    // 뜨거운 파편(강착 원반·초신성 잔해): 온도에 따라 빛난다
+    const hm = new THREE.MeshBasicMaterial({ map: root.REALTEX ? REALTEX.tex('eros') : null, color: 0xffffff });
+    this.debHot = new THREE.InstancedMesh(dg, hm, 900);
+    this.debHot.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    this.debHot.count = 0; this.debHot.frustumCulled = false;
+    this.scene.add(this.debHot);
+    this._col = new THREE.Color();
     this._m4 = new THREE.Matrix4(); this._q = new THREE.Quaternion(); this._s = new V3();
 
     // 로슈/궤도 보조선
@@ -111,11 +118,28 @@
     this.gridMesh = null;
     this.vecGroup = new THREE.Group(); this.helpers.add(this.vecGroup);
     this.hzMesh = null;
+    this.bloomOn = true;
+    this.initComposer();
+    this.time = 0;
     this.resize();
+  };
+
+  /* 블룸(발광) 합성 파이프라인 */
+  Renderer.prototype.initComposer = function () {
+    if (!THREE.EffectComposer || !THREE.UnrealBloomPass) { this.composer = null; return; }
+    const c = new THREE.EffectComposer(this.gl);
+    c.addPass(new THREE.RenderPass(this.scene, this.cam));
+    const bp = new THREE.UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.34, 0.36, 0.985);
+    c.addPass(bp);
+    const gp = new THREE.ShaderPass(THREE.GammaCorrectionShader);
+    c.addPass(gp);
+    this.composer = c; this.bloom = bp;
   };
 
   Renderer.prototype.resize = function () {
     this.gl.setSize(innerWidth, innerHeight);
+    if (this.composer) this.composer.setSize(innerWidth, innerHeight);
+    if (this.bloom) this.bloom.setSize(innerWidth, innerHeight);
     this.cam.aspect = innerWidth / innerHeight;
     this.cam.updateProjectionMatrix();
   };
@@ -130,7 +154,7 @@
   };
 
   // ---------- 메시 생성 ----------
-  Renderer.prototype.seg = function () { return this.quality >= 2 ? [64, 48] : this.quality === 1 ? [40, 28] : [24, 16]; };
+  Renderer.prototype.seg = function () { return this.quality >= 2 ? [128, 72] : this.quality === 1 ? [80, 48] : [40, 24]; };
 
   Renderer.prototype.build = function (b) {
     const root3 = new THREE.Group();
@@ -175,6 +199,12 @@
       });
       if (RT) {
         if (RT.bump) { mat.bumpMap = REALTEX.tex(RT.bump); mat.bumpScale = RT.bs || 0.02; }
+        else if (!isStar) {
+          // 전용 범프가 없는 천체는 표면 사진 자체의 명암을 요철로 사용 → 매끈함 제거
+          mat.bumpMap = tex;
+          mat.bumpScale = (b.cat === 'moon' || b.cat === 'asteroid' || b.cat === 'dwarf' ||
+            b.cat === 'comet' || b.cat === 'meteoroid' || b.cat === 'debris') ? 0.045 : 0.012;
+        }
         if (RT.spec) { mat.specularMap = REALTEX.tex(RT.spec); mat.specular.setHex(0x1b242e); mat.shininess = 84; }
         if (RT.tint) {                                   // 항성: 흑체 복사 색
           mat.color.setRGB(RT.tint[0], RT.tint[1], RT.tint[2]);
@@ -183,6 +213,7 @@
           mat.color.setHex(RT.tintCol).lerp(new THREE.Color(0xffffff), 0.55);
         }
       }
+      if (!RT && !isStar && b.tex !== 'marble' && !b.x.marble) { mat.bumpMap = tex; mat.bumpScale = 0.03; }
       if (this.marbleMode && !isStar) { mat.envMap = this.envTex; mat.reflectivity = 0.22; mat.combine = THREE.MixOperation; }
       if (b.x.marble || b.tex === 'marble') {
         mat.color.setHex(b.col); mat.shininess = 90; mat.specular.setHex(0x8899aa);
@@ -193,8 +224,10 @@
         const p = geo.attributes.position, sd = b.seed * 0.37;
         for (let i = 0; i < p.count; i++) {
           const x = p.getX(i), y = p.getY(i), z = p.getZ(i);
-          const n = 0.62 + 0.55 * TEX.fbm(x * 2.1 + sd, y * 2.1, z * 2.1, 4);
-          p.setXYZ(i, x * n, y * n * (b.x.irr === 2 ? 0.42 : 0.92), z * n);
+          let n = 0.58 + 0.62 * TEX.fbm(x * 1.9 + sd, y * 1.9, z * 1.9, 5);
+          n += 0.12 * (TEX.fbm(x * 6.5 + sd, y * 6.5, z * 6.5, 3) - 0.5);   // 잔 요철
+          n -= 0.16 * Math.pow(TEX.fbm(x * 3.3 + sd * 2, y * 3.3, z * 3.3, 2), 3) * 4;  // 큰 크레이터 함몰
+          p.setXYZ(i, x * n, y * n * (b.x.irr === 2 ? 0.42 : 0.88), z * n);
         }
         geo.computeVertexNormals();
       }
@@ -203,26 +236,54 @@
         // 항성: 실제 광구 이미지 + 주연감광(limb darkening) + 흑체 복사 색
         const tc = RT && RT.tint ? new THREE.Color(RT.tint[0], RT.tint[1], RT.tint[2]) : new THREE.Color(b.col);
         useMat = new THREE.ShaderMaterial({
-          uniforms: { tMap: { value: tex }, tint: { value: tc }, k: { value: 1.05 } },
+          uniforms: {
+            tMap: { value: tex }, tint: { value: tc }, k: { value: 0.80 },
+            time: { value: 0 }, act: { value: b.flare || 0.25 }
+          },
           vertexShader: 'varying vec2 vUv; varying vec3 vN; varying vec3 vP;' +
             'void main(){ vUv=uv; vN=normalize(normalMatrix*normal); vec4 mv=modelViewMatrix*vec4(position,1.0); vP=mv.xyz;' +
             ' gl_Position=projectionMatrix*mv; }',
-          fragmentShader: 'uniform sampler2D tMap; uniform vec3 tint; uniform float k;' +
+          fragmentShader:
+            'uniform sampler2D tMap; uniform vec3 tint; uniform float k; uniform float time; uniform float act;' +
             'varying vec2 vUv; varying vec3 vN; varying vec3 vP;' +
-            'void main(){ float mu=clamp(dot(normalize(vN), normalize(-vP)),0.0,1.0);' +
+            'float h(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }' +
+            'float nz(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.0-2.0*f);' +
+            ' return mix(mix(h(i),h(i+vec2(1,0)),f.x), mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x), f.y); }' +
+            'void main(){' +
+            ' float mu=clamp(dot(normalize(vN), normalize(-vP)),0.0,1.0);' +
             ' float limb=0.30+0.70*pow(mu,0.55);' +
-            ' vec3 c=texture2D(tMap,vUv).rgb*tint*limb*k;' +
-            ' gl_FragColor=vec4(c,1.0); }'
+            // 광구 대류(granulation): 두 겹의 텍스처가 서로 다른 속도로 흐른다
+            ' vec3 a=texture2D(tMap, vUv+vec2(time*0.0035,0.0)).rgb;' +
+            ' vec3 b2=texture2D(tMap, vUv*1.6+vec2(-time*0.0052, time*0.0011)).rgb;' +
+            ' vec3 c=mix(a,b2,0.38);' +
+            // 밝기 요동 + 표면 활동(플레어)
+            ' float g=nz(vUv*vec2(70.0,35.0)+vec2(time*0.35,-time*0.22));' +
+            ' float g2=nz(vUv*vec2(18.0,9.0)-vec2(time*0.12,time*0.07));' +
+            ' c *= 0.80 + 0.30*g + 0.22*g2;' +
+            ' float fl=smoothstep(0.86,1.0,g2)*act;' +
+            ' c += vec3(1.0,0.72,0.35)*fl*1.6;' +
+            ' gl_FragColor=vec4(c*tint*limb*k,1.0); }'
         });
       }
       const m = new THREE.Mesh(geo, useMat);
       root3.add(m); rec.surf = m; rec.starMat = isStar ? useMat : null;
+      if (isStar) {
+        // 코로나: 부드러운 헤일로 (경계선이 생기지 않는 스프라이트)
+        const ct = (RT && RT.tint) ? new THREE.Color(RT.tint[0], RT.tint[1], RT.tint[2]) : new THREE.Color(b.col);
+        const cor = new THREE.Sprite(new THREE.SpriteMaterial({
+          map: TEX.coronaTex(), color: ct, transparent: true,
+          blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0.45
+        }));
+        cor.scale.setScalar(3.2);
+        root3.add(cor); rec.corona = cor;
+        rec.proms = [];
+      }
 
       if (b.x.clouds || (RT && RT.clouds)) {
         const cmat = (RT && RT.clouds)
           ? new THREE.MeshPhongMaterial({
             color: 0xffffff, alphaMap: REALTEX.tex(RT.clouds), transparent: true,
-            depthWrite: false, opacity: 0.62, shininess: 2
+            depthWrite: false, opacity: 0.88, shininess: 2
           })
           : new THREE.MeshPhongMaterial({ map: TEX.clouds(b.seed, this.quality), transparent: true, depthWrite: false, opacity: 0.85 });
         const cm = new THREE.Mesh(new THREE.SphereGeometry(1.015, S[0], S[1]), cmat);
@@ -263,8 +324,8 @@
         const ring = new THREE.Mesh(rg, rm); ring.rotation.x = Math.PI / 2;
         root3.add(ring); rec.ring = ring;
       }
-      // 구슬 유리 셸
-      if (this.marbleMode) {
+      // 구슬 유리 셸 (항성·잔해에는 씌우지 않는다)
+      if (this.marbleMode && !isStar) {
         const gm = new THREE.Mesh(new THREE.SphereGeometry(1.035, S[0], S[1]), new THREE.MeshPhongMaterial({
           color: 0xffffff, transparent: true, opacity: 0.055, shininess: 150, specular: 0x8fa6bc,
           envMap: this.envTex, reflectivity: 0.22, depthWrite: false, blending: THREE.AdditiveBlending
@@ -304,6 +365,7 @@
 
   Renderer.prototype.dispose = function (uid) {
     const rec = this.meshes.get(uid); if (!rec) return;
+    if (rec.proms) rec.proms.forEach(p => this.scene.remove(p));
     this.group.remove(rec.root); this.group.remove(rec.trail);
     rec.root.traverse(o => { if (o.geometry) o.geometry.dispose(); });
     rec.trail.geometry.dispose();
@@ -366,7 +428,11 @@
       if (!s) { l.visible = false; return; }
       l.visible = true;
       l.position.set(s.px - O.x, s.py - O.y, s.pz - O.z);
-      l.color.setHex(s.col || 0xffffff);
+      // 항성 빛의 색은 온도(흑체 복사) 기준 — 장식용 색이 아니라 실제 색에 가깝게
+      if (root.REALTEX && s.T > 0) {
+        const bb = REALTEX.blackbody(s.T);
+        l.color.setRGB(bb[0], bb[1], bb[2]).lerp(new THREE.Color(1, 1, 1), 0.55);
+      } else l.color.setHex(s.col || 0xffffff);
       const d = Math.hypot(s.px - this.target.x, s.py - this.target.y, s.pz - this.target.z);
       l.intensity = Math.min(2.0, 1.32 + Math.log10(Math.max(1e-4, s.lum() + 0.01)) * 0.2);
       l.distance = 0;
@@ -381,7 +447,19 @@
       if (!rec) rec = this.build(b);
       const R = this.visRadius(b);
       rec.root.position.set(b.px - O.x, b.py - O.y, b.pz - O.z);
-      rec.root.scale.setScalar(R);
+      // 조석 변형: 로슈 한계 안쪽이나 블랙홀 근처에서 주 천체 방향으로 늘어난다
+      if (b.tidal > 0.02 && b.cat !== 'bh') {
+        const st = 1 + b.tidal * 0.55, sq = 1 / Math.sqrt(st);
+        rec.root.scale.set(R * sq, R * sq, R * sq);
+        const dv = new V3(b.tdir[0], b.tdir[1], b.tdir[2]);
+        rec.root.up.set(0, 1, 0);
+        rec.root.lookAt(rec.root.position.x + dv.x, rec.root.position.y + dv.y, rec.root.position.z + dv.z);
+        rec.root.scale.z = R * st;                    // lookAt 은 -Z 를 향하므로 Z 로 늘린다
+        rec.stretched = true;
+      } else if (rec.stretched) {
+        rec.root.rotation.set(0, 0, (b.tilt || 0) * Math.PI / 180);
+        rec.root.scale.setScalar(R); rec.stretched = false;
+      } else rec.root.scale.setScalar(R);
       if (rec.surf && !rec.isBH) rec.surf.rotation.y += b.spin * (dtReal || 0.016) * 60;
       if (rec.clouds) rec.clouds.rotation.y += b.spin * 1.35 * (dtReal || 0.016) * 60;
       if (rec.night) {
@@ -390,12 +468,30 @@
         if (st0) rec.night.material.uniforms.sunDir.value.set(st0.px - b.px, st0.py - b.py, st0.pz - b.pz).normalize();
       }
       if (rec.disk) { rec.disk.rotation.z += 0.4 * (dtReal || 0.016); rec.disk.scale.setScalar(1); }
+      if (rec.starMat) {
+        rec.starMat.uniforms.time.value = this.time;
+        rec.starMat.uniforms.act.value = Math.max(0.12, b.flare || 0.25);
+        if (rec.corona) {
+          const puls = 1 + 0.035 * Math.sin(this.time * 1.7 + b.seed);
+          rec.corona.scale.setScalar(3.2 * puls);
+          rec.corona.material.rotation = this.time * 0.03;
+          rec.corona.material.opacity = 0.34 + 0.26 * (b.flare || 0.25);
+        }
+        this.starActivity(b, rec, dtReal || 0.016, R);
+      }
+      // 용암 분출 (뜨겁거나 조석 가열된 천체)
+      if (!b.isStar() && b.cat !== 'bh' && (b.T > 1100 || b.tidal > 0.22) && Math.random() < 0.16) {
+        const u = Math.random() * 2 - 1, th = Math.random() * 6.2832, rr = Math.sqrt(1 - u * u);
+        const dx = rr * Math.cos(th), dy = u, dz = rr * Math.sin(th);
+        this.jet(b.px + dx * b.r, b.py + dy * b.r, b.pz + dz * b.r,
+          [dx, dy, dz], R * (0.3 + Math.random() * 0.45), 0xff8a30, 1.25);
+      }
       if (rec.glow) {
-        const k = rec.glowK * (b.cat === 'bh' ? 6 : 2.6);
+        const k = rec.glowK * (b.cat === 'bh' ? 5 : (b.isStar() ? 1.55 : 2.4));
         rec.glow.scale.setScalar(k);
         rec.glow.material.color.setHex(b.cat === 'bh' ? 0xffa040 : b.col);
         // 고온 천체는 더 밝게
-        rec.glow.material.opacity = b.isStar() ? 0.95 : Math.min(0.9, (b.T > 800 ? (b.T - 800) / 2500 : 0) + b.tidal * 0.6);
+        rec.glow.material.opacity = b.isStar() ? 0.42 : Math.min(0.9, (b.T > 800 ? (b.T - 800) / 2500 : 0) + b.tidal * 0.6);
         rec.glow.visible = rec.glow.material.opacity > 0.01;
       }
       if (rec.tail) {
@@ -433,16 +529,31 @@
     // 삭제된 천체 정리
     for (const uid of Array.from(this.meshes.keys())) if (!seen.has(uid)) this.dispose(uid);
 
-    // 파편 인스턴싱
-    const D = sim.debris, cnt = Math.min(D.length, this.debInst.instanceMatrix.count);
-    for (let i = 0; i < cnt; i++) {
+    // 파편 인스턴싱 (차가운 파편 / 뜨거운 파편 분리)
+    const D = sim.debris;
+    let nc = 0, nh = 0;
+    const maxC = this.debInst.instanceMatrix.count, maxH = this.debHot.instanceMatrix.count;
+    for (let i = 0; i < D.length; i++) {
       const d = D[i];
-      const r = Math.max(d.r * this.sizeScale, this.dist * 0.0009);
+      const r = Math.max(d.r * this.sizeScale, this.dist * ((d.T > 1200 || d.x.hot) ? 0.0018 : 0.001));
       this._m4.compose(new V3(d.px - O.x, d.py - O.y, d.pz - O.z), this._q, this._s.setScalar(r));
-      this.debInst.setMatrixAt(i, this._m4);
+      if (d.T > 1200 || d.x.hot) {
+        if (nh >= maxH) continue;
+        this.debHot.setMatrixAt(nh, this._m4);
+        const bb = root.REALTEX ? REALTEX.blackbody(d.T) : [1, .6, .3];
+        const boost = Math.min(6, 1 + Math.log10(Math.max(1, d.T)) * 0.8);
+        this._col.setRGB(bb[0] * boost, bb[1] * boost, bb[2] * boost);
+        this.debHot.setColorAt(nh, this._col);
+        nh++;
+      } else {
+        if (nc >= maxC) continue;
+        this.debInst.setMatrixAt(nc, this._m4); nc++;
+      }
     }
-    this.debInst.count = cnt;
+    this.debInst.count = nc; this.debHot.count = nh;
     this.debInst.instanceMatrix.needsUpdate = true;
+    this.debHot.instanceMatrix.needsUpdate = true;
+    if (this.debHot.instanceColor) this.debHot.instanceColor.needsUpdate = true;
 
     this.updateHelpers(sim, sel);
     this.updateFx(dtReal);
@@ -557,6 +668,68 @@
     } else this.selRing.visible = this.selRing2.visible = false;
   };
 
+  /* 항성 표면 활동: 홍염(prominence)과 플레어 */
+  Renderer.prototype.starActivity = function (b, rec, dt, R) {
+    if (!rec.proms) rec.proms = [];
+    const act = Math.max(0.1, b.flare || 0.25);
+    if (rec.proms.length < 7 && Math.random() < dt * (2.2 + act * 6.0)) {
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({
+        map: TEX.flameTex((Math.random() * 8) | 0), transparent: true,
+        blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0
+      }));
+      const u = Math.random() * 2 - 1, th = Math.random() * 6.2832, rr = Math.sqrt(1 - u * u);
+      sp.userData = {
+        d: new V3(rr * Math.cos(th), u, rr * Math.sin(th)),
+        t: 0, life: 1.8 + Math.random() * 2.6,
+        h: 0.22 + Math.random() * 0.55 * (0.5 + act)
+      };
+      this.scene.add(sp); rec.proms.push(sp);
+    }
+    for (let i = rec.proms.length - 1; i >= 0; i--) {
+      const sp = rec.proms[i], u = sp.userData;
+      u.t += dt;
+      const k = u.t / u.life;
+      if (k >= 1) { this.scene.remove(sp); rec.proms.splice(i, 1); continue; }
+      const grow = Math.sin(Math.min(1, k * 1.15) * Math.PI);
+      const h = R * u.h * grow, w = h * 0.75;
+      const c = rec.root.position;
+      sp.position.set(c.x + u.d.x * (R + h * 0.42), c.y + u.d.y * (R + h * 0.42), c.z + u.d.z * (R + h * 0.42));
+      sp.scale.set(w * 2.2, h * 2.2, 1);
+      sp.material.opacity = 0.85 * grow;
+      const a = this.project(sp.position.x + this.origin.x, sp.position.y + this.origin.y, sp.position.z + this.origin.z);
+      const o2 = this.project(c.x + this.origin.x, c.y + this.origin.y, c.z + this.origin.z);
+      sp.material.rotation = Math.atan2(a.x - o2.x, -(a.y - o2.y));
+    }
+  };
+
+  /* 용암·가스 분출 */
+  Renderer.prototype.jet = function (x, y, z, dir, size, color, life) {
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: TEX.flameTex((Math.random() * 8) | 0), color: color || 0xff9040,
+      transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0.9
+    }));
+    sp.position.set(x - this.origin.x, y - this.origin.y, z - this.origin.z);
+    sp.userData = { wx: x, wy: y, wz: z, r0: size, t: 0, life: life || 0.9, jet: 1, d: dir };
+    sp.scale.set(size, size, 1);
+    this.fxGroup.add(sp); this.fx.push(sp);
+    if (this.fx.length > 90) { const o = this.fx.shift(); this.fxGroup.remove(o); }
+  };
+
+  /* 초신성 충격파 */
+  Renderer.prototype.shockwave = function (x, y, z, r0, life) {
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: TEX.shockTex(), color: 0xffffff, transparent: true,
+      blending: THREE.AdditiveBlending, depthWrite: false, opacity: 1
+    }));
+    sp.position.set(x - this.origin.x, y - this.origin.y, z - this.origin.z);
+    sp.userData = { wx: x, wy: y, wz: z, r0: r0, t: 0, life: life || 3.2, shock: 1 };
+    this.fxGroup.add(sp); this.fx.push(sp);
+    const fl = new THREE.PointLight(0xfff0d0, 0, 0, 0);
+    fl.position.set(x - this.origin.x, y - this.origin.y, z - this.origin.z);
+    this.scene.add(fl);
+    this.flash = { light: fl, t: 0, life: 2.4, wx: x, wy: y, wz: z };
+  };
+
   // ---------- 이펙트 ----------
   Renderer.prototype.boom = function (x, y, z, r, color, life) {
     const s = new THREE.Sprite(new THREE.SpriteMaterial({
@@ -572,14 +745,41 @@
   Renderer.prototype.updateFx = function (dt) {
     dt = dt || 0.016;
     const O = this.origin;
+    this.time += dt;
+    if (this.flash) {
+      const f = this.flash;
+      f.t += dt;
+      const k = f.t / f.life;
+      if (k >= 1) { this.scene.remove(f.light); this.flash = null; }
+      else {
+        f.light.position.set(f.wx - O.x, f.wy - O.y, f.wz - O.z);
+        f.light.intensity = 40 * Math.pow(1 - k, 2.5);
+        f.light.distance = 0;
+      }
+    }
     for (let i = this.fx.length - 1; i >= 0; i--) {
       const s = this.fx[i], u = s.userData;
       u.t += dt;
       const k = u.t / u.life;
       if (k >= 1) { this.fxGroup.remove(s); this.fx.splice(i, 1); continue; }
       s.position.set(u.wx - O.x, u.wy - O.y, u.wz - O.z);
-      s.scale.setScalar(u.r0 * (2 + k * 14));
-      s.material.opacity = (1 - k) * 0.95;
+      if (u.shock) {
+        const g = Math.pow(k, 0.55);
+        s.scale.setScalar(u.r0 * (3 + g * 90));
+        s.material.opacity = (1 - k) * (1 - k) * 1.0;
+      } else if (u.jet) {
+        const g = Math.sin(Math.min(1, k * 1.2) * Math.PI);
+        s.scale.set(u.r0 * (0.8 + k * 1.1), u.r0 * (1 + k * 2.4), 1);
+        s.material.opacity = 0.9 * g;
+        if (u.d) {
+          const a = this.project(u.wx + u.d[0], u.wy + u.d[1], u.wz + u.d[2]);
+          const o2 = this.project(u.wx, u.wy, u.wz);
+          s.material.rotation = Math.atan2(a.x - o2.x, -(a.y - o2.y));
+        }
+      } else {
+        s.scale.setScalar(u.r0 * (2 + k * 14));
+        s.material.opacity = (1 - k) * 0.95;
+      }
     }
   };
 
@@ -616,7 +816,10 @@
     return new V3(p.x + this.origin.x, p.y + this.origin.y, p.z + this.origin.z);
   };
 
-  Renderer.prototype.render = function () { this.gl.render(this.scene, this.cam); };
+  Renderer.prototype.render = function () {
+    if (this.bloomOn && this.composer) this.composer.render();
+    else this.gl.render(this.scene, this.cam);
+  };
 
   root.Renderer = Renderer;
 })(window);

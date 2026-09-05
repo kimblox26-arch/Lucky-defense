@@ -4,6 +4,12 @@
     ko: {
       _name: '한국어',
       title: 'MARBLE COSMOS', subtitle: '구슬 우주 시뮬레이터',
+      viewOpts: '표시 옵션', rocheShow: '로슈 한계 표시',
+
+      preset_sn: '초신성 폭발', preset_tde: '블랙홀 조석 파괴',
+
+      ev_tde: '블랙홀 조석 파괴!', ev_supernova: '초신성 폭발!', ev_giant: '적색거성으로 팽창', supernova: '초신성', redgiant: '적색거성화', evolution: '항성 진화', evorate: '진화 속도', bloom: '발광(블룸)', tidalDeform: '조석 변형', physicsAlways: '물리 효과는 항상 적용됩니다 (표시 버튼은 화면 표시만 전환)',
+
       st_stable: '안정', st_tidal: '조석 변형', st_break: '붕괴 진행', primary: '중심 천체', fluidL: '유체 한계', rigidL: '강체 한계', frag: '조각', newmoon: '새 위성',
 
       bname: '이름', surface: '표면', color: '색', spin: '자전', fixed: '위치 고정',
@@ -55,6 +61,12 @@
     en: {
       _name: 'English',
       title: 'MARBLE COSMOS', subtitle: 'Marble Universe Simulator',
+      viewOpts: 'View Options', rocheShow: 'Roche Limit Overlay',
+
+      preset_sn: 'Supernova', preset_tde: 'Black Hole Tidal Disruption',
+
+      ev_tde: 'Tidal disruption by black hole!', ev_supernova: 'SUPERNOVA!', ev_giant: 'Expanded into a red giant', supernova: 'Supernova', redgiant: 'Red Giant', evolution: 'Stellar Evolution', evorate: 'Evolution Rate', bloom: 'Bloom', tidalDeform: 'Tidal Deformation', physicsAlways: 'Physics is always on — these buttons only toggle the overlay',
+
       st_stable: 'Stable', st_tidal: 'Tidally stressed', st_break: 'Breaking up', primary: 'Primary', fluidL: 'Fluid limit', rigidL: 'Rigid limit', frag: 'frag', newmoon: 'New Moon',
 
       bname: 'Name', surface: 'Surface', color: 'Color', spin: 'Spin', fixed: 'Pin Position',
@@ -99,6 +111,12 @@
     ja: {
       _name: '日本語',
       title: 'MARBLE COSMOS', subtitle: 'ビー玉宇宙シミュレーター',
+      viewOpts: '表示オプション', rocheShow: 'ロッシュ限界表示',
+
+      preset_sn: '超新星爆発', preset_tde: 'ブラックホール潮汐破壊',
+
+      ev_tde: 'ブラックホールの潮汐破壊!', ev_supernova: '超新星爆発!', ev_giant: '赤色巨星に膨張', supernova: '超新星', redgiant: '赤色巨星化', evolution: '恒星進化', evorate: '進化速度', bloom: 'ブルーム', tidalDeform: '潮汐変形', physicsAlways: '物理は常に有効 — ボタンは表示の切替のみ',
+
       st_stable: '安定', st_tidal: '潮汐変形', st_break: '崩壊進行', primary: '中心天体', fluidL: '流体限界', rigidL: '剛体限界', frag: '破片', newmoon: '新衛星',
 
       bname: '名前', surface: '表面', color: '色', spin: '自転', fixed: '位置固定',
