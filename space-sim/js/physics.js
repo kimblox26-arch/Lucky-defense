@@ -35,6 +35,19 @@
     this.T0 = this.T;
     this.flare = 0;                     // 항성 표면 활동도 0~1
     this.dead = false;
+    /* ---------- 행성 물성 (Universe Sandbox 계열) ---------- */
+    const P = o.p || (root.PROPS_FOR ? root.PROPS_FOR(this.cid, this.cat) : null) || {};
+    this.atmoP = o.atmoP != null ? o.atmoP : (P.atmo || 0);        // 표면 기압 (bar)
+    this.albedo = o.albedo != null ? o.albedo : (P.alb != null ? P.alb : 0.3);
+    this.rotH = o.rotH != null ? o.rotH : (P.rot || 24);           // 자전 주기 (시간)
+    this.tiltDeg = o.tiltDeg != null ? o.tiltDeg : (this.x.tilt != null ? this.x.tilt : (P.tilt || 0));
+    this.water = o.water != null ? o.water : (P.water || 0);       // 표면 액체 비율
+    this.ice = o.ice != null ? o.ice : (P.ice || 0);               // 표면 얼음 비율
+    this.gh = o.gh != null ? o.gh : (P.gh || 0);                   // 온실 효과 (K)
+    this.magnet = o.magnet != null ? o.magnet : (P.mag || 0);      // 자기장 (µT)
+    this.comp = Object.assign({ rock: 0, iron: 0, ice: 0, water: 0, gas: 0 }, o.comp || P.comp || { rock: .7, iron: .3 });
+    this.tilt = this.tiltDeg;
+    this.water0 = this.water;   // 원래 해수면 (물을 추가하면 낮은 지형부터 잠긴다)
     this.trail = [];
     this.mesh = null;
     this.fixed = !!o.fixed;
@@ -56,6 +69,25 @@
     return 4 * Math.PI * R * R * SB * Math.pow(this.T, 4) / 3.828e26;
   };
   Body.prototype.schwarzschild = function () { return 2 * G0 * this.m / (C_LIGHT * C_LIGHT); };
+  /* 자전 각속도 (rad / 시뮬레이션 초) */
+  Body.prototype.spinRate = function () {
+    const h = Math.abs(this.rotH) < 1e-4 ? 1e-4 : this.rotH;
+    return 2 * Math.PI / (h * 3600);
+  };
+  /* 구성비로부터 밀도 (kg/m^3) */
+  Body.prototype.compDensity = function () {
+    const c = this.comp, D = { rock: 3300, iron: 7870, ice: 930, water: 1000, gas: 180 };
+    let sum = 0, tot = 0;
+    for (const k in D) { const f = c[k] || 0; sum += f * D[k]; tot += f; }
+    return tot > 0 ? sum / tot : 3300;
+  };
+  /* 구성비를 바꾸면 밀도(=반지름)가 따라 변한다 */
+  Body.prototype.applyComposition = function () { this.setDensity(this.compDensity()); };
+  /* 대기 유지 가능 여부: 열속도 vs 탈출속도 (Jeans escape 근사) */
+  Body.prototype.canHoldAtmo = function () {
+    const vth = 0.157 * Math.sqrt(Math.max(1, this.T) / 28) * 1e-3;   // Mm/s (질소 기준)
+    return this.escapeV() > vth * 6;
+  };
 
   /* ---------- 시뮬레이션 ---------- */
   function Sim() {
@@ -204,12 +236,14 @@
       const k = (i / (n - 1) - 0.5) * 2;                 // -1..1  진행방향 오프셋
       const jx = (Math.random() - 0.5), jy = (Math.random() - 0.5), jz = (Math.random() - 0.5);
       const off = b.r * (1.1 + Math.abs(k) * 1.6);
-      const crowded = this.bodies.length > this.maxBodies * 0.7;
+      // 2차 이상으로 부서진 조각은 천체가 아니라 파편으로 (연쇄 파쇄로 천체 수가 폭증하는 것을 방지)
+      const gen = (b.x.gen || 0) + 1;
+      const crowded = this.bodies.length > this.maxBodies * 0.6 || gen >= 2 || b.r < 0.05;
       const p = new Body({
         cat: (b.cat === 'debris' || crowded) ? 'debris' : 'asteroid',
         deb: b.deb || crowded || rad < b.r * 0.16,
         cid: b.cid, label: b.label, m: mm, r: rad, T: b.T * 1.15, tex: b.tex, col: b.col,
-        x: { irr: 1, frag: 1, from: b.cid },
+        x: { irr: 1, frag: 1, gen: gen, from: b.cid },
         px: b.px + tx * off * k + jx * b.r * 0.9,
         py: b.py + ty * off * k + jy * b.r * 0.9,
         pz: b.pz + tz * off * k + jz * b.r * 0.9,
@@ -395,7 +429,7 @@
           a.nAcc = (a.nAcc || 1) + (b.nAcc || 1);
           this.remove(b);
           // 충분히 많은 파편이 뭉쳐 충분히 무거워지면 위성으로 승격
-          if (a.nAcc >= 3 && a.m > this.moonThreshold() && this.bodies.length < this.maxBodies * 0.85) {
+          if (a.nAcc >= 5 && a.m > this.moonThreshold() && this.bodies.length < this.maxBodies * 0.85) {
             this.remove(a);
             a.alive = true; a.deb = false; a.cat = 'moon'; a.tex = a.tex === 'debris' ? 'crater' : a.tex;
             a.label = 'newmoon'; a.x = Object.assign({}, a.x, { born: 1 });
@@ -409,7 +443,7 @@
   Sim.prototype.moonThreshold = function () {
     let mx = 0;
     for (const b of this.bodies) if (b.m > mx) mx = b.m;
-    return Math.max(1e-6, mx * 4e-3);
+    return Math.max(1e-6, mx * 5e-3);
   };
 
   /* 로슈 한계 검사 → 조석 붕괴 */
@@ -642,10 +676,39 @@
         if (d < 1e-9) continue;
         flux += s.lum() / (d * d);
       }
-      const alb = b.tex === 'ice' ? 0.6 : b.tex === 'earth' ? 0.3 : 0.15;
-      const Teq = 278.6 * Math.pow(flux * (1 - alb) / 0.7, 0.25);
-      const target = Teq + (b.x.atmo ? Teq * 0.15 * b.x.atmo : 0) + b.tidal * 260;
+      // 알베도는 얼음이 많을수록 높다 (빙하 알베도 되먹임)
+      const alb = Math.min(0.92, (b.albedo != null ? b.albedo : 0.3) + b.ice * 0.35);
+      const Teq = 278.6 * Math.pow(Math.max(1e-9, flux) * (1 - alb) / 0.7, 0.25);
+      const target = Teq + (b.gh || 0) * Math.min(3, Math.log10(1 + (b.atmoP || 0) * 9) + 0.35) + b.tidal * 260;
       b.T += (target - b.T) * 0.02;
+    }
+  };
+
+  /* 기후: 얼음/바다/대기의 상태 변화 (US2 스타일) */
+  Sim.prototype.climate = function (dtSec) {
+    const k = Math.min(0.25, Math.abs(dtSec) / 3.156e7);   // 1년 = 1단위
+    if (k <= 0) return;
+    for (const b of this.bodies) {
+      if (b.isStar() || b.cat === 'bh' || b.deb) continue;
+      const total = (b.water || 0) + (b.ice || 0);
+      if (total > 0) {
+        if (b.T < 271) {                     // 얼어붙는다
+          const f = Math.min(b.water, k * 0.8 * (271 - b.T) / 60);
+          b.water -= f; b.ice += f;
+        } else if (b.T > 275) {              // 녹는다
+          const f = Math.min(b.ice, k * 0.8 * (b.T - 275) / 60);
+          b.ice -= f; b.water += f;
+        }
+        if (b.T > 373) {                     // 끓어 증발 → 대기로
+          const f = Math.min(b.water, k * 0.5 * (b.T - 373) / 120);
+          b.water -= f; b.atmoP += f * 60;
+        }
+      }
+      // 대기 탈출 (약한 중력 + 고온)
+      if (b.atmoP > 0 && !b.canHoldAtmo()) b.atmoP = Math.max(0, b.atmoP - b.atmoP * k * 0.35);
+      b.water = Math.max(0, Math.min(1, b.water));
+      b.ice = Math.max(0, Math.min(1, b.ice));
+      b.atmoP = Math.max(0, b.atmoP);
     }
   };
 
@@ -675,6 +738,7 @@
     this.checkBlackHoles();
     this.accreteDebris();
     this.evolveStars(dtTot);
+    this.climate(dtTot);
     if (this.tCounter === undefined) this.tCounter = 0;
     if (++this.tCounter % 10 === 0) this.updateTemps();
   };

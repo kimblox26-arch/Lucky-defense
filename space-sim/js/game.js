@@ -12,7 +12,7 @@
       quality: 1, sizeScale: 1, trails: true, trailLen: 260, labels: true, marble: true,
       substeps: 4, gmul: 1, maxBodies: 220, colMode: 'realistic', debris: true,
       selfGrav: false, accretion: true, tidal: true, sound: true, showFps: true, glow: true,
-      evolution: true, evoRate: 1e5, bloom: true
+      evolution: true, evoRate: 1e5, bloom: true, terrain: 3
     }
   };
   window.G = G;
@@ -48,8 +48,12 @@
 
   /* ---------- 토스트 ---------- */
   let toastT = 0;
+  const toastSeen = {};
   function toast(msg, ms) {
     if (!G.started) return;
+    const now = performance.now();
+    if (toastSeen[msg] && now - toastSeen[msg] < 4000) return;   // 같은 메시지 연속 스팸 방지
+    toastSeen[msg] = now;
     const el = document.createElement('div');
     el.className = 'tt'; el.textContent = msg;
     $('#toast').appendChild(el);
@@ -269,6 +273,7 @@
     sim.evolution = s.evolution; sim.evoRate = s.evoRate;
     sim.rocheOn = true;                       // 로슈 한계 물리는 항상 적용
     r.bloomOn = s.bloom && s.quality > 0;
+    r.terrain = s.terrain;
     try { localStorage.setItem('mc_st', JSON.stringify(s)); } catch (e) {}
   }
   function loadSettings() {
@@ -343,6 +348,28 @@
       row(I18N.t('temp'), 'i_temp', 0, 6, Math.log10(Math.max(1, b.T))) +
       '<div class="row"><label>' + I18N.t('velocity') + '</label><input type="range" id="i_vel" min="0" max="300" value="100"></div>' +
       '<div class="row"><label>' + I18N.t('spin') + '</label><input type="range" id="i_spin" min="-20" max="20" step="0.5" value="' + (b.spin * 1e4).toFixed(1) + '"></div>' +
+      // ---- 행성 설정 (Universe Sandbox 계열) ----
+      (b.cat === 'bh' ? '' :
+        '<div class="sec">' + I18N.t('planetSet') + '</div>' +
+        row2(I18N.t('pressure'), 'i_atm', -8, 3, Math.log10(Math.max(1e-8, b.atmoP || 1e-8)), 0.05) +
+        row2(I18N.t('greenhouse'), 'i_gh', 0, 600, b.gh || 0, 1) +
+        row2(I18N.t('albedo'), 'i_alb', 0, 1, b.albedo != null ? b.albedo : 0.3, 0.01) +
+        row2(I18N.t('waterL'), 'i_wat', 0, 1, b.water || 0, 0.01) +
+        row2(I18N.t('iceL'), 'i_ice', 0, 1, b.ice || 0, 0.01) +
+        row2(I18N.t('rotper'), 'i_rot', -2, 4, Math.log10(Math.max(0.01, Math.abs(b.rotH || 24))), 0.02) +
+        row2(I18N.t('axtilt'), 'i_tilt', 0, 180, Math.abs(b.tiltDeg || 0), 1) +
+        row2(I18N.t('magfield'), 'i_mag', 0, 3000, b.magnet || 0, 10) +
+        '<div class="sec">' + I18N.t('compos') + '</div>' +
+        row2(I18N.t('rock'), 'i_c_rock', 0, 1, b.comp.rock || 0, 0.01) +
+        row2(I18N.t('iron'), 'i_c_iron', 0, 1, b.comp.iron || 0, 0.01) +
+        row2(I18N.t('iceC'), 'i_c_ice', 0, 1, b.comp.ice || 0, 0.01) +
+        row2(I18N.t('gasC'), 'i_c_gas', 0, 1, b.comp.gas || 0, 0.01) +
+        '<div class="grid2" style="margin-top:5px">' +
+        btn('i_water', '💧 ' + I18N.t('addWater')) + btn('i_atmo', '🌫 ' + I18N.t('addAtmo')) +
+        btn('i_heat', '🔥 ' + I18N.t('heat')) + btn('i_cool', '❄ ' + I18N.t('cool')) +
+        '</div><div class="grid2" style="margin-top:4px">' +
+        btn('i_terra', '🌍 ' + I18N.t('terraform')) + btn('i_freeze', '🧊 ' + I18N.t('iceL')) +
+        '</div>') +
       '<div class="sec">' + I18N.t('appearance') + '</div>' +
       '<div class="row"><label>' + I18N.t('surface') + '</label><select id="i_tex">' +
       TEXES.map(t => '<option value="' + t + '"' + (t === b.tex ? ' selected' : '') + '>' + t + '</option>').join('') +
@@ -373,6 +400,51 @@
     g('i_temp').oninput = e => { b.T = Math.pow(10, +e.target.value); };
     g('i_spin').oninput = e => { b.spin = +e.target.value * 1e-4; };
     g('i_tex').onchange = e => { b.tex = e.target.value; b.x.texOverride = 1; G.ren.dispose(b.uid); };
+    // ---- 행성 설정 핸들러 ----
+    if (g('i_atm')) {
+      const show = (id, txt) => { const el = g(id + '_v'); if (el) el.textContent = txt; };
+      const upd = () => {
+        show('i_atm', b.atmoP < 0.001 ? b.atmoP.toExponential(1) : b.atmoP.toFixed(b.atmoP < 10 ? 3 : 0) + ' bar');
+        show('i_gh', Math.round(b.gh) + ' K');
+        show('i_alb', (b.albedo * 100).toFixed(0) + '%');
+        show('i_wat', (b.water * 100).toFixed(0) + '%');
+        show('i_ice', (b.ice * 100).toFixed(0) + '%');
+        show('i_rot', Math.abs(b.rotH) < 48 ? Math.abs(b.rotH).toFixed(2) + ' h' : (Math.abs(b.rotH) / 24).toFixed(1) + ' d');
+        show('i_tilt', Math.round(b.tiltDeg) + '°');
+        show('i_mag', Math.round(b.magnet) + ' µT');
+        ['rock', 'iron', 'ice', 'gas'].forEach(k => show('i_c_' + k, ((b.comp[k] || 0) * 100).toFixed(0) + '%'));
+      };
+      const sync = () => { upd(); G.ren.dispose(b.uid); };
+      g('i_atm').oninput = e => { b.atmoP = Math.pow(10, +e.target.value); upd(); };
+      g('i_gh').oninput = e => { b.gh = +e.target.value; upd(); };
+      g('i_alb').oninput = e => { b.albedo = +e.target.value; upd(); };
+      g('i_wat').oninput = e => { b.water = +e.target.value; upd(); };
+      g('i_ice').oninput = e => { b.ice = +e.target.value; upd(); };
+      g('i_rot').oninput = e => {
+        const sgn = (b.rotH || 24) < 0 ? -1 : 1;
+        b.rotH = sgn * Math.pow(10, +e.target.value); upd();
+      };
+      g('i_tilt').oninput = e => { b.tiltDeg = +e.target.value; b.tilt = b.tiltDeg; upd(); G.ren.dispose(b.uid); };
+      g('i_mag').oninput = e => { b.magnet = +e.target.value; upd(); };
+      ['rock', 'iron', 'ice', 'gas'].forEach(k => {
+        g('i_c_' + k).oninput = e => {
+          b.comp[k] = +e.target.value;
+          const t = (b.comp.rock || 0) + (b.comp.iron || 0) + (b.comp.ice || 0) + (b.comp.gas || 0);
+          if (t > 0) { b.applyComposition(); }
+          upd();
+        };
+      });
+      g('i_water').onclick = () => { b.water = Math.min(1, b.water + 0.25); if (!G.ren.meshes.get(b.uid).ocean) G.ren.dispose(b.uid); upd(); toast('💧 ' + I18N.t('addWater')); };
+      g('i_atmo').onclick = () => { b.atmoP = Math.max(0.05, b.atmoP * 3 + 0.3); if (b.gh < 5) b.gh = 12; upd(); toast('🌫 ' + I18N.t('addAtmo')); };
+      g('i_heat').onclick = () => { b.T += 200; upd(); };
+      g('i_cool').onclick = () => { b.T = Math.max(3, b.T - 200); upd(); };
+      g('i_terra').onclick = () => {
+        b.atmoP = 1; b.gh = 33; b.albedo = 0.3; b.water = 0.7; b.ice = 0.08; b.T = 288;
+        G.ren.dispose(b.uid); upd(); toast('🌍 ' + I18N.t('terraform'));
+      };
+      g('i_freeze').onclick = () => { b.T = 120; b.ice = Math.min(1, b.ice + b.water); b.water = 0; upd(); };
+      upd();
+    }
     g('i_col').oninput = e => { b.col = parseInt(e.target.value.slice(1), 16); G.ren.dispose(b.uid); };
     const flag = (id, key, val) => g(id).onclick = () => {
       b.x[key] = b.x[key] ? 0 : (val || 1);
@@ -427,6 +499,11 @@
     };
     refreshInspLive();
   }
+  function row2(label, id, min, max, val, step) {
+    return '<div class="row"><label>' + label + '</label>' +
+      '<input type="range" id="' + id + '" min="' + min + '" max="' + max + '" step="' + (step || 0.01) +
+      '" value="' + val + '"><b id="' + id + '_v" style="min-width:56px;text-align:right;font-size:11px"></b></div>';
+  }
   function row(label, id, min, max, val) {
     return '<div class="row"><label>' + label + '</label><input type="range" id="' + id + '" min="' + min +
       '" max="' + max + '" step="0.01" value="' + val + '"></div>';
@@ -450,6 +527,18 @@
       kv(I18N.t('gravity'), b.surfaceG().toFixed(2) + ' m/s² (' + (b.surfaceG() / 9.807).toFixed(2) + ' g)') +
       kv(I18N.t('escape'), fmtVel(b.escapeV())) +
       kv(I18N.t('velocity'), fmtVel(b.speed()));
+    if (b.cat !== 'bh' && !b.isStar()) {
+      h += kv(I18N.t('pressure'), b.atmoP < 0.001 ? (b.atmoP || 0).toExponential(1) + ' bar' : b.atmoP.toFixed(b.atmoP < 10 ? 3 : 0) + ' bar') +
+        kv(I18N.t('albedo'), ((b.albedo || 0) * 100).toFixed(0) + '%') +
+        kv(I18N.t('rotper'), (Math.abs(b.rotH) < 48 ? Math.abs(b.rotH).toFixed(2) + ' h' : (Math.abs(b.rotH) / 24).toFixed(1) + ' d') + (b.rotH < 0 ? ' ↺' : '')) +
+        kv(I18N.t('axtilt'), Math.round(b.tiltDeg || 0) + '°');
+      if (b.water > 0.005 || b.ice > 0.005)
+        h += kv(I18N.t('waterL') + ' / ' + I18N.t('iceL'), (b.water * 100).toFixed(0) + '% / ' + (b.ice * 100).toFixed(0) + '%');
+      const cs = ['rock', 'iron', 'ice', 'gas'].filter(k => (b.comp[k] || 0) > 0.02)
+        .map(k => I18N.t(k === 'ice' ? 'iceC' : k === 'gas' ? 'gasC' : k) + ' ' + ((b.comp[k] || 0) * 100).toFixed(0) + '%');
+      if (cs.length) h += kv(I18N.t('compos'), cs.join(' · '));
+      if (b.atmoP > 1e-4 && !b.canHoldAtmo()) h += kv('', '<span style="color:var(--warm)">⚠ ' + I18N.t('atmoLost') + '</span>');
+    }
     if (b.cat === 'bh') h += kv('Rs', fmtDist(b.schwarzschild()));
     if (b.isStar()) h += kv('L', b.lum().toExponential(2) + ' L☉');
     if (oe && isFinite(oe.a)) {
@@ -498,6 +587,7 @@
       srow(I18N.t('quality'), '', '<select id="o_q"><option value="0">Low</option><option value="1">Medium</option><option value="2">High</option></select>') +
       srow(I18N.t('sizescale'), '×1 ~ ×2000', '<input type="range" id="o_size" min="0" max="3.3" step="0.01" value="' + Math.log10(s.sizeScale) + '"><b id="o_sizev" style="min-width:52px;text-align:right">×' + s.sizeScale.toFixed(1) + '</b>') +
       srow(I18N.t('trailLen'), '', '<input type="range" id="o_trail" min="20" max="900" step="10" value="' + s.trailLen + '">') +
+      srow(I18N.t('terrain'), '×0 ~ ×10', '<input type="range" id="o_terr" min="0" max="10" step="0.5" value="' + s.terrain + '"><b id="o_terrv" style="min-width:34px;text-align:right">×' + s.terrain + '</b>') +
       srow(I18N.t('labels'), '', sw('o_lab', s.labels)) +
       srow(I18N.t('marble'), '', sw('o_marb', s.marble)) +
       srow(I18N.t('bloom'), '', sw('o_bloom', s.bloom)) +
@@ -526,6 +616,10 @@
         applySettings();
       };
       w.querySelector('#o_trail').oninput = e => { s.trailLen = +e.target.value; applySettings(); rebuildAll(); };
+      w.querySelector('#o_terr').oninput = e => {
+        s.terrain = +e.target.value; w.querySelector('#o_terrv').textContent = '×' + s.terrain;
+        applySettings(); rebuildAll();
+      };
       w.querySelector('#o_sub').oninput = e => { s.substeps = +e.target.value; applySettings(); };
       w.querySelector('#o_g').oninput = e => { s.gmul = +e.target.value; w.querySelector('#o_gv').textContent = '×' + s.gmul.toFixed(2); applySettings(); };
       w.querySelector('#o_max').oninput = e => { s.maxBodies = +e.target.value; applySettings(); };
@@ -546,7 +640,8 @@
         Object.assign(s, {
           quality: 1, sizeScale: 1, trails: true, trailLen: 260, labels: true, marble: true, substeps: 4,
           gmul: 1, maxBodies: 220, colMode: 'realistic', debris: true, selfGrav: false, accretion: true,
-          tidal: true, sound: true, showFps: true, glow: true, evolution: true, evoRate: 1e5, bloom: true
+          tidal: true, sound: true, showFps: true, glow: true, evolution: true, evoRate: 1e5,
+          bloom: true, terrain: 3
         });
         applySettings(); rebuildAll(); w.remove(); openSettings();
       };

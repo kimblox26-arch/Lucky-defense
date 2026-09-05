@@ -191,12 +191,73 @@
     ['c_star', '일반 항성', 'Generic Star', '一般恒星', 'custom', MS, RS, 5772, 'sun', 0xffd76b, { lum: 1, glow: 2.4 }]
   ];
 
+  /* ---------- 행성 물성 (Universe Sandbox 계열 속성) ----------
+     atmo: 표면 기압(bar) / alb: 반사율 / rot: 자전 주기(시간, 음수는 역행)
+     tilt: 자전축 기울기(°) / water: 표면 액체 비율 / ice: 얼음 비율
+     gh: 온실 효과(K) / comp: 구성비 {rock, iron, ice, water, gas} / mag: 자기장(µT) */
+  const PROPS = {
+    sun: { atmo: 0, alb: 0, rot: 609.1, tilt: 7.25, comp: { gas: 1 }, mag: 100 },
+    mercury: { atmo: 1e-14, alb: .088, rot: 1407.6, tilt: .03, water: 0, ice: .001, gh: 0, comp: { rock: .30, iron: .70 }, mag: .3 },
+    venus: { atmo: 92, alb: .76, rot: -5832.5, tilt: 177.36, water: 0, ice: 0, gh: 503, comp: { rock: .68, iron: .32 }, mag: 0 },
+    earth: { atmo: 1, alb: .306, rot: 23.934, tilt: 23.44, water: .71, ice: .10, gh: 33, comp: { rock: .675, iron: .32, water: .0005 }, mag: 50 },
+    mars: { atmo: .006, alb: .25, rot: 24.623, tilt: 25.19, water: .0, ice: .06, gh: 5, comp: { rock: .75, iron: .25 }, mag: .05 },
+    jupiter: { atmo: 1000, alb: .503, rot: 9.925, tilt: 3.13, comp: { gas: .99, rock: .01 }, mag: 4170 },
+    saturn: { atmo: 1000, alb: .342, rot: 10.656, tilt: 26.73, comp: { gas: .98, rock: .02 }, mag: 21 },
+    uranus: { atmo: 1000, alb: .30, rot: -17.24, tilt: 97.77, comp: { gas: .83, ice: .17 }, mag: 23 },
+    neptune: { atmo: 1000, alb: .29, rot: 16.11, tilt: 28.32, comp: { gas: .80, ice: .20 }, mag: 14 },
+    moon: { atmo: 3e-15, alb: .11, rot: 655.7, tilt: 6.68, ice: .001, comp: { rock: .90, iron: .10 }, mag: 0 },
+    io: { atmo: 1e-9, alb: .63, rot: 42.46, tilt: 0, comp: { rock: .82, iron: .18 } },
+    europa: { atmo: 1e-11, alb: .67, rot: 85.2, tilt: .1, water: .0, ice: 1, comp: { rock: .85, ice: .15 } },
+    ganymede: { atmo: 1e-12, alb: .43, rot: 171.7, tilt: .2, ice: .8, comp: { rock: .55, ice: .45 } },
+    callisto: { atmo: 1e-11, alb: .22, rot: 400.5, tilt: 0, ice: .7, comp: { rock: .55, ice: .45 } },
+    titan: { atmo: 1.45, alb: .22, rot: 382.7, tilt: .3, water: .01, ice: .5, gh: 21, comp: { rock: .55, ice: .45 } },
+    enceladus: { atmo: 1e-9, alb: .99, rot: 32.9, ice: 1, comp: { rock: .4, ice: .6 } },
+    triton: { atmo: 1.4e-5, alb: .76, rot: -141.0, ice: 1, comp: { rock: .65, ice: .35 } },
+    pluto: { atmo: 1e-5, alb: .52, rot: -153.3, tilt: 122.5, ice: .98, comp: { rock: .70, ice: .30 } },
+    charon: { atmo: 0, alb: .38, rot: 153.3, ice: .8, comp: { rock: .65, ice: .35 } },
+    ceres: { atmo: 0, alb: .09, rot: 9.07, tilt: 4, ice: .25, comp: { rock: .75, ice: .25 } },
+    vesta: { atmo: 0, alb: .42, rot: 5.34, tilt: 29, comp: { rock: .82, iron: .18 } },
+    eris: { atmo: 0, alb: .96, rot: 378, ice: 1, comp: { rock: .7, ice: .3 } },
+    haumea: { atmo: 0, alb: .51, rot: 3.92, ice: .9, comp: { rock: .8, ice: .2 } },
+    trap1e: { atmo: 1, alb: .3, rot: 146.5, water: .6, ice: .15, gh: 30, comp: { rock: .7, iron: .3 } },
+    kepler452b: { atmo: 1.4, alb: .3, rot: 30, water: .7, ice: .08, gh: 40, comp: { rock: .7, iron: .3 } },
+    proximab: { atmo: .5, alb: .3, rot: 268.8, water: .2, ice: .3, gh: 15, comp: { rock: .7, iron: .3 } }
+  };
+  /* 분류별 기본 물성 */
+  const DEF = {
+    star: { atmo: 0, alb: 0, rot: 600, tilt: 0, comp: { gas: 1 } },
+    planet: { atmo: .5, alb: .3, rot: 24, tilt: 15, comp: { rock: .7, iron: .3 } },
+    moon: { atmo: 0, alb: .2, rot: 200, tilt: 2, comp: { rock: .8, ice: .2 } },
+    dwarf: { atmo: 0, alb: .4, rot: 100, tilt: 10, ice: .6, comp: { rock: .7, ice: .3 } },
+    asteroid: { atmo: 0, alb: .15, rot: 8, tilt: 20, comp: { rock: .85, iron: .15 } },
+    comet: { atmo: 0, alb: .04, rot: 12, tilt: 30, ice: .6, comp: { ice: .6, rock: .4 } },
+    meteoroid: { atmo: 0, alb: .12, rot: 3, tilt: 40, comp: { rock: .8, iron: .2 } },
+    exo: { atmo: 1, alb: .3, rot: 30, tilt: 12, comp: { rock: .6, iron: .3, ice: .1 } },
+    bh: { atmo: 0, alb: 0, rot: 0.001, tilt: 0, comp: {} },
+    ns: { atmo: 0, alb: 0, rot: 0.0002, tilt: 0, comp: {} },
+    wd: { atmo: 0, alb: 0, rot: 1, tilt: 0, comp: {} },
+    bd: { atmo: 1000, alb: .2, rot: 5, tilt: 5, comp: { gas: .98 } },
+    custom: { atmo: .3, alb: .3, rot: 24, tilt: 10, comp: { rock: .7, iron: .3 } }
+  };
+  function propsFor(id, cat) {
+    const d = DEF[cat] || DEF.custom;
+    const p = PROPS[id] || {};
+    return {
+      atmo: p.atmo != null ? p.atmo : d.atmo, alb: p.alb != null ? p.alb : d.alb,
+      rot: p.rot != null ? p.rot : d.rot, tilt: p.tilt != null ? p.tilt : d.tilt,
+      water: p.water != null ? p.water : (d.water || 0), ice: p.ice != null ? p.ice : (d.ice || 0),
+      gh: p.gh != null ? p.gh : (d.gh || 0), mag: p.mag != null ? p.mag : (d.mag || 0),
+      comp: Object.assign({ rock: 0, iron: 0, ice: 0, water: 0, gas: 0 }, p.comp || d.comp)
+    };
+  }
+
   const KEYS = ['id', 'ko', 'en', 'ja', 'cat', 'm', 'r', 'T', 'tex', 'col', 'x'];
   const CATALOG = R.map(row => {
     const o = {};
     KEYS.forEach((k, i) => o[k] = row[i]);
     o.x = o.x || {};
     o.rho = o.m * 1e24 / ((4 / 3) * Math.PI * Math.pow(o.r * 1e6, 3)); // kg/m^3
+    o.p = propsFor(o.id, o.cat);
     return o;
   });
   const BY_ID = {};
@@ -206,4 +267,5 @@
   root.CAT_BY_ID = BY_ID;
   root.CAT_ORDER = ['all', 'star', 'planet', 'moon', 'dwarf', 'asteroid', 'comet', 'meteoroid', 'exo', 'bh', 'ns', 'wd', 'bd', 'custom'];
   root.UNITS = { MS, MJ, ME, RS, RJ, RE };
+  root.PROPS_FOR = propsFor;
 })(window);

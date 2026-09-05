@@ -4,6 +4,8 @@
     ko: {
       _name: '한국어',
       title: 'MARBLE COSMOS', subtitle: '구슬 우주 시뮬레이터',
+      terrain: '지형 높낮이 과장', planetSet: '행성 설정', pressure: '대기압', greenhouse: '온실 효과', albedo: '반사율', waterL: '표면 물', iceL: '얼음', rotper: '자전 주기', axtilt: '자전축 기울기', magfield: '자기장', compos: '구성 성분', rock: '암석', iron: '철', iceC: '얼음', gasC: '가스', addWater: '물 추가', addAtmo: '대기 추가', heat: '가열', cool: '냉각', terraform: '지구화', atmoLost: '대기가 우주로 빠져나감',
+
       viewOpts: '표시 옵션', rocheShow: '로슈 한계 표시',
 
       preset_sn: '초신성 폭발', preset_tde: '블랙홀 조석 파괴',
@@ -61,6 +63,8 @@
     en: {
       _name: 'English',
       title: 'MARBLE COSMOS', subtitle: 'Marble Universe Simulator',
+      terrain: 'Terrain Relief', planetSet: 'Planet Settings', pressure: 'Pressure', greenhouse: 'Greenhouse', albedo: 'Albedo', waterL: 'Surface Water', iceL: 'Ice', rotper: 'Rotation Period', axtilt: 'Axial Tilt', magfield: 'Magnetic Field', compos: 'Composition', rock: 'Rock', iron: 'Iron', iceC: 'Ice', gasC: 'Gas', addWater: 'Add Water', addAtmo: 'Add Atmosphere', heat: 'Heat', cool: 'Cool', terraform: 'Terraform', atmoLost: 'Atmosphere escaping to space',
+
       viewOpts: 'View Options', rocheShow: 'Roche Limit Overlay',
 
       preset_sn: 'Supernova', preset_tde: 'Black Hole Tidal Disruption',
@@ -111,6 +115,8 @@
     ja: {
       _name: '日本語',
       title: 'MARBLE COSMOS', subtitle: 'ビー玉宇宙シミュレーター',
+      terrain: '地形の起伏', planetSet: '惑星設定', pressure: '気圧', greenhouse: '温室効果', albedo: 'アルベド', waterL: '表面の水', iceL: '氷', rotper: '自転周期', axtilt: '自転軸傾斜', magfield: '磁場', compos: '組成', rock: '岩石', iron: '鉄', iceC: '氷', gasC: 'ガス', addWater: '水を追加', addAtmo: '大気を追加', heat: '加熱', cool: '冷却', terraform: 'テラフォーム', atmoLost: '大気が宇宙へ流出中',
+
       viewOpts: '表示オプション', rocheShow: 'ロッシュ限界表示',
 
       preset_sn: '超新星爆発', preset_tde: 'ブラックホール潮汐破壊',

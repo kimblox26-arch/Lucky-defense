@@ -5,7 +5,8 @@
   function make(id, over) {
     const c = CAT_BY_ID[id];
     const o = Object.assign({
-      cid: c.id, cat: c.cat, m: c.m, r: c.r, T: c.T, tex: c.tex, col: c.col, x: Object.assign({}, c.x)
+      cid: c.id, cat: c.cat, m: c.m, r: c.r, T: c.T, tex: c.tex, col: c.col,
+      x: Object.assign({}, c.x), p: c.p
     }, over || {});
     return new PHYS.Body(o);
   }

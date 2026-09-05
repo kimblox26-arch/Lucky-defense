@@ -2,6 +2,13 @@
 (function (root) {
   const V3 = THREE.Vector3;
 
+  /* 로그 깊이 버퍼 청크 — 커스텀 셰이더도 내장 재질과 같은 깊이를 쓰도록 한다.
+     (없으면 오버레이가 깊이 테스트에서 버려져 아예 그려지지 않는다) */
+  const LGV_P = '#include <common>\n#include <logdepthbuf_pars_vertex>\n';
+  const LGV = '\n#include <logdepthbuf_vertex>\n';
+  const LGF_P = '#include <common>\n#include <logdepthbuf_pars_fragment>\n';
+  const LGF = '\n#include <logdepthbuf_fragment>\n';
+
   function Renderer(canvas) {
     this.canvas = canvas;
     this.quality = 1;
@@ -119,6 +126,7 @@
     this.vecGroup = new THREE.Group(); this.helpers.add(this.vecGroup);
     this.hzMesh = null;
     this.bloomOn = true;
+    this.terrain = 3;          // 지형 과장 배율
     this.initComposer();
     this.time = 0;
     this.resize();
@@ -189,16 +197,25 @@
       const RT = (root.REALTEX && b.tex !== 'marble' && !b.x.marble) ? REALTEX.forBody(b) : null;
       const tex = RT ? REALTEX.tex(RT.map) : TEX.surface(b.tex, b.seed, this.quality);
       rec.real = RT;
+      rec.disp = 0;
       const mat = new THREE.MeshPhongMaterial({
         map: tex,
-        shininess: this.marbleMode ? 22 : 8,
-        specular: new THREE.Color(this.marbleMode ? 0x151d28 : 0x080808),
+        shininess: 6,
+        specular: new THREE.Color(0x060606),   // 암석·얼음 표면은 거의 확산 반사만 (인공적인 광택 제거)
         emissive: new THREE.Color(isStar ? b.col : 0x000000),
         emissiveIntensity: isStar ? 1 : 0,
         emissiveMap: isStar ? tex : null
       });
+      let dispS = 0;
       if (RT) {
         if (RT.bump) { mat.bumpMap = REALTEX.tex(RT.bump); mat.bumpScale = RT.bs || 0.02; }
+        if (RT.disp && this.quality > 0) {
+          // 실제 고도 자료로 지형을 실제로 융기·함몰시킨다 (윤곽선에 산맥이 보인다)
+          dispS = RT.disp * (this.terrain || 3);
+          mat.displacementMap = REALTEX.tex(RT.bump || RT.map);
+          mat.displacementScale = dispS;
+          mat.displacementBias = 0;
+        }
         else if (!isStar) {
           // 전용 범프가 없는 천체는 표면 사진 자체의 명암을 요철로 사용 → 매끈함 제거
           mat.bumpMap = tex;
@@ -240,16 +257,16 @@
             tMap: { value: tex }, tint: { value: tc }, k: { value: 0.80 },
             time: { value: 0 }, act: { value: b.flare || 0.25 }
           },
-          vertexShader: 'varying vec2 vUv; varying vec3 vN; varying vec3 vP;' +
+          vertexShader: LGV_P + 'varying vec2 vUv; varying vec3 vN; varying vec3 vP;' +
             'void main(){ vUv=uv; vN=normalize(normalMatrix*normal); vec4 mv=modelViewMatrix*vec4(position,1.0); vP=mv.xyz;' +
-            ' gl_Position=projectionMatrix*mv; }',
-          fragmentShader:
+            ' gl_Position=projectionMatrix*mv;' + LGV + '}',
+          fragmentShader: LGF_P +
             'uniform sampler2D tMap; uniform vec3 tint; uniform float k; uniform float time; uniform float act;' +
             'varying vec2 vUv; varying vec3 vN; varying vec3 vP;' +
             'float h(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }' +
             'float nz(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.0-2.0*f);' +
             ' return mix(mix(h(i),h(i+vec2(1,0)),f.x), mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x), f.y); }' +
-            'void main(){' +
+            'void main(){' + LGF +
             ' float mu=clamp(dot(normalize(vN), normalize(-vP)),0.0,1.0);' +
             ' float limb=0.30+0.70*pow(mu,0.55);' +
             // 광구 대류(granulation): 두 겹의 텍스처가 서로 다른 속도로 흐른다
@@ -265,6 +282,7 @@
             ' gl_FragColor=vec4(c*tint*limb*k,1.0); }'
         });
       }
+      rec.disp = dispS;
       const m = new THREE.Mesh(geo, useMat);
       root3.add(m); rec.surf = m; rec.starMat = isStar ? useMat : null;
       if (isStar) {
@@ -282,30 +300,118 @@
       if (b.x.clouds || (RT && RT.clouds)) {
         const cmat = (RT && RT.clouds)
           ? new THREE.MeshPhongMaterial({
-            color: 0xffffff, alphaMap: REALTEX.tex(RT.clouds), transparent: true,
-            depthWrite: false, opacity: 0.88, shininess: 2
+            color: 0xf2f6fa, alphaMap: REALTEX.tex(RT.clouds), transparent: true,
+            depthWrite: false, opacity: 0.95, shininess: 1, specular: 0x0a0a0a
           })
-          : new THREE.MeshPhongMaterial({ map: TEX.clouds(b.seed, this.quality), transparent: true, depthWrite: false, opacity: 0.85 });
-        const cm = new THREE.Mesh(new THREE.SphereGeometry(1.015, S[0], S[1]), cmat);
+          : new THREE.MeshPhongMaterial({ map: TEX.clouds(b.seed, this.quality), transparent: true, depthWrite: false, opacity: 0.8 });
+        const cm = new THREE.Mesh(new THREE.SphereGeometry(1 + dispS + 0.004, S[0], Math.max(24, S[1] >> 1)), cmat);
         root3.add(cm); rec.clouds = cm;
       }
       // 밤면 도시 불빛 (실제 NASA City Lights)
       if (RT && RT.night) {
         const nmat = new THREE.ShaderMaterial({
-          uniforms: { tMap: { value: REALTEX.tex(RT.night) }, sunDir: { value: new THREE.Vector3(1, 0, 0) }, k: { value: 3.0 } },
-          vertexShader: 'varying vec2 vUv; varying vec3 vNW; void main(){ vUv=uv; vNW=normalize(mat3(modelMatrix)*normal); gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }',
-          fragmentShader: 'uniform sampler2D tMap; uniform vec3 sunDir; uniform float k; varying vec2 vUv; varying vec3 vNW;' +
-            'void main(){ float d=dot(normalize(vNW), normalize(sunDir)); float night=smoothstep(0.10,-0.22,d);' +
-            ' vec3 c=texture2D(tMap,vUv).rgb; gl_FragColor=vec4(c*night*k,1.0); }',
+          uniforms: { tMap: { value: REALTEX.tex(RT.night) }, sunDir: { value: new THREE.Vector3(1, 0, 0) }, k: { value: 2.0 } },
+          vertexShader: LGV_P + 'varying vec2 vUv; varying vec3 vNW; void main(){ vUv=uv; vNW=normalize(mat3(modelMatrix)*normal);' +
+            ' gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);' + LGV + '}',
+          fragmentShader: LGF_P + 'uniform sampler2D tMap; uniform vec3 sunDir; uniform float k; varying vec2 vUv; varying vec3 vNW;' +
+            'void main(){' + LGF + ' float d=dot(normalize(vNW), normalize(sunDir)); float night=1.0-smoothstep(-0.22,0.10,d);' +
+            ' vec3 c=max(texture2D(tMap,vUv).rgb-vec3(0.17,0.17,0.27), 0.0)*2.4;' +
+            ' gl_FragColor=vec4(c*night*k,1.0); }',
           blending: THREE.AdditiveBlending, transparent: true, depthWrite: false
         });
-        const nmesh = new THREE.Mesh(new THREE.SphereGeometry(1.002, S[0], S[1]), nmat);
+        const nmesh = new THREE.Mesh(new THREE.SphereGeometry(1 + dispS + 0.0015, S[0], S[1]), nmat);
         root3.add(nmesh); rec.night = nmesh;
       }
-      if (b.x.atmo) {
-        const am = new THREE.Mesh(new THREE.SphereGeometry(1.06, 32, 24),
-          new THREE.MeshBasicMaterial({ color: new THREE.Color(b.col).lerp(new THREE.Color(0x88ccff), 0.55), transparent: true, opacity: 0.16 * b.x.atmo, side: THREE.BackSide, blending: THREE.AdditiveBlending, depthWrite: false }));
+      // 대기: 실제처럼 아주 얇은 산란 테두리 (기압에 따라 두께·밝기 변화)
+      if ((b.atmoP || 0) > 1e-6 || b.x.atmo) {
+        const ac = this.atmoColor(b);
+        const am = new THREE.Mesh(new THREE.SphereGeometry(1.09, 72, 44), new THREE.ShaderMaterial({
+          uniforms: {
+            col: { value: ac }, strength: { value: 0.5 }, inner: { value: 1 / 1.09 },
+            sunDir: { value: new THREE.Vector3(1, 0, 0) }
+          },
+          vertexShader: LGV_P + 'varying vec3 vN; varying vec3 vP; varying vec3 vW;' +
+            'void main(){ vN=normalize(normalMatrix*normal); vec4 mv=modelViewMatrix*vec4(position,1.0); vP=mv.xyz;' +
+            ' vW=normalize(mat3(modelMatrix)*normal); gl_Position=projectionMatrix*mv;' + LGV + '}',
+          fragmentShader: LGF_P + 'uniform vec3 col; uniform float strength; uniform float inner; uniform vec3 sunDir;' +
+            'varying vec3 vN; varying vec3 vP; varying vec3 vW;' +
+            'void main(){' + LGF +
+            ' float mu=abs(dot(normalize(vN), normalize(-vP)));' +
+            ' float p=sqrt(max(0.0,1.0-mu*mu));' +                       // 임팩트 파라미터 (0~1)
+            ' float t=clamp((p-inner)/max(1e-4,1.0-inner), 0.0, 1.0);' + // 지표(0) → 대기 상단(1)
+            ' float dens=exp(-t*2.6)*pow(1.0-t*t,1.6);' +                // 지수적으로 옅어지는 대기
+            ' float sun=clamp(dot(normalize(vW), normalize(sunDir))*0.8+0.36, 0.0, 1.0);' +
+            ' float a=dens*strength*sun;' +
+            ' if(a<0.002) discard;' +
+            ' gl_FragColor=vec4(col*a*1.15, a); }',
+          transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.BackSide
+        }));
+        // 원반 위의 옅은 산란 — 테두리가 선처럼 보이지 않고 표면과 자연스럽게 이어진다
+        const hz = new THREE.Mesh(new THREE.SphereGeometry(1.004, 48, 32), new THREE.ShaderMaterial({
+          uniforms: { col: { value: ac.clone() }, strength: { value: 0.2 }, sunDir: { value: new THREE.Vector3(1, 0, 0) } },
+          vertexShader: LGV_P + 'varying vec3 vN; varying vec3 vP; varying vec3 vW;' +
+            'void main(){ vN=normalize(normalMatrix*normal); vec4 mv=modelViewMatrix*vec4(position,1.0); vP=mv.xyz;' +
+            ' vW=normalize(mat3(modelMatrix)*normal); gl_Position=projectionMatrix*mv;' + LGV + '}',
+          fragmentShader: LGF_P + 'uniform vec3 col; uniform float strength; uniform vec3 sunDir;' +
+            'varying vec3 vN; varying vec3 vP; varying vec3 vW;' +
+            'void main(){' + LGF + ' float mu=clamp(dot(normalize(vN), normalize(-vP)),0.0,1.0);' +
+            ' float rim=pow(1.0-mu,2.4);' +
+            ' float sun=clamp(dot(normalize(vW), normalize(sunDir))*1.1+0.16, 0.0, 1.0);' +
+            ' float a=(0.10+0.90*rim)*strength*sun*0.5;' +
+            ' if(a<0.002) discard;' +
+            ' gl_FragColor=vec4(col*a, a); }',
+          transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.FrontSide
+        }));
+        root3.add(hz); rec.haze = hz;
         root3.add(am); rec.atmo = am;
+      }
+      // 얼음(빙하) 오버레이 — 온도가 내려가면 극지방부터 얼어붙는다
+      if (!isStar && (b.comp.gas || 0) < 0.5 && b.cat !== 'bh') {
+        const im = new THREE.Mesh(new THREE.SphereGeometry(1 + dispS + 0.0008, S[0], S[1]), new THREE.ShaderMaterial({
+          uniforms: { ice: { value: b.ice || 0 } },
+          vertexShader: LGV_P + 'varying vec2 vUv; void main(){ vUv=uv;' +
+            ' gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);' + LGV + '}',
+          fragmentShader: LGF_P + 'uniform float ice; varying vec2 vUv;' +
+            'float h(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }' +
+            'float nz(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.0-2.0*f);' +
+            ' return mix(mix(h(i),h(i+vec2(1,0)),f.x), mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x), f.y); }' +
+            'void main(){' + LGF + ' float lat=abs(vUv.y*2.0-1.0);' +
+            ' float n=nz(vUv*vec2(34.0,17.0))*0.09-0.045;' +
+            ' float edge=1.055-ice*1.12+n;' +
+            ' float a=smoothstep(edge-0.05, edge+0.09, lat)*0.92;' +
+            ' if(a<0.004) discard;' +
+            ' gl_FragColor=vec4(0.93,0.96,1.0,a); }',
+          transparent: true, depthWrite: false
+        }));
+        root3.add(im); rec.ice = im;
+        // 바다 오버레이 — 물을 추가하면 낮은 지형부터 잠긴다
+        if (RT && (RT.bump || RT.map)) {
+          const om = new THREE.Mesh(new THREE.SphereGeometry(1 + dispS + 0.0006, S[0], S[1]), new THREE.ShaderMaterial({
+            uniforms: {
+              hMap: { value: REALTEX.tex(RT.bump || RT.map) }, level: { value: 0 },
+              deep: { value: new THREE.Color(0x0a2f5c) }, sunDir: { value: new THREE.Vector3(1, 0, 0) }
+            },
+            vertexShader: LGV_P + 'varying vec2 vUv; varying vec3 vNW; varying vec3 vN; varying vec3 vP;' +
+              'void main(){ vUv=uv; vNW=normalize(mat3(modelMatrix)*normal); vN=normalize(normalMatrix*normal);' +
+              ' vec4 mv=modelViewMatrix*vec4(position,1.0); vP=mv.xyz; gl_Position=projectionMatrix*mv;' + LGV + '}',
+            fragmentShader: LGF_P + 'uniform sampler2D hMap; uniform float level; uniform vec3 deep; uniform vec3 sunDir;' +
+              'varying vec2 vUv; varying vec3 vNW; varying vec3 vN; varying vec3 vP;' +
+              'void main(){' + LGF + ' if(level<=0.001) discard;' +
+              ' float h=texture2D(hMap,vUv).g;' +
+              ' float a=1.0-smoothstep(level-0.02, level+0.03, h);' +
+              ' if(a<0.01) discard;' +
+              ' float d=clamp((level-h)*3.0,0.0,1.0);' +
+              ' vec3 c=mix(vec3(0.30,0.62,0.78), deep, d);' +
+              ' float lam=clamp(dot(normalize(vNW), normalize(sunDir)),0.0,1.0);' +
+              ' float mu=clamp(dot(normalize(vN), normalize(-vP)),0.0,1.0);' +
+              ' float spec=pow(clamp(1.0-mu,0.0,1.0),3.0)*0.35;' +
+              ' c *= 0.06 + 1.15*lam;' +
+              ' c += vec3(0.9,0.95,1.0)*spec*lam;' +
+              ' gl_FragColor=vec4(c, a*(0.35+0.65*lam)); }',
+            transparent: true, depthWrite: false
+          }));
+          root3.add(om); rec.ocean = om;
+        }
       }
       if (b.x.rings) {
         const inner = (RT && RT.ring) ? RT.ri : 1.28;
@@ -324,8 +430,8 @@
         const ring = new THREE.Mesh(rg, rm); ring.rotation.x = Math.PI / 2;
         root3.add(ring); rec.ring = ring;
       }
-      // 구슬 유리 셸 (항성·잔해에는 씌우지 않는다)
-      if (this.marbleMode && !isStar) {
+      // 구슬 유리 셸 — 구슬 천체에만 (실제 행성에는 윤곽선이 생기지 않도록)
+      if (this.marbleMode && !isStar && (b.x.marble || b.tex === 'marble')) {
         const gm = new THREE.Mesh(new THREE.SphereGeometry(1.035, S[0], S[1]), new THREE.MeshPhongMaterial({
           color: 0xffffff, transparent: true, opacity: 0.055, shininess: 150, specular: 0x8fa6bc,
           envMap: this.envTex, reflectivity: 0.22, depthWrite: false, blending: THREE.AdditiveBlending
@@ -370,6 +476,35 @@
     rec.root.traverse(o => { if (o.geometry) o.geometry.dispose(); });
     rec.trail.geometry.dispose();
     this.meshes.delete(uid);
+  };
+
+  /* 높이맵의 고도 분포(백분위) — 물 비율만큼 정확히 잠기도록 */
+  Renderer.prototype.heightProfile = function (tex) {
+    if (!tex || !tex.image || !(tex.image.width > 0)) return null;
+    if (tex.__hprof) return tex.__hprof;
+    try {
+      const c = document.createElement('canvas'); c.width = 96; c.height = 48;
+      const cx = c.getContext('2d'); cx.drawImage(tex.image, 0, 0, 96, 48);
+      const d = cx.getImageData(0, 0, 96, 48).data;
+      const arr = [];
+      for (let i = 0; i < d.length; i += 4) arr.push(d[i + 1] / 255);
+      arr.sort((a, b) => a - b);
+      const pr = new Float32Array(101);
+      for (let i = 0; i <= 100; i++) pr[i] = arr[Math.min(arr.length - 1, Math.round(i / 100 * (arr.length - 1)))];
+      tex.__hprof = pr;
+      return pr;
+    } catch (e) { return null; }
+  };
+
+  /* 대기 산란 색 — 조성과 기압으로 결정 */
+  Renderer.prototype.atmoColor = function (b) {
+    const c = b.comp || {};
+    const P = b.atmoP || 0;
+    if (c.gas > 0.5) return new THREE.Color(b.col).lerp(new THREE.Color(0xdfefff), 0.35);  // 가스행성
+    if (b.tex === 'titan' || (c.ice > 0.3 && P > 0.5)) return new THREE.Color(0xff9a4a);   // 메탄 헤이즈
+    if (P > 8) return new THREE.Color(0xffd9a0);                                           // 금성형 두꺼운 CO2
+    if (b.water > 0.05 || (P > 0.2 && P <= 8)) return new THREE.Color(0x6fa8ff);           // 질소·산소 (레일리 산란)
+    return new THREE.Color(0xffb08a);                                                      // 희박한 먼지 대기
   };
 
   // ---------- 카메라 ----------
@@ -460,8 +595,58 @@
         rec.root.rotation.set(0, 0, (b.tilt || 0) * Math.PI / 180);
         rec.root.scale.setScalar(R); rec.stretched = false;
       } else rec.root.scale.setScalar(R);
-      if (rec.surf && !rec.isBH) rec.surf.rotation.y += b.spin * (dtReal || 0.016) * 60;
-      if (rec.clouds) rec.clouds.rotation.y += b.spin * 1.35 * (dtReal || 0.016) * 60;
+      // 자전: 실제 자전 주기와 시뮬레이션 시간으로 계산 (고배속에서는 스트로브 방지 제한)
+      if (rec.surf && !rec.starMat) {
+        const dir = (b.rotH || 24) < 0 ? -1 : 1;
+        const target = dir * (b.spinRate() * sim.t) % 6.283185;
+        let cur = rec.rotAng || 0;
+        let d = target - cur;
+        while (d > Math.PI) d -= 6.283185;
+        while (d < -Math.PI) d += 6.283185;
+        cur += Math.max(-0.35, Math.min(0.35, d));
+        rec.rotAng = cur;
+        rec.surf.rotation.y = cur;
+        if (rec.night) rec.night.rotation.y = cur;
+        if (rec.ice) rec.ice.rotation.y = cur;
+        if (rec.ocean) rec.ocean.rotation.y = cur;
+      }
+      if (rec.clouds) rec.clouds.rotation.y = (rec.rotAng || 0) * 1.06 + this.time * 0.004;
+      // 대기·바다·얼음 상태 반영
+      if (rec.atmo) {
+        const P = b.atmoP || 0;
+        const h = 0.010 + 0.022 * Math.log10(1 + P);          // 실제 대기는 반지름의 1~3% 두께
+        const Ra = 1 + (rec.disp || 0) + h;
+        rec.atmo.scale.setScalar(Ra / 1.09);
+        rec.atmo.material.uniforms.inner.value = (1 + (rec.disp || 0)) / Ra;
+        const st = Math.max(0, Math.min(0.85, 0.10 + 0.24 * Math.log10(1 + P * 4)));
+        rec.atmo.material.uniforms.strength.value = st;
+        rec.atmo.material.uniforms.col.value.copy(this.atmoColor(b)).lerp(new THREE.Color(1, 1, 1), 0.18);
+        rec.atmo.visible = P > 1e-5;
+        const st0 = stars[0];
+        if (st0) rec.atmo.material.uniforms.sunDir.value.set(st0.px - b.px, st0.py - b.py, st0.pz - b.pz).normalize();
+        if (rec.haze) {
+          rec.haze.scale.setScalar((1 + (rec.disp || 0) + 0.001) / 1.004);
+          rec.haze.material.uniforms.strength.value = st;
+          rec.haze.material.uniforms.col.value.copy(this.atmoColor(b)).lerp(new THREE.Color(1, 1, 1), 0.25);
+          rec.haze.visible = P > 1e-4;
+          if (st0) rec.haze.material.uniforms.sunDir.value.copy(rec.atmo.material.uniforms.sunDir.value);
+        }
+      }
+      if (rec.ice) {
+        rec.ice.material.uniforms.ice.value = b.ice || 0;
+        rec.ice.visible = (b.ice || 0) > 0.004;
+      }
+      if (rec.ocean) {
+        const extra = Math.max(0, (b.water || 0) - (b.water0 || 0));
+        const pr = this.heightProfile(rec.ocean.material.uniforms.hMap.value);
+        rec.ocean.material.uniforms.level.value = pr
+          ? pr[Math.max(0, Math.min(100, Math.round(extra * 100)))]
+          : Math.min(1, extra * 1.45);
+        rec.ocean.visible = extra > 0.004;
+        const st1 = stars[0];
+        if (st1 && rec.ocean.visible) rec.ocean.material.uniforms.sunDir.value.set(st1.px - b.px, st1.py - b.py, st1.pz - b.pz).normalize();
+      }
+      if (rec.clouds) rec.clouds.material.opacity = 0.95 * Math.min(1, 0.25 + (b.atmoP || 0) * 1.2) * (b.water > 0.02 ? 1 : 0.55);
       if (rec.night) {
         rec.night.rotation.y = rec.surf ? rec.surf.rotation.y : 0;
         const st0 = stars[0];

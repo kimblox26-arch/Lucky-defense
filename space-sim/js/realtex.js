@@ -33,11 +33,11 @@
   /* 실제 표면 맵이 존재하는 천체 (카탈로그 id 기준) */
   const REAL = {
     sun: { map: 'sun', star: 1 },
-    mercury: { map: 'mercury', bump: 'mercury_bump', bs: 0.012 },
-    venus: { map: 'venus', bump: 'venus_bump', bs: 0.01 },
-    earth: { map: 'earth', bump: 'earth_bump', bs: 0.014, spec: 'earth_spec', night: 'earth_night', clouds: 'earth_clouds' },
-    moon: { map: 'moon', bump: 'moon_bump', bs: 0.018 },
-    mars: { map: 'mars', bump: 'mars_bump', bs: 0.016 },
+    mercury: { map: 'mercury', bump: 'mercury_bump', bs: 0.012, disp: 0.0037 },
+    venus: { map: 'venus', bump: 'venus_bump', bs: 0.01, disp: 0.0023 },
+    earth: { map: 'earth', bump: 'earth_bump', bs: 0.014, disp: 0.0031, spec: 'earth_spec', night: 'earth_night', clouds: 'earth_clouds' },
+    moon: { map: 'moon', bump: 'moon_bump', bs: 0.018, disp: 0.0104 },
+    mars: { map: 'mars', bump: 'mars_bump', bs: 0.016, disp: 0.0088 },
     jupiter: { map: 'jupiter' },
     saturn: { map: 'saturn', ring: 'rings_saturn', ri: 1.13, ro: 2.32 },
     uranus: { map: 'uranus', ring: 'rings_uranus', ri: 1.62, ro: 2.02 },
