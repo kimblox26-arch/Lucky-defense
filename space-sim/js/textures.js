@@ -316,6 +316,7 @@
     }
     const tex = new THREE.CanvasTexture(c);
     tex.anisotropy = 4;
+    if (THREE.sRGBEncoding !== undefined) tex.encoding = THREE.sRGBEncoding;
     cache[key] = tex;
     return tex;
   }
@@ -362,6 +363,29 @@
     }
     ctx.putImageData(img, 0, 0);
     const t = new THREE.CanvasTexture(c); cache[key] = t; return t;
+  }
+
+  /* 강착 원반 (반경 방향 그라데이션: 내부 청백색 → 외부 주황) */
+  function diskTex() {
+    if (cache.disk) return cache.disk;
+    const w = 512, c = makeCanvas(w, 8), ctx = c.getContext('2d');
+    const img = ctx.createImageData(w, 8), d = img.data;
+    for (let x = 0; x < w; x++) {
+      const t = x / w;
+      const col = ramp([[0, [255, 255, 255]], [.12, [200, 230, 255]], [.3, [255, 220, 150]],
+      [.55, [255, 150, 50]], [.8, [200, 70, 20]], [1, [60, 16, 6]]], t);
+      // 안쪽이 뜨겁고 밝다 + 난류 줄무늬
+      let a = Math.pow(1 - t, 1.5) * (0.55 + 0.45 * Math.sin(t * 47) * Math.sin(t * 13.7));
+      a *= cl(t * 6, 0, 1);
+      for (let y = 0; y < 8; y++) {
+        const i = (y * w + x) * 4;
+        d[i] = col[0]; d[i + 1] = col[1]; d[i + 2] = col[2]; d[i + 3] = cl(a, 0, 1) * 255;
+      }
+    }
+    ctx.putImageData(img, 0, 0);
+    const t = new THREE.CanvasTexture(c);
+    if (THREE.sRGBEncoding !== undefined) t.encoding = THREE.sRGBEncoding;
+    cache.disk = t; return t;
   }
 
   /* 은하수 배경 (equirect) */
@@ -424,6 +448,7 @@
     }
     ctx.globalAlpha = 1;
     const t = new THREE.CanvasTexture(c);
+    if (THREE.sRGBEncoding !== undefined) t.encoding = THREE.sRGBEncoding;
     t.mapping = THREE.EquirectangularReflectionMapping;
     cache[key] = t; return t;
   }
@@ -442,5 +467,5 @@
     const t = new THREE.CanvasTexture(c); cache[key] = t; return t;
   }
 
-  root.TEX = { surface, clouds, ringTex, galaxy, glowTex, fbm, vnoise, clearCache: () => { for (const k in cache) delete cache[k]; } };
+  root.TEX = { surface, clouds, ringTex, diskTex, galaxy, glowTex, fbm, vnoise, clearCache: () => { for (const k in cache) delete cache[k]; } };
 })(window);

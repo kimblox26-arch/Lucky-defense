@@ -106,6 +106,18 @@
     G.sim.paused = false;
     G.sim.collisions = false; G.sim.timeScale = 900; G.ren.showTrails = false;
     I18N.refresh();
+    // 실사 텍스처 선행 로딩
+    if (window.REALTEX) {
+      const bar = $('#lfill'), num = $('#lnum');
+      REALTEX.setProgress((a, b) => {
+        if (bar) bar.style.width = (a / Math.max(1, b) * 100).toFixed(0) + '%';
+        if (num) num.textContent = 'TEXTURES ' + a + ' / ' + b;
+      });
+      REALTEX.preload(() => {
+        const l = $('#loading'); if (l) l.classList.add('done');
+        rebuildAll();
+      });
+    }
     addEventListener('resize', () => { G.ren.resize(); resizeDrag(); });
     resizeDrag();
     G.lastT = performance.now();
@@ -300,9 +312,10 @@
     $('#spawn').classList.add('hide');
     $('#insp_name').textContent = bodyName(b);
     const el = $('#insp_body');
-    const TEXES = ['earth', 'ocean', 'desert', 'ice', 'lava', 'mars', 'venus', 'crater', 'rock', 'iron', 'ceres',
-      'comet', 'carbon', 'io', 'europa', 'ganymede', 'titan', 'triton', 'iapetus', 'pluto',
-      'gas_j', 'gas_s', 'gas_u', 'gas_n', 'bd', 'sun', 'star_red', 'star_blue', 'wd', 'ns', 'marble'];
+    // 표면 = 실제 천체 사진 목록 (+ 구슬)
+    const TEXES = window.REALTEX
+      ? Object.keys(REALTEX.BYTEX).filter((v, i, a) => a.indexOf(v) === i).concat(['marble'])
+      : ['earth', 'mars', 'venus', 'crater', 'rock', 'ice', 'lava', 'gas_j', 'gas_s', 'gas_u', 'gas_n', 'sun', 'marble'];
     el.innerHTML =
       '<div id="i_live"></div>' +
       '<div class="sec">' + I18N.t('edit') + '</div>' +
@@ -341,7 +354,7 @@
     g('i_rho').oninput = e => { b.setDensity(Math.pow(10, +e.target.value)); };
     g('i_temp').oninput = e => { b.T = Math.pow(10, +e.target.value); };
     g('i_spin').oninput = e => { b.spin = +e.target.value * 1e-4; };
-    g('i_tex').onchange = e => { b.tex = e.target.value; G.ren.dispose(b.uid); };
+    g('i_tex').onchange = e => { b.tex = e.target.value; b.x.texOverride = 1; G.ren.dispose(b.uid); };
     g('i_col').oninput = e => { b.col = parseInt(e.target.value.slice(1), 16); G.ren.dispose(b.uid); };
     const flag = (id, key, val) => g(id).onclick = () => {
       b.x[key] = b.x[key] ? 0 : (val || 1);

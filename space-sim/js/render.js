@@ -22,6 +22,9 @@
     r.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
     r.setSize(innerWidth, innerHeight);
     r.setClearColor(0x02030a, 1);
+    if (THREE.sRGBEncoding !== undefined) r.outputEncoding = THREE.sRGBEncoding;
+    r.toneMapping = THREE.ACESFilmicToneMapping;
+    r.toneMappingExposure = 0.95;
     this.gl = r;
     this.scene = new THREE.Scene();
     this.cam = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 0.01, 1e12);
@@ -32,17 +35,26 @@
     this.theta = 0.6; this.phi = 1.05;
     this.follow = null;
 
-    this.scene.add(new THREE.AmbientLight(0x33405e, 1.05));
+    this.scene.add(new THREE.AmbientLight(0x223046, 0.14));
     this.sunLights = [];
     for (let i = 0; i < 4; i++) {
       const l = new THREE.PointLight(0xffffff, 0, 0, 0);
       l.visible = false; this.scene.add(l); this.sunLights.push(l);
     }
-    this.fill = new THREE.DirectionalLight(0x8aa8ff, 0.22);
+    this.fill = new THREE.DirectionalLight(0x8aa8ff, 0.08);
     this.fill.position.set(1, 1, 1); this.scene.add(this.fill);
 
-    // 은하수 스카이박스
-    const gtex = TEX.galaxy(this.quality);
+    // 은하수 스카이박스 (실제 전천 파노라마)
+    let gtex;
+    if (root.REALTEX) {
+      gtex = REALTEX.tex('milkyway');
+      gtex.mapping = THREE.EquirectangularReflectionMapping;
+      const self = this;
+      gtex.image && gtex.image.addEventListener && gtex.image.addEventListener('error', function () {
+        const f = TEX.galaxy(self.quality);
+        self.envTex = f; self.sky.material.map = f; self.sky.material.needsUpdate = true;
+      });
+    } else gtex = TEX.galaxy(this.quality);
     this.envTex = gtex;
     const sky = new THREE.Mesh(
       new THREE.SphereGeometry(1, 48, 32),
@@ -83,7 +95,10 @@
 
     // 파편 인스턴스
     const dg = new THREE.SphereGeometry(1, 8, 6);
-    const dm = new THREE.MeshPhongMaterial({ color: 0xb9b0a4, shininess: 60, specular: 0x555555 });
+    const dm = new THREE.MeshPhongMaterial({
+      color: 0xd8d0c4, shininess: 26, specular: 0x333333,
+      map: root.REALTEX ? REALTEX.tex('eros') : null
+    });
     this.debInst = new THREE.InstancedMesh(dg, dm, 1200);
     this.debInst.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     this.debInst.count = 0;
@@ -108,8 +123,10 @@
   Renderer.prototype.setQuality = function (q) {
     this.quality = q;
     this.gl.setPixelRatio(Math.min(devicePixelRatio || 1, q >= 2 ? 2 : q === 1 ? 1.5 : 1));
-    const gtex = TEX.galaxy(q);
-    this.envTex = gtex; this.sky.material.map = gtex; this.sky.material.needsUpdate = true;
+    if (!root.REALTEX) {
+      const gtex = TEX.galaxy(q);
+      this.envTex = gtex; this.sky.material.map = gtex; this.sky.material.needsUpdate = true;
+    }
   };
 
   // ---------- 메시 생성 ----------
@@ -126,26 +143,51 @@
       const core = new THREE.Mesh(new THREE.SphereGeometry(1, S[0], S[1]), new THREE.MeshBasicMaterial({ color: 0x000000 }));
       root3.add(core); rec.surf = core;
       // 강착 원반
-      const dg = new THREE.RingGeometry(2.2, 7.5, 96, 1);
-      const dt = TEX.ringTex(3);
-      const dm = new THREE.MeshBasicMaterial({ map: dt, side: THREE.DoubleSide, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, color: 0xffb066 });
-      const disk = new THREE.Mesh(dg, dm); disk.rotation.x = Math.PI / 2 - 0.35;
+      const dInner = 2.3, dOuter = 9.5;
+      const dg = new THREE.RingGeometry(dInner, dOuter, 128, 1);
+      {   // UV 를 반경 방향으로
+        const pp = dg.attributes.position, uv = dg.attributes.uv, v = new V3();
+        for (let i = 0; i < pp.count; i++) {
+          v.fromBufferAttribute(pp, i);
+          uv.setXY(i, (v.length() - dInner) / (dOuter - dInner), 0.5);
+        }
+      }
+      const dm = new THREE.MeshBasicMaterial({
+        map: TEX.diskTex(), side: THREE.DoubleSide, transparent: true,
+        blending: THREE.AdditiveBlending, depthWrite: false, color: 0xffffff
+      });
+      const disk = new THREE.Mesh(dg, dm); disk.rotation.x = Math.PI / 2 - 0.28;
       root3.add(disk); rec.disk = disk;
       // 광자 고리
       const ph = new THREE.Mesh(new THREE.RingGeometry(1.45, 1.62, 96), new THREE.MeshBasicMaterial({ color: 0xffd9a0, side: THREE.DoubleSide, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false }));
       ph.rotation.x = Math.PI / 2 - 0.35; root3.add(ph); rec.photon = ph;
     } else {
-      const tex = TEX.surface(b.tex, b.seed, this.quality);
+      const RT = (root.REALTEX && b.tex !== 'marble' && !b.x.marble) ? REALTEX.forBody(b) : null;
+      const tex = RT ? REALTEX.tex(RT.map) : TEX.surface(b.tex, b.seed, this.quality);
+      rec.real = RT;
       const mat = new THREE.MeshPhongMaterial({
         map: tex,
-        shininess: this.marbleMode ? 46 : 12,
-        specular: new THREE.Color(this.marbleMode ? 0x33404d : 0x0e0e0e),
+        shininess: this.marbleMode ? 22 : 8,
+        specular: new THREE.Color(this.marbleMode ? 0x151d28 : 0x080808),
         emissive: new THREE.Color(isStar ? b.col : 0x000000),
         emissiveIntensity: isStar ? 1 : 0,
         emissiveMap: isStar ? tex : null
       });
-      if (this.marbleMode && !isStar) { mat.envMap = this.envTex; mat.reflectivity = 0.28; mat.combine = THREE.MixOperation; }
-      if (b.x.marble || b.tex === 'marble') { mat.color.setHex(b.col); mat.shininess = 90; mat.specular.setHex(0x8899aa); }
+      if (RT) {
+        if (RT.bump) { mat.bumpMap = REALTEX.tex(RT.bump); mat.bumpScale = RT.bs || 0.02; }
+        if (RT.spec) { mat.specularMap = REALTEX.tex(RT.spec); mat.specular.setHex(0x1b242e); mat.shininess = 84; }
+        if (RT.tint) {                                   // 항성: 흑체 복사 색
+          mat.color.setRGB(RT.tint[0], RT.tint[1], RT.tint[2]);
+          if (isStar) mat.emissive.setRGB(RT.tint[0], RT.tint[1], RT.tint[2]);
+        } else if (RT.tintCol != null) {                 // 대체 사진 사용 시 카탈로그 색으로 보정
+          mat.color.setHex(RT.tintCol).lerp(new THREE.Color(0xffffff), 0.55);
+        }
+      }
+      if (this.marbleMode && !isStar) { mat.envMap = this.envTex; mat.reflectivity = 0.22; mat.combine = THREE.MixOperation; }
+      if (b.x.marble || b.tex === 'marble') {
+        mat.color.setHex(b.col); mat.shininess = 90; mat.specular.setHex(0x8899aa);
+        mat.emissive.setHex(b.col).multiplyScalar(0.22); mat.emissiveIntensity = 1;
+      }
       let geo = new THREE.SphereGeometry(1, S[0], S[1]);
       if (b.x.irr) {                        // 불규칙 천체 (소행성/혜성/파편)
         const p = geo.attributes.position, sd = b.seed * 0.37;
@@ -156,13 +198,48 @@
         }
         geo.computeVertexNormals();
       }
-      const m = new THREE.Mesh(geo, mat);
-      root3.add(m); rec.surf = m;
+      let useMat = mat;
+      if (isStar) {
+        // 항성: 실제 광구 이미지 + 주연감광(limb darkening) + 흑체 복사 색
+        const tc = RT && RT.tint ? new THREE.Color(RT.tint[0], RT.tint[1], RT.tint[2]) : new THREE.Color(b.col);
+        useMat = new THREE.ShaderMaterial({
+          uniforms: { tMap: { value: tex }, tint: { value: tc }, k: { value: 1.05 } },
+          vertexShader: 'varying vec2 vUv; varying vec3 vN; varying vec3 vP;' +
+            'void main(){ vUv=uv; vN=normalize(normalMatrix*normal); vec4 mv=modelViewMatrix*vec4(position,1.0); vP=mv.xyz;' +
+            ' gl_Position=projectionMatrix*mv; }',
+          fragmentShader: 'uniform sampler2D tMap; uniform vec3 tint; uniform float k;' +
+            'varying vec2 vUv; varying vec3 vN; varying vec3 vP;' +
+            'void main(){ float mu=clamp(dot(normalize(vN), normalize(-vP)),0.0,1.0);' +
+            ' float limb=0.30+0.70*pow(mu,0.55);' +
+            ' vec3 c=texture2D(tMap,vUv).rgb*tint*limb*k;' +
+            ' gl_FragColor=vec4(c,1.0); }'
+        });
+      }
+      const m = new THREE.Mesh(geo, useMat);
+      root3.add(m); rec.surf = m; rec.starMat = isStar ? useMat : null;
 
-      if (b.x.clouds) {
-        const cm = new THREE.Mesh(new THREE.SphereGeometry(1.015, S[0], S[1]),
-          new THREE.MeshPhongMaterial({ map: TEX.clouds(b.seed, this.quality), transparent: true, depthWrite: false, opacity: 0.85 }));
+      if (b.x.clouds || (RT && RT.clouds)) {
+        const cmat = (RT && RT.clouds)
+          ? new THREE.MeshPhongMaterial({
+            color: 0xffffff, alphaMap: REALTEX.tex(RT.clouds), transparent: true,
+            depthWrite: false, opacity: 0.62, shininess: 2
+          })
+          : new THREE.MeshPhongMaterial({ map: TEX.clouds(b.seed, this.quality), transparent: true, depthWrite: false, opacity: 0.85 });
+        const cm = new THREE.Mesh(new THREE.SphereGeometry(1.015, S[0], S[1]), cmat);
         root3.add(cm); rec.clouds = cm;
+      }
+      // 밤면 도시 불빛 (실제 NASA City Lights)
+      if (RT && RT.night) {
+        const nmat = new THREE.ShaderMaterial({
+          uniforms: { tMap: { value: REALTEX.tex(RT.night) }, sunDir: { value: new THREE.Vector3(1, 0, 0) }, k: { value: 3.0 } },
+          vertexShader: 'varying vec2 vUv; varying vec3 vNW; void main(){ vUv=uv; vNW=normalize(mat3(modelMatrix)*normal); gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }',
+          fragmentShader: 'uniform sampler2D tMap; uniform vec3 sunDir; uniform float k; varying vec2 vUv; varying vec3 vNW;' +
+            'void main(){ float d=dot(normalize(vNW), normalize(sunDir)); float night=smoothstep(0.10,-0.22,d);' +
+            ' vec3 c=texture2D(tMap,vUv).rgb; gl_FragColor=vec4(c*night*k,1.0); }',
+          blending: THREE.AdditiveBlending, transparent: true, depthWrite: false
+        });
+        const nmesh = new THREE.Mesh(new THREE.SphereGeometry(1.002, S[0], S[1]), nmat);
+        root3.add(nmesh); rec.night = nmesh;
       }
       if (b.x.atmo) {
         const am = new THREE.Mesh(new THREE.SphereGeometry(1.06, 32, 24),
@@ -170,7 +247,8 @@
         root3.add(am); rec.atmo = am;
       }
       if (b.x.rings) {
-        const inner = 1.28, outer = 1.28 + 1.35 * b.x.rings;
+        const inner = (RT && RT.ring) ? RT.ri : 1.28;
+        const outer = (RT && RT.ring) ? RT.ro : 1.28 + 1.35 * b.x.rings;
         const rg = new THREE.RingGeometry(inner, outer, 128, 1);
         // UV 를 반경 방향으로
         const p = rg.attributes.position, uv = rg.attributes.uv, v = new V3();
@@ -178,15 +256,18 @@
           v.fromBufferAttribute(p, i);
           uv.setXY(i, (v.length() - inner) / (outer - inner), 0.5);
         }
-        const rm = new THREE.MeshBasicMaterial({ map: TEX.ringTex(b.seed), side: THREE.DoubleSide, transparent: true, depthWrite: false, opacity: 0.95 });
+        const rm = new THREE.MeshBasicMaterial({
+          map: (RT && RT.ring) ? REALTEX.tex(RT.ring) : TEX.ringTex(b.seed),
+          side: THREE.DoubleSide, transparent: true, depthWrite: false, opacity: 0.95
+        });
         const ring = new THREE.Mesh(rg, rm); ring.rotation.x = Math.PI / 2;
         root3.add(ring); rec.ring = ring;
       }
       // 구슬 유리 셸
       if (this.marbleMode) {
         const gm = new THREE.Mesh(new THREE.SphereGeometry(1.035, S[0], S[1]), new THREE.MeshPhongMaterial({
-          color: 0xffffff, transparent: true, opacity: 0.085, shininess: 120, specular: 0x9fb4c8,
-          envMap: this.envTex, reflectivity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending
+          color: 0xffffff, transparent: true, opacity: 0.055, shininess: 150, specular: 0x8fa6bc,
+          envMap: this.envTex, reflectivity: 0.22, depthWrite: false, blending: THREE.AdditiveBlending
         }));
         root3.add(gm); rec.marble = gm;
       }
@@ -287,10 +368,10 @@
       l.position.set(s.px - O.x, s.py - O.y, s.pz - O.z);
       l.color.setHex(s.col || 0xffffff);
       const d = Math.hypot(s.px - this.target.x, s.py - this.target.y, s.pz - this.target.z);
-      l.intensity = Math.min(2.6, 1.3 + Math.log10(Math.max(1e-4, s.lum() + 0.01)) * 0.28);
+      l.intensity = Math.min(2.0, 1.32 + Math.log10(Math.max(1e-4, s.lum() + 0.01)) * 0.2);
       l.distance = 0;
     });
-    if (!stars.length) this.fill.intensity = 1.0; else this.fill.intensity = 0.18;
+    if (!stars.length) this.fill.intensity = 0.8; else this.fill.intensity = 0.07;
 
     const seen = new Set();
     const bodies = sim.bodies;
@@ -303,6 +384,11 @@
       rec.root.scale.setScalar(R);
       if (rec.surf && !rec.isBH) rec.surf.rotation.y += b.spin * (dtReal || 0.016) * 60;
       if (rec.clouds) rec.clouds.rotation.y += b.spin * 1.35 * (dtReal || 0.016) * 60;
+      if (rec.night) {
+        rec.night.rotation.y = rec.surf ? rec.surf.rotation.y : 0;
+        const st0 = stars[0];
+        if (st0) rec.night.material.uniforms.sunDir.value.set(st0.px - b.px, st0.py - b.py, st0.pz - b.pz).normalize();
+      }
       if (rec.disk) { rec.disk.rotation.z += 0.4 * (dtReal || 0.016); rec.disk.scale.setScalar(1); }
       if (rec.glow) {
         const k = rec.glowK * (b.cat === 'bh' ? 6 : 2.6);
@@ -325,7 +411,7 @@
         }
       }
       // 표면 온도 → 자체 발광 (용암/항성)
-      if (rec.surf && rec.surf.material.emissive && !b.isStar() && b.cat !== 'bh') {
+      if (rec.surf && rec.surf.material.emissive && !rec.starMat && !b.isStar() && b.cat !== 'bh') {
         const hot = Math.max(0, Math.min(1, (b.T - 700) / 2200 + b.tidal * 0.5));
         rec.surf.material.emissive.setRGB(hot * 1.0, hot * 0.32, hot * 0.08);
         rec.surf.material.emissiveIntensity = hot;

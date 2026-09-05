@@ -172,3 +172,11 @@ input:focus,select:focus{border-color:var(--c1)}
   .b{padding:7px 9px;font-size:12px}
   #spawn,#insp{width:calc(100vw - 16px)}
 }
+
+/* ---------- 텍스처 로딩 ---------- */
+#loading{position:absolute;bottom:52px;display:flex;flex-direction:column;align-items:center;gap:6px;
+  font-size:10px;letter-spacing:.22em;color:var(--dim);transition:opacity .5s}
+#loading.done{opacity:0;pointer-events:none}
+.lbar{width:min(70vw,260px);height:3px;border-radius:3px;background:rgba(95,240,255,.14);overflow:hidden}
+.lbar i{display:block;height:100%;width:0;border-radius:3px;
+  background:linear-gradient(90deg,var(--c2),var(--c1));box-shadow:0 0 10px rgba(95,240,255,.7);transition:width .2s}

@@ -185,7 +185,7 @@
     marble(sim) {
       sim.clear();
       // 중앙의 빛나는 구슬 항성
-      const core = make('c_star', { m: 5200, r: 34, T: 5600, col: 0xffe0a0, x: { lum: 0.02, glow: 2.2 } });
+      const core = make('c_star', { m: 5200, r: 30, T: 5600, col: 0xffe6b4, x: { lum: 1.2, glow: 1.3 } });
       core.label = '';
       sim.add(core);
       const N = 62, list = [];
