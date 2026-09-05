@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#03050c">
+<meta name="description" content="Marble Cosmos — 구슬로 이루어진 천체들의 3D 우주 시뮬레이터">
+<title>Marble Cosmos — 구슬 우주 시뮬레이터</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3CradialGradient id='g' cx='35%25' cy='30%25'%3E%3Cstop offset='0' stop-color='%23ffffff'/%3E%3Cstop offset='.45' stop-color='%235ff0ff'/%3E%3Cstop offset='1' stop-color='%235b2a9d'/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='14' fill='url(%23g)'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<canvas id="gl"></canvas>
+<div id="labels"></div>
+<canvas id="dragline"></canvas>
+
+<!-- ============ HUD ============ -->
+<div id="hud" class="hide">
+  <div id="stats" class="panel" style="padding:7px 10px">
+    <div><b id="s_fps">60</b> FPS</div>
+    <div><span data-t="bodies">천체</span> <b id="s_bodies">0</b></div>
+    <div><span data-t="debrisN">파편</span> <b id="s_deb">0</b></div>
+    <div><span data-t="scale">배율</span> <b id="s_scale">1</b></div>
+  </div>
+
+  <div id="top" class="panel">
+    <button class="b ic" id="t_rev" title="Reverse">⏪</button>
+    <button class="b ic" id="t_slow">◀</button>
+    <button class="b ic" id="t_pause">⏸</button>
+    <button class="b ic" id="t_fast">▶</button>
+    <div class="clock"><span id="t_speed">1 일/초</span><small id="t_elapsed">T+0</small></div>
+    <button class="b ic" id="t_menu">☰</button>
+  </div>
+
+  <div id="left">
+    <button class="b ic on" id="tool_select" title="선택">🖐</button>
+    <button class="b ic" id="tool_place" title="배치">✚</button>
+    <button class="b ic" id="tool_launch" title="발사">🚀</button>
+    <button class="b ic" id="tool_spray" title="구슬 뿌리기">✨</button>
+    <button class="b ic" id="tool_measure" title="측정">📐</button>
+    <button class="b ic" id="btn_spawn" title="소환">🪐</button>
+    <button class="b ic" id="btn_presets" title="시나리오">🌌</button>
+    <button class="b ic" id="btn_settings" title="설정">⚙</button>
+  </div>
+
+  <div id="bottom" class="panel">
+    <button class="b sm on" id="g_trails" data-t="trails">궤적</button>
+    <button class="b sm on" id="g_roche" data-t="roche">로슈 한계</button>
+    <button class="b sm on" id="g_labels" data-t="labels">이름표</button>
+    <button class="b sm" id="g_grid" data-t="grid">중력장</button>
+    <button class="b sm" id="g_hz" data-t="hz">거주가능</button>
+    <button class="b sm" id="g_vec" data-t="vectors">속도 벡터</button>
+    <button class="b sm on" id="g_marble" data-t="marble">구슬 모드</button>
+    <button class="b sm on" id="g_col" data-t="collide">충돌</button>
+    <button class="b sm warn" id="g_clear" data-t="clearAll">전체 삭제</button>
+  </div>
+
+  <div id="help" data-t="hint_cam"></div>
+
+  <!-- 소환 브라우저 -->
+  <div id="spawn" class="panel hide">
+    <div class="ttl"><span class="dot"></span><span data-t="spawn">천체 소환</span>
+      <button class="b sm" id="spawn_close" style="margin-left:auto">✕</button></div>
+    <div class="bd">
+      <input type="text" id="spawn_search" data-tp="searchPH" style="max-width:none;width:100%">
+      <div class="cats" id="spawn_cats"></div>
+      <div class="list scroll" id="spawn_list"></div>
+      <div style="font-size:10.5px;color:var(--dim);line-height:1.4" id="spawn_hint"></div>
+    </div>
+  </div>
+
+  <!-- 천체 정보 -->
+  <div id="insp" class="panel hide">
+    <div class="ttl"><span class="dot"></span><span id="insp_name">—</span>
+      <button class="b sm" id="insp_close" style="margin-left:auto">✕</button></div>
+    <div class="bd scroll" id="insp_body"></div>
+  </div>
+</div>
+
+<!-- ============ 메인 메뉴 ============ -->
+<div id="menu">
+  <div class="logo">
+    <h1 data-t="title">MARBLE COSMOS</h1>
+    <h2 data-t="subtitle">구슬 우주 시뮬레이터</h2>
+  </div>
+  <div class="mbtns">
+    <button class="mb" id="m_play" data-t="play">플레이</button>
+    <button class="mb" id="m_settings" data-t="settings">설정</button>
+    <button class="mb" id="m_lang" data-t="language">언어</button>
+    <button class="mb q" id="m_quit" data-t="quit">나가기</button>
+  </div>
+  <div class="ver">v1.0 · three.js</div>
+</div>
+
+<div id="modals"></div>
+<div id="toast"></div>
+
+<script src="js/lib/three.min.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/catalog.js"></script>
+<script src="js/textures.js"></script>
+<script src="js/physics.js"></script>
+<script src="js/scenarios.js"></script>
+<script src="js/render.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>
