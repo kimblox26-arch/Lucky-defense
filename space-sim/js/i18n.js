@@ -3,7 +3,7 @@
   const L = {
     ko: {
       _name: '한국어',
-      title: 'MARBLE COSMOS', subtitle: '구슬 우주 시뮬레이터',
+      title: 'SpaceSim', subtitle: '천체물리학 시뮬레이션 플랫폼',
       terrain: '지형 높낮이 과장', planetSet: '행성 설정', pressure: '대기압', greenhouse: '온실 효과', albedo: '반사율', waterL: '표면 물', iceL: '얼음', rotper: '자전 주기', axtilt: '자전축 기울기', magfield: '자기장', compos: '구성 성분', rock: '암석', iron: '철', iceC: '얼음', gasC: '가스', addWater: '물 추가', addAtmo: '대기 추가', heat: '가열', cool: '냉각', terraform: '지구화', atmoLost: '대기가 우주로 빠져나감',
 
       viewOpts: '표시 옵션', rocheShow: '로슈 한계 표시',
@@ -62,7 +62,7 @@
     },
     en: {
       _name: 'English',
-      title: 'MARBLE COSMOS', subtitle: 'Marble Universe Simulator',
+      title: 'SpaceSim', subtitle: 'Astrophysical Simulation Platform',
       terrain: 'Terrain Relief', planetSet: 'Planet Settings', pressure: 'Pressure', greenhouse: 'Greenhouse', albedo: 'Albedo', waterL: 'Surface Water', iceL: 'Ice', rotper: 'Rotation Period', axtilt: 'Axial Tilt', magfield: 'Magnetic Field', compos: 'Composition', rock: 'Rock', iron: 'Iron', iceC: 'Ice', gasC: 'Gas', addWater: 'Add Water', addAtmo: 'Add Atmosphere', heat: 'Heat', cool: 'Cool', terraform: 'Terraform', atmoLost: 'Atmosphere escaping to space',
 
       viewOpts: 'View Options', rocheShow: 'Roche Limit Overlay',

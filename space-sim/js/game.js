@@ -1,4 +1,4 @@
-/* ===== Marble Cosmos — 메인 게임 로직 ===== */
+/* ===== SpaceSim — 천체물리학 시뮬레이션 엔진 ===== */
 (function () {
   const $ = s => document.querySelector(s);
   const $$ = s => Array.from(document.querySelectorAll(s));
