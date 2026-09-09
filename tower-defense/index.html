@@ -41,6 +41,9 @@
   <button class="bbtn primary" id="btnSummon">
     <span class="bico">✨</span><span class="blab">소환</span><span class="bsub" id="summonCost">30G</span>
   </button>
+  <button class="bbtn primary ten" id="btnSummon10">
+    <span class="bico">🎰</span><span class="blab">10연소환</span><span class="bsub" id="summon10Cost">300G</span>
+  </button>
   <button class="bbtn" id="btnMerge">
     <span class="bico">⇪</span><span class="blab">자동합성</span><span class="bsub" id="mergeCount">0쌍</span>
   </button>
@@ -90,8 +93,19 @@
 <div id="toasts" class="toasts"></div>
 <div id="banner" class="banner hidden"></div>
 <div id="rarityBanner" class="rarity-banner hidden">
+  <div class="rb-confetti" id="rbConfetti"></div>
+  <div class="rb-tag" id="rbTag"></div>
   <canvas id="rbCanvas" width="220" height="220"></canvas>
   <div class="rb-text"><div class="rb-rare" id="rbRare"></div><div class="rb-name" id="rbName"></div></div>
+</div>
+
+<!-- ======================================================= 10연소환 결과 -->
+<div id="multiPull" class="multi-pull hidden">
+  <div class="mp-box">
+    <div class="mp-head"><h2 id="mpTitle">10연 소환 결과</h2><button class="close" id="mpClose">✕</button></div>
+    <div class="mp-grid" id="mpGrid"></div>
+    <button class="bigbtn" id="mpOk">확인</button>
+  </div>
 </div>
 <div id="achPop" class="ach-pop hidden">
   <div class="ap-ico" id="apIco">🏆</div>

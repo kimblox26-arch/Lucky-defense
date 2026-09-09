@@ -412,6 +412,17 @@ const Game = {
     const base = 30 + this.summonCount * 6;
     return Math.max(12, Math.floor(base * (1 - this.research.summoncost * .02)));
   },
+  /** N연차 소환의 예상 총 비용 (무료 소환권은 앞에서부터 소모됨을 감안) */
+  summonCostN(n) {
+    let total = 0, free = this.freeSummons || 0, count = this.summonCount;
+    for (let i = 0; i < n; i++) {
+      if (free > 0) { free--; continue; }
+      const base = 30 + count * 6;
+      total += Math.max(12, Math.floor(base * (1 - this.research.summoncost * .02)));
+      count++;
+    }
+    return total;
+  },
 
   rollRarity() {
     const luck = this.research.luck * .05 + (this.perks.luck || 0) * .08 + (this.luckBoost || 0);
@@ -419,9 +430,12 @@ const Game = {
     return U.weighted(list).r;
   },
 
-  summon(bulk) {
+  summon(opts) {
+    opts = opts || {};
+    const silent = !!opts.silent;
     if (this.units.length >= this.slotMax()) {
-      SFX.play('error'); if (window.UI) UI.toast('배치 공간이 없다! (진지 확장 연구)', '#ff6b6b'); return null;
+      if (!silent) { SFX.play('error'); if (window.UI) UI.toast('배치 공간이 없다! (진지 확장 연구)', '#ff6b6b'); }
+      return null;
     }
     let cost = this.summonCost();
     if (this.freeSummons > 0) { this.freeSummons--; cost = 0; }
@@ -432,28 +446,59 @@ const Game = {
     const pool = UNITS_BY_RARITY[rar.key];
     const def = U.pick(pool);
     const free = this.freeTiles();
-    if (!free.length) { this.gold += cost; if (window.UI) UI.toast('빈 칸이 없다!', '#ff6b6b'); return null; }
+    if (!free.length) { this.gold += cost; if (!silent && window.UI) UI.toast('빈 칸이 없다!', '#ff6b6b'); return null; }
     const [gx, gy] = U.pick(free);
     const u = new Unit(this, def.key, 1, gx, gy);
     this.units.push(u);
     this.refreshAll();
 
     const ri = RARITY_IDX[rar.key];
-    this.collect(def.key);
+    const isNew = this.collect(def.key);
     this.stats.bestRarity = Math.max(this.stats.bestRarity, ri);
     this.stats.maxUnits = Math.max(this.stats.maxUnits, this.units.length);
 
-    /* 연출 */
+    /* 연출 — 운빨겜 스타일 : 등급이 높을수록 화면 전체가 반응한다 */
     const col = rar.color;
     VFX.summon(u.px, u.py, ri, col, this);
+    if (!silent) {
+      this.playSummonFx(u, def, rar, ri);
+    } else {
+      /* 대량소환 중에는 가볍게 : 자리마다 스파크만 튀긴다 */
+      SFX.play(ri >= 4 ? 'legendary' : 'coin');
+      FX.popText(u.px, u.py - this.ts * .8, def.name, col, 13 + ri);
+    }
+    this.checkAchievements();
+    if (window.UI) UI.refresh();
+    return { unit: u, def, rar, ri, isNew };
+  },
+
+  /** 등급별 소환 이펙트 (단독 소환용) */
+  playSummonFx(u, def, rar, ri) {
+    const col = rar.color;
+    FX.popText(u.px, u.py - this.ts * .8, def.name, col, 14 + ri);
     if (ri >= 6) { SFX.play('mythic'); FX.flash(col, .6); FX.shake(14); FX.stop(.14); if (window.UI) UI.rarityBanner(def, rar); }
     else if (ri >= 5) { SFX.play('mythic'); FX.flash(col, .45); FX.shake(10); if (window.UI) UI.rarityBanner(def, rar); }
     else if (ri >= 4) { SFX.play('legendary'); FX.flash(col, .3); FX.shake(6); if (window.UI) UI.rarityBanner(def, rar); }
+    else if (ri >= 3) { SFX.play('upgrade'); FX.flash(col, .18); FX.shake(3); if (window.UI) UI.rarityBanner(def, rar); }
+    else if (ri >= 2) { SFX.play('summon'); if (window.UI) UI.rarityBanner(def, rar); }
     else SFX.play('summon');
-    FX.popText(u.px, u.py - this.ts * .8, def.name, col, 14 + ri);
-    this.checkAchievements();
-    if (window.UI) UI.refresh();
-    return u;
+  },
+
+  /** 운빨존많겜식 N연차 소환 — 결과를 모았다가 한 번에 화려하게 공개한다 */
+  summonMulti(n) {
+    const results = [];
+    for (let i = 0; i < n; i++) {
+      const r = this.summon({ silent: true });
+      if (!r) break;
+      results.push(r);
+    }
+    if (!results.length) {
+      SFX.play('error');
+      if (window.UI) UI.toast(this.freeSummons > 0 ? '배치 공간이 없다!' : '골드가 부족하다!', '#ff6b6b');
+      return results;
+    }
+    if (window.UI) UI.multiPullBanner(results);
+    return results;
   },
 
   slotMax() { return 20 + this.research.slot; },

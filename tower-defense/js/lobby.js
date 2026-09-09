@@ -313,14 +313,23 @@ const Lobby = {
 
   /* --------------------------------------------------- 맵 선택 */
   renderMapPanel(b) {
-    b.innerHTML = `<div class="p-note">이전 맵을 100웨이브까지 클리어하면 다음 전장이 열린다.</div>
-      <div class="maplist" id="mapList"></div>
-      <button class="bigbtn" id="startBattle">전투 시작</button>`;
+    /* 스크롤을 내리지 않아도 항상 보이는 상단 고정 시작 바 (핵심 버그 수정) */
+    b.innerHTML = `
+      <div class="map-sticky-bar" id="mapStickyBar">
+        <div class="msb-info">
+          <span class="msb-label">선택한 전장</span>
+          <b id="msbMapName">${this.esc(this.selectedMap.name)}</b>
+        </div>
+        <button class="bigbtn msb-start" id="startBattle">⚔ 전투 시작</button>
+      </div>
+      <div class="p-note">이전 맵을 100웨이브까지 클리어하면 다음 전장이 열린다. 맵을 탭해서 고른 뒤, 위 버튼이나 카드를 한 번 더 탭하면 바로 시작한다.</div>
+      <div class="maplist" id="mapList"></div>`;
     const list = document.getElementById('mapList');
     MAPS.forEach((m, i) => {
       const unlocked = i === 0 || Game.unlockedMaps[m.key];
+      const isSel = m.key === this.selectedMap.key;
       const d = document.createElement('div');
-      d.className = 'mapcard2' + (m.key === this.selectedMap.key ? ' on' : '') + (unlocked ? '' : ' lock');
+      d.className = 'mapcard2' + (isSel ? ' on' : '') + (unlocked ? '' : ' lock');
       d.innerHTML = `<canvas width="220" height="130"></canvas>
         <div class="mc-body">
           <div class="mc-n">${m.name} ${unlocked ? '' : '🔒'}</div>
@@ -334,6 +343,7 @@ const Lobby = {
         </div>`;
       d.onclick = () => {
         if (!unlocked) { this.toast('아직 잠겨 있다', '#ff6b6b'); SFX.play('error'); return; }
+        if (isSel) { this.startBattle(); return; }  // 이미 선택된 맵을 다시 탭하면 즉시 시작
         this.selectedMap = m; SFX.play('click'); this.renderMapPanel(b);
       };
       list.appendChild(d);

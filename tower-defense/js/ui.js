@@ -31,6 +31,7 @@ const UI = {
 
   bind() {
     $('btnSummon').onclick = () => { SFX.init(); SFX.resume(); Game.summon(); };
+    $('btnSummon10').onclick = () => { SFX.init(); SFX.resume(); Game.summonMulti(10); };
     $('btnMerge').onclick = () => Game.autoMergeAll();
     $('btnWave').onclick = () => {
       if (!Game.waveActive) Game.startWave();
@@ -156,6 +157,11 @@ const UI = {
     $('summonCost').textContent = Game.freeSummons > 0 ? `무료 ×${Game.freeSummons}` : U.fmt(cost) + 'G';
     $('btnSummon').classList.toggle('dis', (Game.gold < cost && !Game.freeSummons) || Game.units.length >= Game.slotMax());
     $('btnSummon').classList.toggle('glow', Game.gold >= cost * 3 || Game.freeSummons > 0);
+
+    const cost10 = Game.summonCostN(10);
+    $('summon10Cost').textContent = cost10 <= 0 ? '무료!' : U.fmt(cost10) + 'G';
+    $('btnSummon10').classList.toggle('dis', Game.gold < cost10 || Game.units.length >= Game.slotMax());
+    $('btnSummon10').classList.toggle('glow', Game.gold >= cost10 * 1.5);
     const counts = {};
     for (const u of Game.units) { const k = u.key + '_' + u.star; counts[k] = (counts[k] || 0) + 1; }
     let pairs = 0;
@@ -423,27 +429,112 @@ const UI = {
     setTimeout(() => b.classList.add('hidden'), 2500);
   },
 
-  rarityBanner(def, rar) {
+  /** 등급별 태그 — 높을수록 화면을 더 세게 흔든다 (운빨겜 스타일) */
+  RARITY_TAGS: { 2: '오오!', 3: 'GREAT!!', 4: 'LEGENDARY!!', 5: 'MYTHIC!!!', 6: 'ULTIMATE!!!!', 7: '대박!!!!!' },
+
+  _rbToken: 0,
+  rarityBanner(def, rar, opt) {
+    opt = opt || {};
+    const ri = RARITY_IDX[rar.key];
     const b = $('rarityBanner');
+    /* 세대 토큰 : 오래된 hide 타이머가 뒤늦게 발동해도(레이스 컨디션) 최신 배너를
+       실수로 숨기지 않도록 막는다. clearTimeout만으로는 타이밍이 어긋나는 경우를
+       완전히 막지 못했던 실사용 버그(전설/신화 등급이 하이라이트 안 뜸)의 근본 수정. */
+    const token = ++this._rbToken;
+    clearTimeout(this._rbT);
     b.classList.remove('hidden');
+    b.className = 'rarity-banner tier-' + ri;
     b.style.color = rar.color;
     $('rbRare').textContent = rar.name.toUpperCase();
     $('rbRare').style.color = rar.color;
-    $('rbName').textContent = def.name;
+    $('rbName').textContent = (opt.prefix || '') + def.name;
+    $('rbTag').textContent = this.RARITY_TAGS[ri] || '';
+    $('rbTag').style.color = rar.color;
     Draw.portraitUnit($('rbCanvas'), def, 0, { scale: .3 });
-    clearTimeout(this._rbT);
-    this._rbT = setTimeout(() => b.classList.add('hidden'), 2200);
+    this.spawnConfetti(ri, rar.color);
+    const dur = 1500 + ri * 260;
+    this._rbT = setTimeout(() => {
+      if (this._rbToken !== token) return;   // 이미 다음 배너로 교체됨 — 이 타이머는 무시
+      b.classList.add('hidden');
+      $('rbConfetti').innerHTML = '';
+    }, dur);
   },
 
+  /** DOM 컨페티 — 등급이 높을수록 화면을 가득 채운다 */
+  spawnConfetti(ri, color) {
+    const host = $('rbConfetti');
+    host.innerHTML = '';
+    if (ri < 3) return;
+    const n = Math.min(60, 10 + ri * 8);
+    const shapes = ['★', '✦', '●', '♦'];
+    for (let i = 0; i < n; i++) {
+      const s = document.createElement('span');
+      s.className = 'confetti-bit';
+      s.textContent = U.pick(shapes);
+      s.style.left = U.rand(0, 100) + 'vw';
+      s.style.color = Math.random() < .5 ? color : '#ffe9a0';
+      s.style.fontSize = U.rand(10, 22) + 'px';
+      s.style.animationDelay = U.rand(0, .5) + 's';
+      s.style.animationDuration = U.rand(1.1, 2.0) + 's';
+      host.appendChild(s);
+    }
+  },
+
+  /** 운빨존많겜식 N연 소환 결과 팝업 */
+  multiPullBanner(results) {
+    const overlay = $('multiPull');
+    overlay.classList.remove('hidden');
+    const sorted = results.slice().sort((a, b) => b.ri - a.ri);
+    const best = sorted[0];
+    $('mpTitle').textContent = `${results.length}연 소환 결과`;
+    const grid = $('mpGrid');
+    grid.innerHTML = results.map((r, i) => {
+      const rar = RARITY[r.ri];
+      const isBest = r === best && r.ri >= 2;
+      return `<div class="mp-card ${isBest ? 'best' : ''}" style="--d:${i * 65}ms; border-color:${rar.color}">
+        <canvas width="100" height="100" data-mp="${i}"></canvas>
+        <div class="mp-n" style="color:${rar.color}">${r.isNew ? '✨' : ''}${r.def.name}</div>
+        <div class="mp-r" style="color:${rar.color}">${rar.name}${r.unit.star > 1 ? ' ' + '★'.repeat(r.unit.star) : ''}</div>
+      </div>`;
+    }).join('');
+    grid.querySelectorAll('[data-mp]').forEach(cv => {
+      const r = results[+cv.dataset.mp];
+      Draw.portraitUnit(cv, r.def, 0);
+    });
+    const closeFn = () => overlay.classList.add('hidden');
+    $('mpClose').onclick = closeFn;
+    $('mpOk').onclick = closeFn;
+
+    const counts = {};
+    for (const r of results) counts[r.ri] = (counts[r.ri] || 0) + 1;
+    const summary = Object.keys(counts).sort((a, b) => b - a)
+      .map(ri => `${RARITY[ri].name} ×${counts[ri]}`).join(' · ');
+    this.toast(summary, RARITY[best.ri].color);
+
+    /* 최고 등급 하이라이트를 잠시 뒤 큰 배너로 한 번 더 터뜨린다 */
+    if (best.ri >= 3) {
+      SFX.play(best.ri >= 5 ? 'mythic' : 'legendary');
+      setTimeout(() => this.rarityBanner(best.def, RARITY[best.ri], { prefix: '★ 최고 등급 ★  ' }), 380);
+      if (best.ri >= 5) { FX.flash(RARITY[best.ri].color, .5); FX.shake(12); }
+    } else {
+      SFX.play('summon');
+    }
+  },
+
+  _apToken: 0,
   achievementPopup(a) {
     const p = $('achPop');
+    const token = ++this._apToken;
+    clearTimeout(this._apT);
     p.classList.remove('hidden');
     $('apIco').textContent = a.icon;
     $('apTitle').textContent = '업적 달성 · ' + a.name;
     $('apDesc').textContent = a.desc;
     $('apGem').textContent = '💎 +' + a.gem;
-    clearTimeout(this._apT);
-    this._apT = setTimeout(() => p.classList.add('hidden'), 3200);
+    this._apT = setTimeout(() => {
+      if (this._apToken !== token) return;
+      p.classList.add('hidden');
+    }, 3200);
   },
 
   /* ------------------------------------------------------ 이벤트 */
