@@ -93,6 +93,7 @@
   .card .cs{ font-size:10px; color:#ffd06a; display:flex; align-items:center; gap:2px; line-height:1; }
   .card .cs .ic{ width:9px; height:9px; }
   .card .su{ position:absolute; top:2px; right:3px; font-size:8.5px; color:#9dd2ff; }
+  .card .aa{ position:absolute; top:2px; left:3px; font-size:8px; color:#ffd06a; letter-spacing:-.5px; }
   .card .cdv{ position:absolute; left:0; right:0; bottom:0; background:rgba(6,10,14,.72);
               pointer-events:none; height:0%; }
   .card.no{ filter:grayscale(.72) brightness(.68); }
@@ -223,11 +224,11 @@ function setIcons(root){ (root||document).querySelectorAll("[data-ico]").forEach
 /* rng:사거리 hold:정지거리 sup:인구 cd:재생산 대기 */
 const UNITS=[
  {id:"rifle", nm:"보병",   cost:70,  sup:1, hp:150,  dmg:10, rate:1.7, rng:78,  spd:36, cd:0.9,  proj:"bullet", aa:true,  tier:1},
- {id:"sniper",nm:"저격수", cost:150, sup:2, hp:105,  dmg:46, rate:.55, rng:205, spd:30, cd:3.2,  proj:"bullet", aa:true,  tier:1},
- {id:"apc",   nm:"장갑차", cost:250, sup:3, hp:620,  dmg:15, rate:2.0, rng:95,  spd:44, cd:5.5,  proj:"bullet", aa:true,  tier:2},
- {id:"mortar",nm:"박격포", cost:340, sup:3, hp:180,  dmg:62, rate:.45, rng:300, spd:26, cd:8,    proj:"arc",    aa:false, splash:46, min:120, tier:2},
- {id:"tank",  nm:"전차",   cost:470, sup:4, hp:1300, dmg:78, rate:.62, rng:130, spd:26, cd:9.5,  proj:"shell",  aa:false, splash:26, tier:3},
- {id:"heli",  nm:"공격헬기",cost:600, sup:4, hp:470, dmg:30, rate:1.35,rng:160, spd:56, cd:13,   proj:"rocket", aa:true,  air:true, tier:3}
+ {id:"sniper",nm:"저격수", cost:150, sup:2, hp:105,  dmg:46, rate:.55, rng:205, spd:30, cd:2.4,  proj:"bullet", aa:true,  tier:1},
+ {id:"apc",   nm:"장갑차", cost:250, sup:3, hp:620,  dmg:15, rate:2.0, rng:95,  spd:44, cd:4.2,  proj:"bullet", aa:true,  tier:2},
+ {id:"mortar",nm:"박격포", cost:340, sup:3, hp:180,  dmg:62, rate:.45, rng:300, spd:26, cd:6,    proj:"arc",    aa:false, splash:46, min:120, tier:2},
+ {id:"tank",  nm:"전차",   cost:470, sup:4, hp:1300, dmg:78, rate:.62, rng:130, spd:26, cd:7.4,  proj:"shell",  aa:false, splash:26, tier:3},
+ {id:"heli",  nm:"공격헬기",cost:600, sup:4, hp:470, dmg:30, rate:1.35,rng:160, spd:56, cd:10,   proj:"rocket", aa:true,  air:true, tier:3}
 ];
 const UMAP={}; UNITS.forEach((u,i)=>{ UMAP[u.id]=u; u.i=i; });
 
@@ -240,18 +241,18 @@ const THEMES={
  night:{g:"#3a4450",g2:"#2e3742",rd:"#28313b",dust:"#4e5b69",sky:"#0d1218",rock:"#232b33"}
 };
 const STAGES=[
- {n:1, nm:"국경 초소",   th:"desert", ehp:2200,  inc:15, gap:3.4, mul:1.00, roster:["rifle"], turret:0},
- {n:2, nm:"사막 보급로", th:"desert", ehp:3200,  inc:19, gap:3.1, mul:1.10, roster:["rifle","sniper"], turret:1},
- {n:3, nm:"폐허 시가지", th:"urban",  ehp:4400,  inc:23, gap:2.9, mul:1.20, roster:["rifle","sniper","apc"], turret:1},
- {n:4, nm:"강변 교두보", th:"field",  ehp:5800,  inc:27, gap:2.8, mul:1.32, roster:["rifle","apc","mortar"], turret:2},
- {n:5, nm:"산악 진지",   th:"field",  ehp:7400,  inc:31, gap:2.6, mul:1.45, roster:["rifle","sniper","apc","mortar"], turret:2},
- {n:6, nm:"공업 단지",   th:"urban",  ehp:9200,  inc:35, gap:2.5, mul:1.60, roster:["rifle","apc","mortar","tank"], turret:3},
- {n:7, nm:"항만 방어선", th:"urban",  ehp:11500, inc:39, gap:2.4, mul:1.76, roster:["rifle","sniper","apc","tank"], turret:3},
- {n:8, nm:"설원 비행장", th:"snow",   ehp:14000, inc:43, gap:2.3, mul:1.94, roster:["rifle","apc","tank","heli"], turret:4},
- {n:9, nm:"협곡 돌파",   th:"snow",   ehp:17000, inc:47, gap:2.2, mul:2.14, roster:["sniper","apc","mortar","tank","heli"], turret:4},
- {n:10,nm:"요새 포위",   th:"night",  ehp:21000, inc:52, gap:2.1, mul:2.36, roster:["rifle","apc","mortar","tank","heli"], turret:5},
- {n:11,nm:"수도 외곽",   th:"night",  ehp:26000, inc:58, gap:2.0, mul:2.60, roster:UNITS.map(u=>u.id), turret:5},
- {n:12,nm:"최종 사령부", th:"night",  ehp:34000, inc:66, gap:1.9, mul:2.90, roster:UNITS.map(u=>u.id), turret:6}
+ {n:1, nm:"국경 초소",   th:"desert", ehp:2000,  inc:14, gap:3.4, mul:1.00, roster:["rifle"], turret:0},
+ {n:2, nm:"사막 보급로", th:"desert", ehp:2600,  inc:15, gap:3.2, mul:1.03, roster:["rifle","sniper"], turret:0},
+ {n:3, nm:"폐허 시가지", th:"urban",  ehp:3300,  inc:17, gap:3.0, mul:1.07, roster:["rifle","sniper","apc"], turret:1},
+ {n:4, nm:"강변 교두보", th:"field",  ehp:4100,  inc:19, gap:2.9, mul:1.11, roster:["rifle","apc","mortar"], turret:1},
+ {n:5, nm:"산악 진지",   th:"field",  ehp:5000,  inc:20, gap:2.8, mul:1.15, roster:["rifle","sniper","apc","mortar"], turret:2},
+ {n:6, nm:"공업 단지",   th:"urban",  ehp:6000,  inc:22, gap:2.7, mul:1.19, roster:["rifle","apc","mortar","tank"], turret:2},
+ {n:7, nm:"항만 방어선", th:"urban",  ehp:7200,  inc:23, gap:2.6, mul:1.23, roster:["rifle","sniper","apc","tank"], turret:3},
+ {n:8, nm:"설원 비행장", th:"snow",   ehp:8500,  inc:25, gap:2.5, mul:1.27, roster:["rifle","apc","tank","heli"], turret:3},
+ {n:9, nm:"협곡 돌파",   th:"snow",   ehp:10000, inc:26, gap:2.4, mul:1.31, roster:["sniper","apc","mortar","tank","heli"], turret:4},
+ {n:10,nm:"요새 포위",   th:"night",  ehp:11800, inc:28, gap:2.3, mul:1.35, roster:["rifle","apc","mortar","tank","heli"], turret:4},
+ {n:11,nm:"수도 외곽",   th:"night",  ehp:14000, inc:29, gap:2.2, mul:1.39, roster:UNITS.map(u=>u.id), turret:5},
+ {n:12,nm:"최종 사령부", th:"night",  ehp:17000, inc:31, gap:2.1, mul:1.44, roster:UNITS.map(u=>u.id), turret:6}
 ];
 
 /* ---------------- 사령부 강화(메타) ---------------- */
@@ -314,16 +315,16 @@ function sfx(kind){
 /* ---------------- 전투 상태 ---------------- */
 let S=null, playing=false, paused=false, aiming=false, TT=0;
 const TECH=[
- {id:"fire",  nm:"화력 관제", d:"아군 공격력 +8%",      max:6, c:n=>Math.round(280*Math.pow(1.55,n))},
- {id:"armor", nm:"복합 장갑", d:"신규 유닛 체력 +10%",  max:6, c:n=>Math.round(260*Math.pow(1.55,n))},
- {id:"inc",   nm:"보급 증편", d:"자금 수입 +7/초",      max:6, c:n=>Math.round(320*Math.pow(1.5,n))},
- {id:"sup",   nm:"병력 증원", d:"인구 한계 +3",         max:6, c:n=>Math.round(240*Math.pow(1.6,n))},
- {id:"tur",   nm:"기지 포탑", d:"기지 포탑 위력/사거리", max:5, c:n=>Math.round(420*Math.pow(1.7,n))}
+ {id:"fire",  nm:"화력 관제", d:"아군 공격력 +10%",     max:8, c:n=>Math.round(210*Math.pow(1.42,n))},
+ {id:"armor", nm:"복합 장갑", d:"신규 유닛 체력 +12%",  max:8, c:n=>Math.round(190*Math.pow(1.42,n))},
+ {id:"inc",   nm:"보급 증편", d:"자금 수입 +10/초",     max:6, c:n=>Math.round(230*Math.pow(1.44,n))},
+ {id:"sup",   nm:"병력 증원", d:"인구 한계 +3",         max:6, c:n=>Math.round(170*Math.pow(1.48,n))},
+ {id:"tur",   nm:"기지 포탑", d:"기지 포탑 위력/사거리", max:5, c:n=>Math.round(330*Math.pow(1.6,n))}
 ];
 
 function newBattle(sn){
   const st=STAGES[sn-1];
-  const bmax=3000+450*lv("base");
+  const bmax=3400+450*lv("base");
   S={ st, th:THEMES[st.th], t:0, funds:320+180*lv("cash"),
       units:[], projs:[], fx:[], pops:[], craters:[],
       base:{hp:bmax,max:bmax,ang:0,cool:0},
@@ -334,10 +335,10 @@ function newBattle(sn){
   UNITS.forEach(u=>S.cd[u.id]=0);
   buildTerrain();
 }
-const dmgMul=()=>(1+0.08*S.tech.fire)*(1+0.05*lv("fire"));
-const hpMul=()=>1+0.10*S.tech.armor;
-const incomeRate=()=>22+7*S.tech.inc+2.5*lv("line");
-const supMax=()=>12+3*S.tech.sup;
+const dmgMul=()=>(1+0.10*S.tech.fire)*(1+0.05*lv("fire"));
+const hpMul=()=>1+0.12*S.tech.armor;
+const incomeRate=()=>32+10*S.tech.inc+2.5*lv("line");
+const supMax=()=>18+3*S.tech.sup;
 const supUsed=()=>S.units.reduce((a,u)=>a+(u.side===0&&!u.dead?UMAP[u.type].sup:0),0);
 const airMax=()=>Math.max(14,32-2*lv("air"));
 const airDmg=()=>150+50*lv("air");
@@ -361,9 +362,10 @@ function rnd_(R,a,b){ return a+R()*(b-a); }
 function spawnUnit(side,type,scale){
   const b=UMAP[type];
   const m=scale||1;
+  const em=1+(m-1)*0.5;                        // 적 공격력은 체력보다 완만하게 상승
   const hp=Math.round(b.hp*(side===0?hpMul():m));
   const u={ side, type, x:rnd(rx0+16,rx1-16), y:side===0?yBot-10:yTop+10,
-    hp, max:hp, dmg:b.dmg*(side===0?dmgMul():m*0.92), rate:b.rate, rng:b.rng,
+    hp, max:hp, dmg:b.dmg*(side===0?dmgMul():em), rate:b.rate, rng:b.rng,
     spd:b.spd*rnd(.94,1.06), air:!!b.air, aa:!!b.aa, splash:b.splash||0, min:b.min||0,
     proj:b.proj, cool:rnd(0,.5), tgt:null, walk:rnd(0,6.28), dead:false, fl:0, hurt:0 };
   S.units.push(u);
@@ -387,9 +389,10 @@ function aiThink(dt){
   S.ai.funds+=st.inc*dt;
   S.ai.timer-=dt;
   if(S.ai.timer>0) return;
-  const cnt=S.units.reduce((a,u)=>a+(u.side===1&&!u.dead?1:0),0);
-  if(cnt>=26){ S.ai.timer=.8; return; }
-  const pool=st.roster.map(id=>UMAP[id]).filter(u=>u.cost<=S.ai.funds);
+  const cap=12+Math.round(st.n*0.6);                  // 적 인구 상한(아군 기본 18 이하로 시작)
+  const used=S.units.reduce((a,u)=>a+(u.side===1&&!u.dead?UMAP[u.type].sup:0),0);
+  if(used>=cap){ S.ai.timer=.9; return; }
+  const pool=st.roster.map(id=>UMAP[id]).filter(u=>u.cost<=S.ai.funds&&used+u.sup<=cap);
   if(!pool.length){ S.ai.timer=.6; return; }
   pool.sort((a,b)=>b.cost-a.cost);
   const u=Math.random()<.55?pool[0]:pick(pool);
@@ -415,7 +418,7 @@ function hurt(t,dmg){
   if(dmg>=30) pop(t.x,t.y-16,"-"+Math.round(dmg),t.side===0?"#ff9d8a":"#ffe08a");
   if(t.hp<=0&&!t.dead){
     t.dead=true;
-    if(t.side===1){ S.funds+=Math.round(UMAP[t.type].cost*0.34); S.kills++; }
+    if(t.side===1){ S.funds+=Math.round(UMAP[t.type].cost*0.45); S.kills++; }
     boom(t.x,t.y,UMAP[t.type].sup>=3?1:0);
   }
 }
@@ -517,7 +520,7 @@ function update(dt){
   }
 
   // 기지 포탑
-  turret(S.base,0,S.tech.tur,dt);
+  turret(S.base,0,S.tech.tur+1,dt);
   turret(S.ebase,1,S.st.turret,dt);
 
   // 투사체
@@ -567,7 +570,9 @@ function update(dt){
 function turret(b,side,lvT,dt){
   if(b.hp<=0) return;
   b.cool-=dt;
-  const rng=190+22*lvT, dmg=(14+13*lvT)*(side===0?dmgMul():S.st.mul), rate=1.0+.16*lvT;
+  const rng=side===0? 200+24*lvT : 180+16*lvT;
+  const dmg=side===0? (18+16*lvT)*dmgMul() : (12+8*lvT)*(1+(S.st.mul-1)*0.5);
+  const rate=side===0? 1.1+.18*lvT : 0.9+.12*lvT;
   const by=side===0?yBot:yTop;
   let best=null,bd=1e9;
   for(const u of S.units){ if(u.dead||u.side===side) continue;
@@ -922,7 +927,8 @@ function buildDock(){
   const d=$("dock"); d.innerHTML="";
   UNITS.forEach(u=>{
     const el=document.createElement("div"); el.className="card";
-    el.innerHTML='<span class="su">'+u.sup+'</span><canvas width="76" height="64"></canvas>'+
+    el.innerHTML='<span class="su">'+u.sup+'</span>'+(u.aa?'<span class="aa">대공</span>':'')+
+      '<canvas width="76" height="64"></canvas>'+
       '<span class="nm">'+u.nm+'</span>'+
       '<span class="cs"><span class="ic" data-ico="cash"></span>'+u.cost+'</span>'+
       '<div class="cdv"></div>';
@@ -1005,7 +1011,8 @@ function openHelp(){
    '<div class="row"><div class="ti"><b>2. 자금과 인구</b><span>자금은 시간당 자동 수급되며 적 격파 시 추가 획득. 인구 한계 안에서만 병력을 유지할 수 있습니다.</span></div></div>'+
    '<div class="row"><div class="ti"><b>3. 기술 개발</b><span>전투 중 기술 버튼으로 화력·장갑·수입·인구·기지 포탑을 강화합니다.</span></div></div>'+
    '<div class="row"><div class="ti"><b>4. 공습</b><span>공습 버튼 → 전장을 탭하면 지정 지역에 광역 폭격. 재사용 대기시간이 있습니다.</span></div></div>'+
-   '<div class="row"><div class="ti"><b>5. 승리 조건</b><span>적 사령부 내구도를 0으로 만들면 승리. 아군 기지가 파괴되면 패배합니다.</span></div></div>'+
+   '<div class="row"><div class="ti"><b>5. 대공</b><span>「대공」 표시가 있는 보병·저격수·장갑차·공격헬기만 적 공격헬기를 요격할 수 있습니다. 전차와 박격포는 공중을 못 때립니다.</span></div></div>'+
+   '<div class="row"><div class="ti"><b>6. 승리 조건</b><span>적 사령부 내구도를 0으로 만들면 승리. 아군 기지가 파괴되면 패배합니다.</span></div></div>'+
    '<button class="btn steel close" onclick="closeModal()">닫기</button>');
 }
 function openLab(){
