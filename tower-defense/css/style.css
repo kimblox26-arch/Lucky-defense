@@ -723,3 +723,52 @@ button{ font:inherit; color:inherit; cursor:pointer; border:none; background:non
 .mp-card.best{ border-width:3px; box-shadow:0 0 22px -4px currentColor; animation:mpPop .42s cubic-bezier(.2,1.7,.4,1) forwards, bestPulse 1.1s infinite .6s; }
 @keyframes bestPulse{ 50%{ transform:scale(1.06); } }
 .mp-box .bigbtn{ margin:0 16px 16px; width:auto; }
+
+/* =========================================================================
+ *  운빨존많겜 스타일 캔디 UI 마감 — 더 둥글고, 더 통통 튀고, 더 쨍하게
+ * ========================================================================= */
+:root{ --r:18px; }
+
+/* 버튼 통통 튀는 눌림감 (translateY 대신 스케일 바운스) */
+.bbtn, .lmbtn, .skill, .ubtn, .tbtn, .minibtn, .ghostbtn, .toolbtn,
+.mapcard2, .pitem, .cx, .wp, .dcell, .qa {
+  transition: transform .12s cubic-bezier(.34,1.56,.64,1), filter .1s;
+}
+.bbtn:active, .lmbtn:active, .skill:active, .ubtn:active, .minibtn:active,
+.ghostbtn:active, .toolbtn:active, .mapcard2:active, .pitem:active, .qa:active {
+  transform: scale(.9) !important;
+  filter: brightness(1.3);
+}
+.bigbtn{ transition: transform .12s cubic-bezier(.34,1.56,.64,1), filter .1s; }
+.bigbtn:active{ transform: scale(.94) !important; filter: brightness(1.25); }
+
+/* 더 둥글둥글한 패널/카드 */
+.bbtn, .lmbtn{ border-radius:20px; }
+.skill{ border-radius:16px; }
+.stat{ border-radius:999px; border-width:3px; }
+.lb-card, .lp-box, .mp-box, .modal, .dm-box, .auth-box{ border-radius:26px; }
+.mapcard2, .cx, .pitem.card, .mp-card{ border-radius:18px; }
+.bigbtn, .ghostbtn, .minibtn, .toolbtn{ border-radius:16px; }
+
+/* HUD 숫자 : 더 굵고 큼직하게, 살짝 반짝임 */
+.stat b{ font-size:17px; text-shadow:0 1px 0 rgba(0,0,0,.4); }
+.stat{ box-shadow:0 3px 12px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.15); }
+
+/* 주요 버튼에 광택(글로시) 스윕 */
+.bbtn.primary::after, .bigbtn::after, .lmbtn.big::after{
+  content:''; position:absolute; inset:0; border-radius:inherit; pointer-events:none;
+  background:linear-gradient(180deg,rgba(255,255,255,.22),rgba(255,255,255,0) 45%);
+}
+.bbtn.primary, .lmbtn.big{ position:relative; overflow:hidden; }
+.bigbtn{ position:relative; overflow:hidden; }
+
+/* 골드/젬 카운터 살짝 통통 숨쉬기 */
+.stat.gold, .stat.gem{ animation:candyBreathe 2.6s ease-in-out infinite; }
+@keyframes candyBreathe{ 50%{ transform:scale(1.035); } }
+
+/* 소환 버튼 반짝 하이라이트 (더 게임스러운 손짓 유도) */
+.bbtn.primary .bico{ display:inline-block; animation:candyWiggle 1.8s ease-in-out infinite; }
+@keyframes candyWiggle{ 0%,100%{ transform:rotate(0deg) scale(1); } 50%{ transform:rotate(-8deg) scale(1.12); } }
+
+/* 다마지/토스트 텍스트 통통 등장 */
+.toast{ animation:toastIn .28s cubic-bezier(.34,1.56,.64,1), toastOut .3s ease 1.5s forwards; }

@@ -159,7 +159,7 @@ const Draw = {
     const flip = Math.cos(aim) < 0;
 
     if (u.buffFlash > 0) { c.save(); c.shadowColor = '#ffffff'; c.shadowBlur = 18 * u.buffFlash; }
-    GFX.drawChar(c, x, y, S, this.unitLook(def), {
+    GFX.drawCharOutlined(c, x, y, S, this.unitLook(def), {
       t, phase: t * 1.6, aim, recoil, flip, seed: u.seed
     });
     if (u.buffFlash > 0) c.restore();
@@ -473,7 +473,7 @@ const Draw = {
     c.fillStyle = GFX.radial(c, W / 2, H * .5, W * .55, U.rgba(rar.color, .3), 'rgba(0,0,0,0)');
     c.fillRect(0, 0, W, H);
     const S = W * (opts.scale || .26);
-    GFX.drawChar(c, W / 2, H * .62, S, this.unitLook(def), { t: performance.now() / 1000, phase: 0, aim: 0 });
+    GFX.drawCharOutlined(c, W / 2, H * .62, S, this.unitLook(def), { t: performance.now() / 1000, phase: 0, aim: 0 });
     if (star) {
       c.fillStyle = '#ffd24d';
       for (let i = 0; i < star; i++) GFX.star(c, W / 2 + (i - (star - 1) / 2) * W * .12, H * .92, W * .05, 5);
@@ -487,7 +487,7 @@ const Draw = {
     c.fillStyle = GFX.radial(c, W / 2, H * .5, W * .55, U.rgba(def.color, .25), 'rgba(0,0,0,0)');
     c.fillRect(0, 0, W, H);
     const S = W * .24 * (def.boss ? 1.1 : 1);
-    GFX.drawChar(c, W / 2, H * .64, S, this.enemyLook(def), { t: performance.now() / 1000, phase: 0, aim: 0 });
+    GFX.drawCharOutlined(c, W / 2, H * .64, S, this.enemyLook(def), { t: performance.now() / 1000, phase: 0, aim: 0 });
   },
 
   portraitAvatar(cv, av, t) {
@@ -495,7 +495,7 @@ const Draw = {
     const W = cv.width, H = cv.height;
     c.clearRect(0, 0, W, H);
     const S = W * .24;
-    GFX.drawChar(c, W / 2, H * .66, S, this.avatarLook(av), { t: t || performance.now() / 1000, phase: 0, aim: 0 });
+    GFX.drawCharOutlined(c, W / 2, H * .66, S, this.avatarLook(av), { t: t || performance.now() / 1000, phase: 0, aim: 0 });
   },
 
   /* ===================================================================

@@ -1442,7 +1442,7 @@ const RESEARCH = [
   { key: 'splash', name: '폭발 공학', icon: '💥', max: 25, base: 240, growth: 1.28, per: .05, desc: '범위 반경 +5%/레벨' },
   { key: 'dot', name: '고통 증폭', icon: '☣', max: 30, base: 210, growth: 1.26, per: .10, desc: '화상/독/출혈 +10%/레벨' },
   { key: 'slot', name: '진지 확장', icon: '⬛', max: 18, base: 500, growth: 1.42, per: 1, desc: '배치 가능 유닛 +1/레벨' },
-  { key: 'hp', name: '성벽 보강', icon: '🏰', max: 25, base: 300, growth: 1.32, per: 2, desc: '최대 생명 +2/레벨' },
+  { key: 'hp', name: '성벽 보강', icon: '🏰', max: 18, base: 340, growth: 1.34, per: 1.2, desc: '최대 생명 +1.2/레벨' },
   { key: 'interest', name: '이자 운용', icon: '🏦', max: 20, base: 400, growth: 1.35, per: .01, desc: '웨이브 종료 시 이자 +1%/레벨' },
   { key: 'summoncost', name: '소환 효율', icon: '♻', max: 25, base: 280, growth: 1.30, per: .02, desc: '소환 비용 -2%/레벨' },
   { key: 'boss', name: '거인 사냥', icon: '👑', max: 25, base: 320, growth: 1.30, per: .06, desc: '보스 피해 +6%/레벨' },

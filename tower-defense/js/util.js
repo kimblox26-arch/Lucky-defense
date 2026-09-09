@@ -190,11 +190,16 @@ class Particle {
       case 'smoke':
         ctx.globalAlpha = a * .38;
         ctx.beginPath(); ctx.arc(this.x, this.y, Math.max(1, s * (2 - t)), 0, U.TAU); ctx.fill(); break;
-      case 'text':
-        ctx.font = `900 ${Math.max(8, s)}px system-ui,sans-serif`;
+      case 'text': {
+        /* 운빨겜 스타일 : 갓 튀어나올 때 팝! 하고 통통 튀며 커진다 */
+        const age = 1 - t;
+        const pop = age < .2 ? U.easeOutBack(Math.min(1, age / .2)) : 1;
+        const fs = Math.max(8, s * Math.max(.05, pop));
+        ctx.font = `900 ${fs}px system-ui,sans-serif`;
         ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,.55)';
+        ctx.lineWidth = 3.4; ctx.strokeStyle = 'rgba(0,0,0,.6)';
         ctx.strokeText(this.text, this.x, this.y); ctx.fillText(this.text, this.x, this.y); break;
+      }
     }
     ctx.shadowBlur = 0; ctx.globalAlpha = 1;
   }

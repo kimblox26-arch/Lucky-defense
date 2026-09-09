@@ -182,7 +182,8 @@ class Enemy {
     this.hp = this.maxHp;
     this.armor = scale.armor;
     this.bounty = scale.bounty;
-    this.baseSpeed = def.spd * g.ts * .95 * (g.map.diff > 1.6 ? 1.06 : 1) * g.modNum('spdMul', 1);
+    const waveSpdMul = 1 + Math.min(1.6, (w + g.loop * 100 - 1) * .014);
+    this.baseSpeed = def.spd * g.ts * .95 * (g.map.diff > 1.6 ? 1.06 : 1) * g.modNum('spdMul', 1) * waveSpdMul;
 
     this.maxShield = (def.shield || 0) * this.maxHp * .3 * g.modNum('shieldMul', 1);
     this.shield = this.maxShield;

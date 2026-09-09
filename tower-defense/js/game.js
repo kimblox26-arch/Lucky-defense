@@ -223,12 +223,28 @@ const Game = {
   },
 
   /* ---------------------------------------------------------- 스케일 */
+  /** 현재 배치된 전군의 총 DPS (합성/레벨/연구 반영된 실전력) */
+  armyDPS() {
+    let s = 0;
+    for (const u of this.units) s += (u.dps || 0);
+    return s;
+  },
+
   enemyScale(def, hpMul) {
     const w = this.wave + this.loop * 100;
     const diff = this.map.diff;
-    let hp = 24 * def.hp * Math.pow(1.168, w - 1) * diff * (hpMul || 1) * this.modNum('hpMul', 1);
-    hp *= (1 + this.loop * 2.5);
-    let armor = def.armor * (1 + (w - 1) * .085) * diff;
+    let hp = 24 * def.hp * Math.pow(1.16, w - 1) * diff * (hpMul || 1) * this.modNum('hpMul', 1);
+    /* 동적 난이도 보정: 웨이브 고정 곡선만으로는 합성/가챠로 인한 화력 스노우볼을
+       따라잡지 못해(가챠 대박, 대량 합성 시 순식간에 수십~수백 배 화력 격차 발생),
+       현재 전군 DPS를 웨이브별 기대 화력과 비교해 체력을 자동 보정한다.
+       화력이 기대치보다 낮으면 오히려 체력을 낮춰 초반/불운 유저를 배려한다. */
+    const dpsRef = 55 * Math.pow(1.075, w - 1);
+    const powerRatio = U.clamp(this.armyDPS() / dpsRef, .35, 60);
+    /* 지수를 1보다 크게 잡아, 기대치보다 화력이 넘칠수록 체력이 그 이상으로 불어나게 한다
+       (그냥 맞춰주기만 하면 물량으로 찍어누르는 스노우볼을 못 막는다). */
+    hp *= Math.pow(powerRatio, 1.18);
+    hp *= (1 + this.loop * 2.8);
+    let armor = def.armor * (1 + (w - 1) * .13) * diff * Math.pow(powerRatio, .18);
     let bounty = (3.4 + w * .95) * def.bounty * Math.pow(1.028, w) * (1 + this.loop * .8);
     return { hp, armor, bounty };
   },
@@ -355,7 +371,7 @@ const Game = {
     this.waveActive = false;
     const w = this.wave;
     /* 보상 */
-    let reward = Math.floor(45 + w * 16 + Math.pow(w, 1.5) * 2.2);
+    let reward = Math.floor(42 + w * 14 + Math.pow(w, 1.42) * 1.7);
     reward = Math.floor(reward * (1 + (this.perks.gold || 0) * .1));
     const interest = Math.floor(this.gold * this.research.interest * .01);
     this.addGold(reward + interest);
@@ -409,7 +425,7 @@ const Game = {
 
   /* ---------------------------------------------------------- 소환 */
   summonCost() {
-    const base = 30 + this.summonCount * 6;
+    const base = 30 + this.summonCount * 7.4;
     return Math.max(12, Math.floor(base * (1 - this.research.summoncost * .02)));
   },
   /** N연차 소환의 예상 총 비용 (무료 소환권은 앞에서부터 소모됨을 감안) */
@@ -1310,6 +1326,8 @@ const Game = {
   /* ---------------------------------------------------------- 렌더 */
   render() {
     const c = this.ctx, W = this.W, H = this.H;
+    /* 유닛이 아주 많을 때는 스티커 외곽선을 자동으로 생략해 프레임을 지킨다 */
+    GFX.outlineBudget = this.units.length <= 26;
     c.save();
     c.clearRect(0, 0, W, H);
     /* 바깥 배경 */

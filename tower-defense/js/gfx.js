@@ -1248,6 +1248,9 @@ const GFX = {
    *          aura, color, accent}
    *  st   = {t, phase, aim, recoil, flip, scale}
    * =================================================================== */
+  /** 운빨겜 스타일 : 큰 머리(치비) 비율 배수 — 몸은 그대로, 머리/헤어/장비만 키운다 */
+  CHIBI_HEAD: 1.16,
+
   drawChar(c, x, y, S, look, st) {
     const t = st.t || 0;
     const R = GFX.ramp(look.color || '#8fa5c4');
@@ -1255,11 +1258,18 @@ const GFX = {
     const ph = st.phase || 0;
     const aim = st.aim === undefined ? 0 : st.aim;
     const recoil = st.recoil || 0;
-    const bob = Math.sin(t * 2.1 + (st.seed || 0)) * S * .035 - recoil * S * .06;
+    const seed = st.seed || 0;
+
+    /* 통통 튀는 젤리 애니메이션 : 위아래로 튀면서 눌렸다 늘어난다 (스쿼시&스트레치) */
+    const bouncePh = Math.sin(t * 2.1 + seed);
+    const bob = bouncePh * S * .04 - recoil * S * .06;
+    const squashY = 1 + bouncePh * .045 - recoil * .1;
+    const squashX = 1 - bouncePh * .035 + recoil * .12;
 
     c.save();
     c.translate(x, y + bob);
-    if (st.scale && st.scale !== 1) c.scale(st.scale, st.scale);
+    const baseScale = st.scale || 1;
+    c.scale(baseScale * squashX, baseScale * squashY);
     if (st.flip) c.scale(-1, 1);
 
     /* 오라(뒤) */
@@ -1272,25 +1282,17 @@ const GFX = {
     if (look.arms !== false) GFX.drawArm(c, S, R, -S * .3, -S * .12, Math.PI * .72 + Math.sin(ph) * .2, S * .34, S * .12);
     /* 몸통 */
     if (look.torso && GFX.torso[look.torso]) GFX.torso[look.torso](c, S, R, t);
-    /* 머리 */
+    /* 머리 — 치비 비율로 살짝 확대 */
+    const hS = S * this.CHIBI_HEAD;
     c.save();
     c.translate(0, -S * .58 + Math.sin(t * 2.1 + 1) * S * .015);
-    const tilt = U.clamp(Math.sin(t * 1.3) * .05, -.1, .1);
+    const tilt = U.clamp(Math.sin(t * 1.3) * .06, -.11, .11);
     c.rotate(tilt);
-    if (look.head && GFX.head[look.head]) GFX.head[look.head](c, S, look.skin || '#f0c9a0', t);
-    if (look.hair && GFX.hair[look.hair]) GFX.hair[look.hair](c, S, look.hairCol || '#4a3728', t);
-    if (look.gear && GFX.gear[look.gear]) GFX.gear[look.gear](c, S, A, t);
-    /* 얼굴(눈) — 사람형만 */
-    if (look.head === 'human') {
-      const blink = (Math.sin(t * 1.7 + (st.seed || 0)) > .985) ? .12 : 1;
-      c.fillStyle = '#221a20';
-      c.beginPath(); c.ellipse(-S * .1, -S * .02, S * .035, S * .05 * blink, 0, 0, U.TAU); c.fill();
-      c.beginPath(); c.ellipse(S * .1, -S * .02, S * .035, S * .05 * blink, 0, 0, U.TAU); c.fill();
-      if (blink > .5) {
-        c.fillStyle = 'rgba(255,255,255,.9)';
-        c.beginPath(); c.arc(-S * .088, -S * .035, S * .013, 0, U.TAU); c.arc(S * .112, -S * .035, S * .013, 0, U.TAU); c.fill();
-      }
-    }
+    if (look.head && GFX.head[look.head]) GFX.head[look.head](c, hS, look.skin || '#f0c9a0', t);
+    if (look.hair && GFX.hair[look.hair]) GFX.hair[look.hair](c, hS, look.hairCol || '#4a3728', t);
+    if (look.gear && GFX.gear[look.gear]) GFX.gear[look.gear](c, hS, A, t);
+    /* 운빨겜 스타일 : 어떤 생김새든 크고 동글동글한 눈을 붙인다 */
+    if (look.head && look.head !== 'none' && look.cuteEyes !== false) this.cuteEyes(c, hS, t, seed);
     c.restore();
     /* 앞팔 + 무기 (조준 방향) */
     if (look.weapon && look.weapon !== 'none') {
@@ -1308,6 +1310,59 @@ const GFX = {
     c.restore();
   },
 
+  /** 운빨겜 스타일 동글동글 눈 — 머리 종류와 무관하게 통일된 사랑스러운 얼굴을 준다 */
+  cuteEyes(c, S, t, seed) {
+    const blink = (Math.sin(t * 1.7 + seed) > .985) ? .12 : 1;
+    const r = S * .095, dx = S * .135, ey = -S * .03;
+    for (const d of [-1, 1]) {
+      const ex = d * dx;
+      c.fillStyle = '#fff';
+      c.beginPath(); c.ellipse(ex, ey, r, r * blink, 0, 0, U.TAU); c.fill();
+      c.strokeStyle = 'rgba(20,14,16,.55)'; c.lineWidth = Math.max(.6, S * .014);
+      c.stroke();
+      if (blink > .4) {
+        c.fillStyle = '#241a1e';
+        c.beginPath(); c.arc(ex + d * r * .18, ey + r * .18, r * .58, 0, U.TAU); c.fill();
+        c.fillStyle = 'rgba(255,255,255,.95)';
+        c.beginPath(); c.arc(ex - d * r * .22, ey - r * .28, r * .24, 0, U.TAU); c.fill();
+        c.beginPath(); c.arc(ex + d * r * .35, ey + r * .38, r * .12, 0, U.TAU); c.fill();
+      }
+    }
+  },
+
+  /* ===================================================================
+   *  운빨겜 스타일 두꺼운 외곽선 — 실루엣을 여러 방향으로 겹쳐 찍어
+   *  스티커 같은 검은 테두리를 값싸게 흉내낸다 (셰이프별 재작업 없이 적용)
+   * =================================================================== */
+  _outlineCv: null,
+  /** 화면에 살아있는 유닛이 많을 때는 자동으로 외곽선을 생략해 프레임을 지킨다
+   *  (Game.render 에서 매 프레임 갱신) */
+  outlineBudget: true,
+  drawCharOutlined(c, x, y, S, look, st, outlineColor, outlineW) {
+    if (!this.outlineBudget) { this.drawChar(c, x, y, S, look, st); return; }
+    outlineColor = outlineColor || '#241a16';
+    outlineW = outlineW !== undefined ? outlineW : Math.max(1.4, S * .085);
+    const pad = Math.ceil(outlineW * 2 + 4);
+    const w = Math.ceil(S * 3.4) + pad * 2, h = Math.ceil(S * 3.9) + pad * 2;
+    let sc = this._outlineCv;
+    if (!sc) sc = this._outlineCv = document.createElement('canvas');
+    if (sc.width !== w || sc.height !== h) { sc.width = w; sc.height = h; }
+    const cx = sc.getContext('2d');
+    cx.clearRect(0, 0, w, h);
+    const ox = w / 2, oy = h * .64;
+    this.drawChar(cx, ox, oy, S, look, st);
+    cx.globalCompositeOperation = 'source-in';
+    cx.fillStyle = outlineColor;
+    cx.fillRect(0, 0, w, h);
+    cx.globalCompositeOperation = 'source-over';
+    const dirs = 8;
+    for (let i = 0; i < dirs; i++) {
+      const a = i / dirs * U.TAU;
+      c.drawImage(sc, x - ox + Math.cos(a) * outlineW, y - oy + Math.sin(a) * outlineW);
+    }
+    this.drawChar(c, x, y, S, look, st);
+  },
+
   /* ===================================================================
    *  9. 스프라이트 캐시
    * =================================================================== */
@@ -1321,16 +1376,33 @@ const GFX = {
     let cv = this.cache.get(key);
     if (cv) { this.cacheHits++; return cv; }
     this.cacheMiss++;
-    const pad = S * 1.5;
+    const outlineW = Math.max(1.4, S * .085);
+    const pad = S * 1.5 + outlineW * 2 + 4;
     const w = Math.ceil(S * 3 + pad), h = Math.ceil(S * 3.4 + pad);
     cv = document.createElement('canvas');
     cv.width = w; cv.height = h;
     const c = cv.getContext('2d');
     const t = (frame / frames) * (Math.PI * 2 / 2.1);
-    this.drawChar(c, w / 2, h * .62, S, look, {
-      t, phase: (frame / frames) * U.TAU, aim: 0, seed: 0
-    });
-    cv._ox = w / 2; cv._oy = h * .62; cv._key = key;
+    const ox = w / 2, oy = h * .62;
+    const st = { t, phase: (frame / frames) * U.TAU, aim: 0, seed: 0 };
+    /* 외곽선을 캐시된 비트맵에 직접 구워 넣는다 — 프레임당 1회만 비용 발생, 이후엔 공짜 */
+    let sc = this._outlineCv;
+    if (!sc) sc = this._outlineCv = document.createElement('canvas');
+    if (sc.width !== w || sc.height !== h) { sc.width = w; sc.height = h; }
+    const scx = sc.getContext('2d');
+    scx.clearRect(0, 0, w, h);
+    this.drawChar(scx, ox, oy, S, look, st);
+    scx.globalCompositeOperation = 'source-in';
+    scx.fillStyle = '#241a16';
+    scx.fillRect(0, 0, w, h);
+    scx.globalCompositeOperation = 'source-over';
+    const dirs = 10;
+    for (let i = 0; i < dirs; i++) {
+      const a = i / dirs * U.TAU;
+      c.drawImage(sc, Math.cos(a) * outlineW, Math.sin(a) * outlineW);
+    }
+    this.drawChar(c, ox, oy, S, look, st);
+    cv._ox = ox; cv._oy = oy; cv._key = key;
     if (this.cache.size > this.MAX_CACHE) {
       /* 오래된 절반 제거 */
       let i = 0;
