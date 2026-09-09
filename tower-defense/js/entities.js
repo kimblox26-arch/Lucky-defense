@@ -15,9 +15,13 @@ const Combat = {
     const elem = opts.elem || 'phys';
     let dmg = base;
 
-    /* 원소 저항 / 취약 */
-    const res = enemy.def.resist && enemy.def.resist[elem];
-    if (res) dmg *= (1 - res);
+    /* 원소 저항 / 취약 (맵 모디파이어 포함) */
+    let res = (enemy.def.resist && enemy.def.resist[elem]) || 0;
+    res += g.modResist(elem);
+    if (res) dmg *= Math.max(.05, 1 - res);
+    /* 맵 원소 특화 */
+    const eb = g.modElem(elem);
+    if (eb) dmg *= (1 + eb);
 
     /* 언데드 특효 */
     if (opts.holyBonus && enemy.hasFlag('undead')) dmg *= (1 + opts.holyBonus);
@@ -56,8 +60,7 @@ const Combat = {
       const leftover = dmg - absorbed / mult;
       if (enemy.shield <= 0) {
         enemy.shield = 0;
-        FX.ring(enemy.x, enemy.y, '#7fd8ff', g.ts * .8, .3);
-        FX.burst(enemy.x, enemy.y, '#7fd8ff', 12, { speed: 180, shape: 'shard', size: 5 });
+        VFX.shieldBreak(enemy.x, enemy.y, g);
         SFX.play('freeze');
       }
       if (leftover <= 0) {
@@ -72,7 +75,7 @@ const Combat = {
     if (opts.execute && !enemy.boss && enemy.hp / enemy.maxHp <= opts.execute) {
       dmg = enemy.hp;
       FX.popText(enemy.x, enemy.y - g.ts * .5, '처형!', '#ff4f7e', 17);
-      FX.burst(enemy.x, enemy.y, '#ff4f7e', 20, { speed: 260, shape: 'shard' });
+      VFX.execute(enemy.x, enemy.y, g);
       SFX.play('crit');
     }
 
@@ -92,9 +95,10 @@ const Combat = {
       );
     }
     if (crit) {
-      FX.sparks(enemy.x, enemy.y, '#ffd24d', 8, 300);
+      VFX.crit(enemy.x, enemy.y, g);
       SFX.play('crit');
-      FX.shake(2.2);
+    } else if (!opts.isDot && Math.random() < .5) {
+      VFX.hit(elem, enemy.x, enemy.y, U.clamp(applied / Math.max(1, enemy.maxHp) * 6, .4, 2), g);
     }
 
     if (enemy.hp <= 0) enemy.die(opts.source);
@@ -152,6 +156,12 @@ const Combat = {
       e.curse = Math.max(e.curse, s.curse.dur);
       e.curseAmt = Math.max(e.curseAmt, s.curse.amt + g.bonus.curse);
     }
+    if (s.bleed) {
+      e.bleedStacks = Math.min(s.bleed.stack || 5, e.bleedStacks + 1);
+      e.bleed = Math.max(e.bleed, s.bleed.dur);
+      e.bleedDps = Math.max(e.bleedDps, s.bleed.dps * (1 + g.bonus.dot) * (opts.dmgScale || 1));
+      e.bleedSrc = opts.source || null;
+    }
     if (s.root && Math.random() < s.root) {
       e.root = Math.max(e.root, .9);
     }
@@ -172,9 +182,9 @@ class Enemy {
     this.hp = this.maxHp;
     this.armor = scale.armor;
     this.bounty = scale.bounty;
-    this.baseSpeed = def.spd * g.ts * .95 * (g.map.diff > 1.6 ? 1.06 : 1);
+    this.baseSpeed = def.spd * g.ts * .95 * (g.map.diff > 1.6 ? 1.06 : 1) * g.modNum('spdMul', 1);
 
-    this.maxShield = (def.shield || 0) * this.maxHp * .3;
+    this.maxShield = (def.shield || 0) * this.maxHp * .3 * g.modNum('shieldMul', 1);
     this.shield = this.maxShield;
 
     this.dist = opts.dist !== undefined ? opts.dist : 0;
@@ -185,12 +195,13 @@ class Enemy {
     this.chill = 0; this.chillAmt = 0; this.frozen = 0; this.stun = 0; this.root = 0;
     this.burn = 0; this.burnDps = 0; this.burnSrc = null;
     this.poison = 0; this.poisonStacks = 0; this.poisonDps = 0; this.poisonSrc = null;
+    this.bleed = 0; this.bleedStacks = 0; this.bleedDps = 0; this.bleedSrc = null;
     this.curse = 0; this.curseAmt = 0; this.markAmt = 0; this.armorBreak = 0;
     this.hitFlash = 0;
     this.raging = false;
     this.summonCd = def.summonCd ? U.rand(1, def.summonCd) : 0;
     this.healCd = 0;
-    this.teleCd = U.rand(4, 9);
+    this.teleCd = U.rand(4, 9) * (g.modFlag('teleportBias') ? .5 : 1);
     this.flying = this.hasFlag('flying');
     this.updatePos();
   }
@@ -243,11 +254,21 @@ class Enemy {
       });
       if (this.poison <= 0) this.poisonStacks = 0;
     }
+    if (this.bleed > 0 && !this.dead) {
+      this.bleed -= dt;
+      /* 출혈 : 방어 무시 + 이동 중일수록 강하게 */
+      const moveMul = this.speed > 0 ? 1.35 : .6;
+      Combat.hit(this.g, this, this.bleedDps * this.bleedStacks * dt * 4 * moveMul
+        + this.bleedDps * dt * this.maxHp * .003 * this.bleedStacks, {
+        elem: 'blood', isDot: true, trueDmg: true, source: this.bleedSrc
+      });
+      if (this.bleed <= 0) this.bleedStacks = 0;
+    }
     if (this.dead) return;
 
     /* 재생 */
     if (this.def.regen && this.hp < this.maxHp) {
-      this.hp = Math.min(this.maxHp, this.hp + this.maxHp * this.def.regen * dt);
+      this.hp = Math.min(this.maxHp, this.hp + this.maxHp * this.def.regen * this.g.modNum('regenMul', 1) * dt);
     }
     /* 격노 */
     if (this.hasFlag('rage') && !this.raging && this.hp / this.maxHp < .4) {
@@ -333,6 +354,7 @@ class Enemy {
     /* 이펙트 */
     const col = this.def.color;
     const r = g.ts * .36 * (this.def.scale || 1);
+    VFX.kill(this.x, this.y, col, this.boss, g);
     if (this.boss) {
       FX.explosion(this.x, this.y, r * 3.2, col, '#fff');
       FX.flash('#fff', .55); FX.shake(18); FX.stop(.12);
@@ -345,6 +367,13 @@ class Enemy {
       SFX.play('die');
     }
     FX.popText(this.x + U.rand(-10, 10), this.y - g.ts * .55, '+' + U.fmt(gold), '#ffd24d', 13);
+
+    /* 맵 모디파이어 : 부활의 저주 */
+    const revive = g.modVal('reviveChance', 0);
+    if (revive && !this.leaked && !this.boss && Math.random() < revive) {
+      g.spawnEnemy('skeleton', { dist: this.dist, hpMul: .8 });
+      FX.popText(this.x, this.y - 14, '부활!', '#e6e2d0', 13);
+    }
 
     /* 분열 */
     if (this.def.splitInto && !this.leaked) {
@@ -424,17 +453,27 @@ class Unit {
     let spd = d.spd * (1 + g.research.spd * .04) * (1 + (syn.spd || 0)) * (1 + this.auraVal('spd'));
     if (g.buffs.overdrive > 0) spd *= 2.2;
 
-    let rng = d.rng * (1 + g.research.rng * .04) * (1 + (syn.rng || 0)) * (1 + this.auraVal('rng'));
+    let rng = d.rng * (1 + g.research.rng * .04) * (1 + (syn.rng || 0)) * (1 + this.auraVal('rng'))
+      * g.modNum('rngMul', 1);
 
     let crit = (d.crit || 0) + g.research.crit * .02 + (syn.crit || 0) + g.bonus.crit;
     let critMul = (d.critMul || 2) + g.research.critdmg * .12 + (syn.critdmg || 0);
     let pen = (d.pen || 0) + g.research.pen * .03 + (syn.pen || 0);
-    let splash = (d.splash || 0) * (1 + g.research.splash * .05 + (syn.splash || 0));
+    let splash = (d.splash || 0) * (1 + g.research.splash * .05 + (syn.splash || 0)) * g.modNum('splashMul', 1);
+
+    /* 다중 사격 : 연구/시너지로 확률적 추가 발사 */
+    const msBonus = g.research.multishot * .3 + (syn.multishot || 0);
+    let multishot = (d.multishot || 1) + Math.floor(msBonus);
+    this.msChance = msBonus % 1;
 
     this.stat = {
-      dmg, spd: Math.min(12, spd), rng, crit: U.clamp(crit, 0, .95), critMul, pen: U.clamp(pen, 0, 1),
-      splash, chain: (d.chain || 0) + (syn.chain || 0), pierce: d.pierce || 0,
-      multishot: d.multishot || 1,
+      dmg, spd: Math.min(14, spd), rng, crit: U.clamp(crit, 0, .95), critMul, pen: U.clamp(pen, 0, 1),
+      splash,
+      chain: (d.chain || 0) + (syn.chain || 0) + Math.floor(g.research.chain * .5),
+      pierce: d.pierce || 0,
+      multishot,
+      execute: (d.execute || 0) + g.research.exec * .01,
+      summonMul: 1 + g.research.summon * .08 + (syn.summon || 0),
     };
     this.goldAura = this.auraVal('gold') + (syn.gold || 0) + g.bonus.gold;
     this.dps = this.stat.dmg * this.stat.spd * this.stat.multishot;
@@ -451,7 +490,7 @@ class Unit {
       if (U.dist2(this.px, this.py, u.px, u.py) <= r * r) {
         const rar = RARITY[RARITY_IDX[u.def.rarity]];
         const syn = this.g.synergyFor(u.def);
-        v += a.amt * (1 + (u.star - 1) * .35) * (1 + (syn.aura || 0));
+        v += a.amt * (1 + (u.star - 1) * .35) * (1 + (syn.aura || 0) + this.g.research.aura * .08);
       }
     }
     return v;
@@ -521,7 +560,7 @@ class Unit {
     return Object.assign({
       elem: d.elem, crit: this.stat.crit, critMul: this.stat.critMul,
       pen: this.stat.pen, trueDmg: !!d.trueDmg, holyBonus: d.holyBonus,
-      bossBonus: d.bossBonus, execute: d.execute, shieldBreak: d.shieldBreak,
+      bossBonus: d.bossBonus, execute: this.stat.execute, shieldBreak: d.shieldBreak,
       source: this, dmgScale: this.stat.dmg / Math.max(1, d.dmg)
     }, extra || {});
   }
@@ -665,7 +704,7 @@ class Minion {
     this.cd = 1 / (sm.spd * (1 + g.research.spd * .04));
     const col = ELEM[o.def.elem].color;
     const p = new Projectile(g, o, best, 'orb', col);
-    p.dmgOverride = o.stat.dmg * sm.dmg;
+    p.dmgOverride = o.stat.dmg * sm.dmg * (o.stat.summonMul || 1);
     p.size *= .7; p.speed *= 1.15;
     g.projectiles.push(p);
     FX.spawn({ x: this.x, y: this.y, life: .18, size: 6, size2: 0, color: col, shape: 'glow' });
@@ -795,6 +834,21 @@ class Zone {
     if (this.tick <= 0) {
       this.tick = .25;
       Combat.splash(this.g, this.x, this.y, this.r, this.dps * .25, Object.assign({ isDot: true }, this.opts));
+    }
+    /* 블랙홀 : 경로를 따라 뒤로 끌어당긴다 */
+    if (this.opts.pull) {
+      const R2 = this.r * this.r * 2.4;
+      for (const e of this.g.enemies) {
+        if (e.dead || e.boss) continue;
+        if (U.dist2(this.x, this.y, e.x, e.y) < R2) {
+          e.dist = Math.max(0, e.dist - this.g.ts * 1.2 * dt);
+          e.updatePos();
+          if (Math.random() < dt * 6) FX.spawn({
+            x: e.x, y: e.y, vx: (this.x - e.x) * 2, vy: (this.y - e.y) * 2,
+            life: .35, size: 3, color: this.color, shape: 'spark'
+          });
+        }
+      }
     }
     if (Math.random() < dt * 20) {
       const a = U.rand(U.TAU), d = U.rand(0, this.r);

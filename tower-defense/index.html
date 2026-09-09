@@ -13,7 +13,7 @@
 <canvas id="cv"></canvas>
 
 <!-- ======================================================= 상단 HUD -->
-<div id="hud" class="hud">
+<div id="hud" class="hud hidden">
   <div class="hud-row">
     <div class="stat life"  id="statLife"><span class="ic">♥</span><b id="vLife">20</b></div>
     <div class="stat gold"  id="statGold"><span class="ic">🪙</span><b id="vGold">0</b></div>
@@ -27,36 +27,28 @@
   <div id="comboBox" class="combo hidden"><b id="vCombo">0</b><span>COMBO</span><i id="vComboMul">x1.0</i></div>
 </div>
 
-<!-- ======================================================= 시너지 패널 -->
-<div id="synPanel" class="syn-panel"></div>
+<!-- ======================================================= 시너지 -->
+<div id="synPanel" class="syn-panel hidden"></div>
 
 <!-- ======================================================= 스킬바 -->
-<div id="skillBar" class="skillbar"></div>
+<div id="skillBar" class="skillbar hidden"></div>
 
-<!-- ======================================================= 다음 웨이브 미리보기 -->
-<div id="wavePreview" class="wave-preview"></div>
+<!-- ======================================================= 웨이브 예고 -->
+<div id="wavePreview" class="wave-preview hidden"></div>
 
 <!-- ======================================================= 하단 조작 -->
-<div id="bottom" class="bottom">
+<div id="bottom" class="bottom hidden">
   <button class="bbtn primary" id="btnSummon">
-    <span class="bico">✨</span>
-    <span class="blab">소환</span>
-    <span class="bsub" id="summonCost">30G</span>
+    <span class="bico">✨</span><span class="blab">소환</span><span class="bsub" id="summonCost">30G</span>
   </button>
   <button class="bbtn" id="btnMerge">
-    <span class="bico">⇪</span>
-    <span class="blab">자동합성</span>
-    <span class="bsub" id="mergeCount">0쌍</span>
+    <span class="bico">⇪</span><span class="blab">자동합성</span><span class="bsub" id="mergeCount">0쌍</span>
   </button>
   <button class="bbtn wavebtn" id="btnWave">
-    <span class="bico">⚔</span>
-    <span class="blab">웨이브</span>
-    <span class="bsub" id="waveSub">시작</span>
+    <span class="bico">⚔</span><span class="blab">웨이브</span><span class="bsub" id="waveSub">시작</span>
   </button>
   <button class="bbtn" id="btnResearch">
-    <span class="bico">⚗</span>
-    <span class="blab">연구</span>
-    <span class="bsub" id="researchSub">강화</span>
+    <span class="bico">⚗</span><span class="blab">연구</span><span class="bsub" id="researchSub">강화</span>
   </button>
   <button class="bbtn small" id="btnSpeed"><span class="bico" id="speedIco">▶</span><span class="bsub">x1</span></button>
   <button class="bbtn small" id="btnPause"><span class="bico">⏸</span><span class="bsub">정지</span></button>
@@ -67,7 +59,7 @@
 <div id="unitPanel" class="unit-panel hidden">
   <button class="close" id="unitClose">✕</button>
   <div class="up-head">
-    <canvas id="upPortrait" width="120" height="120"></canvas>
+    <canvas id="upPortrait" width="160" height="160"></canvas>
     <div class="up-title">
       <div class="up-name" id="upName">—</div>
       <div class="up-tags"><span id="upRarity" class="tag"></span><span id="upClass" class="tag"></span><span id="upElem" class="tag"></span></div>
@@ -76,34 +68,29 @@
   </div>
   <div class="up-desc" id="upDesc"></div>
   <div class="up-stats" id="upStats"></div>
-  <div class="up-target">
-    <span>타겟팅</span>
-    <div class="segs" id="upTargets"></div>
-  </div>
+  <div class="up-target"><span>타겟팅</span><div class="segs" id="upTargets"></div></div>
   <div class="up-actions">
     <button class="ubtn up" id="btnUpgrade"><b>강화</b><i id="upgCost">-</i></button>
     <button class="ubtn mg" id="btnMergeOne"><b>합성</b><i id="mergeInfo">-</i></button>
     <button class="ubtn sell" id="btnSell"><b>판매</b><i id="sellVal">-</i></button>
+    <button class="ubtn lock" id="btnLock"><b>잠금</b><i id="lockState">해제됨</i></button>
   </div>
 </div>
 
-<!-- ======================================================= 모달 공통 -->
+<!-- ======================================================= 인게임 모달 -->
 <div id="modalWrap" class="modal-wrap hidden">
   <div class="modal" id="modal">
-    <div class="modal-head">
-      <h2 id="modalTitle">제목</h2>
-      <button class="close" id="modalClose">✕</button>
-    </div>
+    <div class="modal-head"><h2 id="modalTitle">제목</h2><button class="close" id="modalClose">✕</button></div>
     <div class="modal-tabs" id="modalTabs"></div>
     <div class="modal-body" id="modalBody"></div>
   </div>
 </div>
 
-<!-- ======================================================= 토스트/배너 -->
+<!-- ======================================================= 알림 -->
 <div id="toasts" class="toasts"></div>
 <div id="banner" class="banner hidden"></div>
 <div id="rarityBanner" class="rarity-banner hidden">
-  <canvas id="rbCanvas" width="180" height="180"></canvas>
+  <canvas id="rbCanvas" width="220" height="220"></canvas>
   <div class="rb-text"><div class="rb-rare" id="rbRare"></div><div class="rb-name" id="rbName"></div></div>
 </div>
 <div id="achPop" class="ach-pop hidden">
@@ -111,38 +98,107 @@
   <div><div class="ap-t" id="apTitle"></div><div class="ap-d" id="apDesc"></div><div class="ap-g" id="apGem"></div></div>
 </div>
 
-<!-- ======================================================= 타이틀 화면 -->
-<div id="title" class="title-screen">
-  <div class="tglow"></div>
-  <h1 class="tt">INFINITE<br><span>TOWER DEFENSE</span></h1>
-  <p class="tsub" id="titleSub"></p>
-  <div class="tmaps" id="titleMaps"></div>
-  <div class="tbtns">
-    <button class="tbtn play" id="btnStart">전투 시작</button>
-    <button class="tbtn" id="btnCodex">도감</button>
-    <button class="tbtn" id="btnAch">업적</button>
-    <button class="tbtn" id="btnPerks">명예 강화</button>
-    <button class="tbtn" id="btnSettings">설정</button>
+<!-- ======================================================= 로그인 화면 -->
+<div id="auth" class="auth-screen hidden">
+  <div class="bg-orbs"><i></i><i></i><i></i></div>
+  <h1 class="auth-logo">INFINITE<br><span>TOWER DEFENSE</span></h1>
+  <div class="auth-box">
+    <div class="auth-tabs">
+      <button id="authTabLogin" class="on">로그인</button>
+      <button id="authTabSignup">회원가입</button>
+    </div>
+    <input class="inp" id="authId" type="text" autocomplete="username" placeholder="아이디 (영문/숫자 3~20자)">
+    <input class="inp" id="authPw" type="password" autocomplete="current-password" placeholder="비밀번호 (4자 이상)">
+    <div id="signupOnly" class="hidden">
+      <input class="inp" id="authNick" type="text" maxlength="12" placeholder="닉네임 (2~12자)">
+    </div>
+    <div class="auth-err" id="authError"></div>
+    <button class="bigbtn" id="authSubmit">로그인</button>
+
+    <div class="auth-div"><span>또는</span></div>
+    <div id="googleBtn" class="gbtn-wrap"></div>
+    <div class="gnote" id="googleNote"></div>
+    <button class="ghostbtn" id="authGuest">게스트로 바로 시작</button>
+    <div id="quickAccounts" class="quick-accounts hidden"></div>
   </div>
-  <div class="tstats" id="titleStats"></div>
-  <div class="ttip" id="titleTip"></div>
+  <div class="auth-foot">진행도는 이 브라우저에 저장된다 · v2.0</div>
 </div>
 
-<!-- ======================================================= 결과 화면 -->
+<!-- ======================================================= 메인 로비 -->
+<div id="lobby" class="lobby hidden">
+  <div class="bg-orbs"><i></i><i></i><i></i></div>
+
+  <div class="lb-top">
+    <div class="lb-card">
+      <div class="lb-avatar" id="lbAvatar"><canvas id="lbAvatarCv" width="200" height="200"></canvas>
+        <div class="lb-badge" id="lbBadge">⭐</div>
+      </div>
+      <div class="lb-info">
+        <div class="lb-title" id="lbTitle">신병</div>
+        <div class="lb-nick" id="lbNick">용사</div>
+        <div class="lb-kind" id="lbKind"></div>
+        <div class="lb-exp">
+          <span id="lbLevel">Lv.1</span>
+          <div class="lb-expbar"><div class="fill" id="lbExpFill"></div></div>
+          <i id="lbExpText">0 / 100</i>
+        </div>
+      </div>
+      <div class="lb-cur"><span>💎</span><b id="lbGem">0</b></div>
+    </div>
+    <div class="lb-stats" id="lbStats"></div>
+  </div>
+
+  <div class="lb-menu">
+    <button class="lmbtn big" id="btnPlay"><span class="lm-i">⚔</span><span class="lm-n">전투 시작</span></button>
+    <button class="lmbtn" id="btnProfile"><span class="lm-i">🎨</span><span class="lm-n">프로필</span></button>
+    <button class="lmbtn" id="btnShop"><span class="lm-i">🛒</span><span class="lm-n">상점</span></button>
+    <button class="lmbtn" id="btnCollection"><span class="lm-i">📖</span><span class="lm-n">도감</span></button>
+    <button class="lmbtn" id="btnAchieve"><span class="lm-i">🏆</span><span class="lm-n">업적</span></button>
+    <button class="lmbtn" id="btnHonor"><span class="lm-i">💎</span><span class="lm-n">명예 강화</span></button>
+    <button class="lmbtn" id="btnDaily"><span class="lm-i">📅</span><span class="lm-n">출석</span><i class="dot hidden" id="badgeDaily"></i></button>
+    <button class="lmbtn" id="btnQuest"><span class="lm-i">📜</span><span class="lm-n">퀘스트</span><i class="dot hidden" id="badgeQuest"></i></button>
+    <button class="lmbtn" id="btnRecords"><span class="lm-i">📊</span><span class="lm-n">전적</span></button>
+    <button class="lmbtn" id="btnSetting"><span class="lm-i">⚙</span><span class="lm-n">설정</span></button>
+    <button class="lmbtn" id="btnAccount"><span class="lm-i">👤</span><span class="lm-n">계정</span></button>
+  </div>
+
+  <div class="lb-tip" id="lbTip"></div>
+</div>
+
+<!-- ======================================================= 로비 패널 -->
+<div id="lobbyPanel" class="lobby-panel hidden">
+  <div class="lp-box">
+    <div class="lp-head"><h2 id="lpTitle">패널</h2><button class="close" id="lpClose">✕</button></div>
+    <div class="lp-body" id="lpBody"></div>
+  </div>
+</div>
+
+<!-- ======================================================= 상세 모달 -->
+<div id="detailModal" class="detail-modal hidden"></div>
+
+<!-- ======================================================= 결과 -->
 <div id="result" class="result-screen hidden">
   <h2 id="resTitle">GAME OVER</h2>
+  <div class="res-avatar"><canvas id="resAvatar" width="180" height="180"></canvas></div>
+  <div class="res-exp" id="resExp"></div>
   <div class="res-grid" id="resGrid"></div>
   <div class="res-btns">
     <button class="tbtn play" id="btnRetry">다시 도전</button>
-    <button class="tbtn" id="btnToTitle">타이틀로</button>
+    <button class="tbtn" id="btnToTitle">로비로</button>
   </div>
 </div>
 
+<script src="js/config.js"></script>
 <script src="js/util.js"></script>
 <script src="js/data.js"></script>
+<script src="js/gfx.js"></script>
+<script src="js/effects.js"></script>
 <script src="js/render.js"></script>
 <script src="js/entities.js"></script>
 <script src="js/game.js"></script>
+<script src="js/account.js"></script>
+<script src="js/lobby.js"></script>
+<script src="js/tutorial.js"></script>
 <script src="js/ui.js"></script>
 </body>
 </html>

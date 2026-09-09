@@ -155,9 +155,12 @@ const Game = {
     this.wave = 0; this.waveActive = false; this.waveKilled = 0; this.waveTotal = 0;
     this.spawnQueue = []; this.breakTime = 3.5; this.loop = 0;
 
-    this.maxLife = 20 + (this.perks.life || 0) * 5;
+    const boost = this.boosters || {};
+    this.maxLife = 20 + (this.perks.life || 0) * 5 + (boost.startlife ? 10 : 0);
     this.life = this.maxLife;
-    this.gold = 260 + (this.perks.gold0 || 0) * 120;
+    this.gold = 260 + (this.perks.gold0 || 0) * 120 + (boost.startgold ? 1000 : 0);
+    this.freeSummons = boost.freeSummon ? 5 : 0;
+    this.luckBoost = boost.luckycharm ? .5 : 0;
     this.mana = 30; this.maxMana = 100;
     this.summonCount = 0;
     this.combo = 0; this.comboTimer = 0; this.maxComboRun = 0;
@@ -176,7 +179,14 @@ const Game = {
       merges: 0, summons: 0, maxCombo: 0, skillUses: 0, maxUnits: 0,
       maxWave: 0, bestRarity: 0, mapsUnlocked: Object.keys(this.unlockedMaps).length + 1,
     };
+    if (this.boosters && Object.keys(this.boosters).length) {
+      this.boosters = {};
+      this.saveMeta();
+    }
     this.buildPath();
+    GFX.clearCache();
+    VFX.clear();
+    GFX.setWeather(this.map.weather, this);
     this.refreshAll();
     this.nextWaveList = null; this.nextWaveNo = 0;
     this.prepareNextWave();
@@ -185,11 +195,13 @@ const Game = {
 
   /* ---------------------------------------------------------- 메타 저장 */
   loadMeta() {
-    const d = Store.load();
+    const d = (window.Account && Account.current) ? Account.loadProfileData() : Store.load();
     this.gems = d && d.gems || 0;
     this.perks = d && d.perks || { atk: 0, gold: 0, luck: 0, life: 0, gold0: 0 };
     this.unlockedMaps = d && d.unlockedMaps || { meadow: 1 };
     this.achieved = d && d.achieved || {};
+    this.collection = d && d.collection || {};
+    this.boosters = d && d.boosters || {};
     this.metaStats = d && d.metaStats || {
       kills: 0, bossKills: 0, totalDmg: 0, leaks: 0, merges: 0, summons: 0,
       maxCombo: 0, skillUses: 0, maxUnits: 0, maxWave: 0, bestRarity: 0, totalGold: 0,
@@ -201,17 +213,20 @@ const Game = {
   },
   saveMeta() {
     this.metaStats.mapsUnlocked = Object.keys(this.unlockedMaps).length;
-    Store.save({
+    const data = {
       gems: this.gems, perks: this.perks, unlockedMaps: this.unlockedMaps,
       achieved: this.achieved, metaStats: this.metaStats, settings: this.settings,
-    });
+      collection: this.collection, boosters: this.boosters,
+    };
+    if (window.Account && Account.current) Account.saveProfileData(data);
+    else Store.save(data);
   },
 
   /* ---------------------------------------------------------- 스케일 */
   enemyScale(def, hpMul) {
     const w = this.wave + this.loop * 100;
     const diff = this.map.diff;
-    let hp = 24 * def.hp * Math.pow(1.168, w - 1) * diff * (hpMul || 1);
+    let hp = 24 * def.hp * Math.pow(1.168, w - 1) * diff * (hpMul || 1) * this.modNum('hpMul', 1);
     hp *= (1 + this.loop * 2.5);
     let armor = def.armor * (1 + (w - 1) * .085) * diff;
     let bounty = (3.4 + w * .95) * def.bounty * Math.pow(1.028, w) * (1 + this.loop * .8);
@@ -229,12 +244,27 @@ const Game = {
 
   buildWave(w) {
     const list = [];
-    const pool = this.availableEnemies();
+    let pool = this.availableEnemies();
+    /* 맵 편향 */
+    if (this.modFlag('undeadBias')) {
+      const und = pool.filter(k => (ENEMY_MAP[k].flags || []).includes('undead'));
+      if (und.length) pool = pool.concat(und, und);
+    }
+    if (this.modFlag('flyBias')) {
+      const fly = pool.filter(k => (ENEMY_MAP[k].flags || []).includes('flying'));
+      if (fly.length) pool = pool.concat(fly, fly, fly);
+    }
+    /* 정예 몬스터 (웨이브 20+) */
+    if (w >= 20) {
+      const elites = ENEMIES.filter(e => e.elite && e.tier <= 3 + Math.floor(w / 30)).map(e => e.key);
+      if (elites.length && w % 5 === 0) pool = pool.concat(elites);
+    }
     const budget = 6 + w * 1.9 + Math.pow(w, 1.25) * .5;
     let spent = 0;
     /* 보스 */
-    if (w % 10 === 0) {
-      const bi = Math.floor(w / 10) - 1;
+    const bossEvery = this.modVal('bossEvery', 10);
+    if (w % bossEvery === 0) {
+      const bi = Math.floor(w / bossEvery) - 1;
       const key = BOSS_ORDER[Math.min(BOSS_ORDER.length - 1, bi)] || BOSS_ORDER[BOSS_ORDER.length - 1];
       list.push({ key, delay: .3 });
       /* 보스 호위 */
@@ -294,6 +324,7 @@ const Game = {
     if (this.enemies.length > 320) return null;
     const e = new Enemy(this, key, opts || {});
     this.enemies.push(e);
+    if (e.boss) VFX.bossIntro(e, this);
     return e;
   },
 
@@ -334,6 +365,7 @@ const Game = {
     FX.popText(this.W / 2, this.H * .38, `웨이브 ${w} 클리어!`, '#7cff9c', 30, { life: 1.6, vy: -30 });
     FX.popText(this.W / 2, this.H * .38 + 34, `+${U.fmt(reward)}G` + (interest ? ` (이자 +${U.fmt(interest)})` : ''), '#ffd24d', 18, { life: 1.6, vy: -24 });
     SFX.play('win');
+    VFX.waveClear(this);
 
     this.checkAchievements();
     if (this.wave >= 100 && this.loop === 0) this.victory();
@@ -352,9 +384,9 @@ const Game = {
     this.gold -= v; return true;
   },
   get goldMul() {
-    return (1 + this.research.gold * .07) * (1 + (this.perks.gold || 0) * .1);
+    return (1 + this.research.gold * .07) * (1 + (this.perks.gold || 0) * .1) * this.modNum('goldMul', 1);
   },
-  get manaMul() { return 1 + this.research.mana * .09; },
+  get manaMul() { return (1 + this.research.mana * .09) * this.modNum('manaMul', 1); },
 
   addCombo() {
     this.combo++;
@@ -382,7 +414,7 @@ const Game = {
   },
 
   rollRarity() {
-    const luck = this.research.luck * .05 + (this.perks.luck || 0) * .08;
+    const luck = this.research.luck * .05 + (this.perks.luck || 0) * .08 + (this.luckBoost || 0);
     const list = RARITY.map((r, i) => ({ r, w: r.w * Math.pow(1 + luck, i) }));
     return U.weighted(list).r;
   },
@@ -391,8 +423,9 @@ const Game = {
     if (this.units.length >= this.slotMax()) {
       SFX.play('error'); if (window.UI) UI.toast('배치 공간이 없다! (진지 확장 연구)', '#ff6b6b'); return null;
     }
-    const cost = this.summonCost();
-    if (!this.spendGold(cost)) return null;
+    let cost = this.summonCost();
+    if (this.freeSummons > 0) { this.freeSummons--; cost = 0; }
+    else if (!this.spendGold(cost)) return null;
     this.summonCount++; this.stats.summons++;
 
     const rar = this.rollRarity();
@@ -406,13 +439,13 @@ const Game = {
     this.refreshAll();
 
     const ri = RARITY_IDX[rar.key];
+    this.collect(def.key);
     this.stats.bestRarity = Math.max(this.stats.bestRarity, ri);
     this.stats.maxUnits = Math.max(this.stats.maxUnits, this.units.length);
 
     /* 연출 */
     const col = rar.color;
-    FX.ring(u.px, u.py, col, this.ts * 1.4, .5);
-    FX.burst(u.px, u.py, col, 10 + ri * 6, { speed: 160 + ri * 40, size: 4 + ri, shape: ri >= 4 ? 'star' : 'circle' });
+    VFX.summon(u.px, u.py, ri, col, this);
     if (ri >= 6) { SFX.play('mythic'); FX.flash(col, .6); FX.shake(14); FX.stop(.14); if (window.UI) UI.rarityBanner(def, rar); }
     else if (ri >= 5) { SFX.play('mythic'); FX.flash(col, .45); FX.shake(10); if (window.UI) UI.rarityBanner(def, rar); }
     else if (ri >= 4) { SFX.play('legendary'); FX.flash(col, .3); FX.shake(6); if (window.UI) UI.rarityBanner(def, rar); }
@@ -425,9 +458,49 @@ const Game = {
 
   slotMax() { return 20 + this.research.slot; },
 
+  /* ---------------------------------------------------------- 맵 모디파이어 */
+  get mods() { return (this.map && this.map.mods) || []; },
+  /** 곱연산 모디파이어 */
+  modNum(key, base) {
+    let v = base;
+    for (const m of this.mods) if (m[key] !== undefined) v *= m[key];
+    return v;
+  },
+  /** 값 모디파이어 (첫 번째 값) */
+  modVal(key, base) {
+    for (const m of this.mods) if (m[key] !== undefined) return m[key];
+    return base;
+  },
+  /** 불리언 모디파이어 */
+  modFlag(key) { return this.mods.some(m => !!m[key]); },
+  /** 원소 피해 보너스 합 */
+  modElem(elem) {
+    let v = 0;
+    for (const m of this.mods) if (m.elemBonus && m.elemBonus[elem]) v += m.elemBonus[elem];
+    return v;
+  },
+  /** 적 원소 저항 가산 */
+  modResist(elem) {
+    let v = 0;
+    for (const m of this.mods) if (m.resistAdd && m.resistAdd[elem]) v += m.resistAdd[elem];
+    return v;
+  },
+
+  /** 도감 등록 */
+  collect(key) {
+    if (!this.collection) this.collection = {};
+    if (this.collection[key]) return false;
+    this.collection[key] = 1;
+    const def = UNIT_MAP[key];
+    if (window.UI && def) UI.toast('📖 신규 발견 : ' + def.name, RARITY[RARITY_IDX[def.rarity]].color);
+    this.saveMeta();
+    return true;
+  },
+  collectedCount() { return this.collection ? Object.keys(this.collection).length : 0; },
+
   /* ---------------------------------------------------------- 합성 */
   findMergeGroup(u) {
-    const same = this.units.filter(x => x.key === u.key && x.star === u.star);
+    const same = this.units.filter(x => x.key === u.key && x.star === u.star && (!x.locked || x === u));
     return same.length >= 3 ? same.slice(0, 3) : null;
   },
   updateMergeFlags() {
@@ -449,6 +522,7 @@ const Game = {
     if (u.star < 3) {
       u.star++;
       FX.explosion(u.px, u.py, this.ts * 1.2, RARITY[RARITY_IDX[u.def.rarity]].color, '#fff');
+      VFX.ascend(u.px, u.py, RARITY[RARITY_IDX[u.def.rarity]].color, this);
       FX.popText(u.px, u.py - this.ts, U.roman(u.star) + '성 달성!', '#ffd24d', 18);
       SFX.play('merge');
       u.refresh(); u.spawnMinions();
@@ -463,10 +537,12 @@ const Game = {
       const nu = new Unit(this, nd.key, 1, gx, gy);
       this.units.push(nu);
       FX.explosion(nu.px, nu.py, this.ts * 2, nextRar.color, '#fff');
+      VFX.ascend(nu.px, nu.py, nextRar.color, this);
       FX.flash(nextRar.color, .45); FX.shake(12); FX.stop(.1);
       FX.popText(nu.px, nu.py - this.ts, '승급! ' + nd.name, nextRar.color, 20, { life: 1.4 });
       SFX.play(nextIdx >= 5 ? 'mythic' : 'legendary');
       this.stats.bestRarity = Math.max(this.stats.bestRarity, nextIdx);
+      this.collect(nd.key);
       this.selected = nu;
       if (nextIdx >= 4 && window.UI) UI.rarityBanner(nd, nextRar);
     }
@@ -476,6 +552,94 @@ const Game = {
     return true;
   },
 
+  /* ---------------------------------------------------------- 편의 기능 */
+
+  /** 유닛 잠금 토글 (합성/판매 보호) */
+  toggleLock(u) {
+    u.locked = !u.locked;
+    SFX.play('click');
+    FX.popText(u.px, u.py - this.ts * .7, u.locked ? '🔒 잠금' : '🔓 해제', '#9fd2ff', 13);
+    this.updateMergeFlags();
+    if (window.UI) UI.refresh();
+    return u.locked;
+  },
+
+  /** 경로 커버리지가 좋은 칸으로 유닛을 자동 재배치 */
+  autoArrange() {
+    /* 각 배치 가능 칸의 "경로 노출 점수" 계산 */
+    const tiles = [];
+    const step = Math.max(6, Math.floor(this.pathLen / 160));
+    for (let gy = 0; gy < this.gh; gy++) {
+      for (let gx = 0; gx < this.gw; gx++) {
+        if (this.isPath(gx, gy)) continue;
+        const px = this.ox + (gx + .5) * this.ts;
+        const py = this.oy + (gy + .5) * this.ts;
+        let score = 0;
+        for (let d = 0; d < this.pathLen; d += step) {
+          const p = this.posAt(d);
+          const dist = U.dist(px, py, p.x, p.y) / this.ts;
+          if (dist < 6) score += 1 / (1 + dist * dist * .25);
+        }
+        tiles.push({ gx, gy, score });
+      }
+    }
+    tiles.sort((a, b) => b.score - a.score);
+
+    /* 사거리가 짧은 유닛일수록 좋은 자리에 */
+    const units = this.units.slice().sort((a, b) => a.stat.rng - b.stat.rng);
+    let moved = 0;
+    units.forEach((u, i) => {
+      const t = tiles[i];
+      if (!t) return;
+      if (u.gx !== t.gx || u.gy !== t.gy) {
+        u.gx = t.gx; u.gy = t.gy; u.setPos(); moved++;
+        FX.ring(u.px, u.py, '#9fd2ff', this.ts * .8, .35);
+      }
+    });
+    this.refreshAll();
+    SFX.play('upgrade');
+    if (window.UI) {
+      UI.toast(moved ? `${moved}기를 최적 위치로 재배치했다` : '이미 최적 배치다', '#9fd2ff');
+      UI.refresh();
+    }
+    return moved;
+  },
+
+  /** 특정 등급 이하 유닛 일괄 판매 (잠금 제외) */
+  sellBelow(rarityIdx) {
+    const targets = this.units.filter(u =>
+      !u.locked && RARITY_IDX[u.def.rarity] < rarityIdx && u.star === 1);
+    if (!targets.length) {
+      if (window.UI) UI.toast('판매할 유닛이 없다', '#ffcf3f');
+      SFX.play('error');
+      return 0;
+    }
+    let gain = 0;
+    for (const u of targets) {
+      gain += Math.floor(u.cost() * .6 + u.invested * .5);
+      this.removeUnit(u, false);
+    }
+    this.addGold(gain);
+    SFX.play('coin');
+    FX.popText(this.W / 2, this.H * .45, '+' + U.fmt(gain) + 'G', '#ffd24d', 24, { life: 1.4, vy: -30 });
+    if (window.UI) {
+      UI.toast(`${targets.length}기 판매 · +${U.fmt(gain)}G`, '#ffd24d');
+      UI.refresh();
+    }
+    return targets.length;
+  },
+
+  /** 유닛별 기여도 순위 */
+  dpsRanking() {
+    return this.units.slice()
+      .sort((a, b) => b.dmgDone - a.dmgDone)
+      .map(u => ({
+        name: u.def.name, star: u.star, level: u.level,
+        rarity: u.def.rarity, elem: u.def.elem,
+        dmg: u.dmgDone, kills: u.kills, dps: u.dps, unit: u,
+      }));
+  },
+
   autoMergeAll() {
     let n = 0;
     let again = true;
@@ -483,6 +647,7 @@ const Game = {
       again = false;
       const counts = {};
       for (const u of this.units) {
+        if (u.locked) continue;
         const k = u.key + '_' + u.star;
         (counts[k] = counts[k] || []).push(u);
       }
@@ -584,7 +749,9 @@ const Game = {
     this.bonus.dmg = (this.perks.atk || 0) * .08;
     this.bonus.crit = 0; this.bonus.gold = 0;
     this.bonus.dot = this.research.dot * .10;
-    this.bonus.slow = 0; this.bonus.freeze = 0; this.bonus.stun = 0; this.bonus.curse = 0;
+    this.bonus.slow = this.research.slow * .04;
+    this.bonus.freeze = 0; this.bonus.stun = 0;
+    this.bonus.curse = this.research.curse * .04;
     for (const k in this.synCache.elem) {
       const t = this.synCache.elem[k];
       if (t.slow) this.bonus.slow += t.slow;
@@ -643,7 +810,7 @@ const Game = {
       return false;
     }
     this.mana -= s.mana;
-    this.skillCd[key] = s.cd;
+    this.skillCd[key] = s.cd * (1 - Math.min(.6, this.research.skillcd * .03));
     this.stats.skillUses++;
     SFX.play('skill');
 
@@ -736,6 +903,134 @@ const Game = {
         SFX.play('heal');
         break;
       }
+      case 'poisonfog': {
+        const R = s.radius * this.ts;
+        this.zones.push(new Zone(this, wx, wy, R, '#7bdd52', 8, dmgBase * .9, {
+          elem: 'poison', trueDmg: true,
+          status: { poison: { dps: 3, dur: 5, stack: 10 } }
+        }));
+        FX.ring(wx, wy, '#7bdd52', R, .6);
+        for (let i = 0; i < 30; i++) {
+          const a = U.rand(U.TAU), d = U.rand(0, R);
+          FX.spawn({
+            x: wx + Math.cos(a) * d, y: wy + Math.sin(a) * d, vx: U.rand(-20, 20), vy: U.rand(-30, -6),
+            life: U.rand(1, 2), size: 9, size2: 3, color: '#7bdd52', shape: 'smoke', glow: false
+          });
+        }
+        SFX.play('explode');
+        break;
+      }
+      case 'blackhole': {
+        const R = s.radius * this.ts;
+        const dur = 5;
+        this.zones.push(new Zone(this, wx, wy, R, '#b57bff', dur, dmgBase * 1.1, {
+          elem: 'void', trueDmg: true, pull: true, shieldBreak: 2
+        }));
+        for (const e of this.enemies) {
+          if (e.dead) continue;
+          if (U.dist2(wx, wy, e.x, e.y) < R * R * 2.2) {
+            e.root = Math.max(e.root, dur);
+            e.markAmt = Math.max(e.markAmt, .3);
+          }
+        }
+        FX.ring(wx, wy, '#b57bff', R * 1.4, .7);
+        for (let i = 0; i < 40; i++) {
+          const a = U.rand(U.TAU), d = U.rand(R * .6, R * 1.8);
+          FX.spawn({
+            x: wx + Math.cos(a) * d, y: wy + Math.sin(a) * d,
+            vx: -Math.cos(a) * d * 1.6, vy: -Math.sin(a) * d * 1.6,
+            life: .8, size: 5, color: '#b57bff', shape: 'spark'
+          });
+        }
+        FX.flash('#b57bff', .3); FX.shake(12);
+        break;
+      }
+      case 'railgun': {
+        /* 경로 전체를 훑는 광선 : 지정 지점에서 가장 가까운 경로 구간 방향 */
+        const ang = U.ang(wx, wy, this.endX, this.endY);
+        const far = Math.max(this.W, this.H) * 1.4;
+        const x2 = wx + Math.cos(ang) * far, y2 = wy + Math.sin(ang) * far;
+        const x1 = wx - Math.cos(ang) * far, y1 = wy - Math.sin(ang) * far;
+        this.beams.push(new Beam([{ x: x1, y: y1 }, { x: x2, y: y2 }], '#6ffff0', .35, 16));
+        const width = s.radius * this.ts;
+        for (const e of this.enemies) {
+          if (e.dead) continue;
+          /* 선분까지 거리 */
+          const vx = x2 - x1, vy = y2 - y1;
+          const t = U.clamp(((e.x - x1) * vx + (e.y - y1) * vy) / (vx * vx + vy * vy), 0, 1);
+          const px = x1 + vx * t, py = y1 + vy * t;
+          if (U.dist2(px, py, e.x, e.y) < width * width) {
+            Combat.hit(this, e, dmgBase * 6, { elem: 'arcane', trueDmg: true, shieldBreak: 3 });
+            FX.explosion(e.x, e.y, this.ts * .8, '#6ffff0');
+          }
+        }
+        FX.flash('#6ffff0', .5); FX.shake(16); FX.stop(.08);
+        SFX.play('laser');
+        break;
+      }
+      case 'summonwave': {
+        let n = 0;
+        for (let i = 0; i < 3; i++) {
+          if (this.units.length >= this.slotMax()) break;
+          const free = this.freeTiles();
+          if (!free.length) break;
+          const rar = this.rollRarity();
+          const def = U.pick(UNITS_BY_RARITY[rar.key]);
+          const [gx, gy] = U.pick(free);
+          const u = new Unit(this, def.key, 1, gx, gy);
+          this.units.push(u);
+          this.collect(def.key);
+          this.stats.bestRarity = Math.max(this.stats.bestRarity, RARITY_IDX[rar.key]);
+          FX.ring(u.px, u.py, rar.color, this.ts * 1.5, .5);
+          FX.burst(u.px, u.py, rar.color, 16, { speed: 200, shape: 'star', size: 6 });
+          n++;
+        }
+        this.refreshAll();
+        SFX.play('summon');
+        FX.popText(this.W / 2, this.H * .4, `긴급 증원 ${n}기!`, '#a48bff', 24, { life: 1.4, vy: -30 });
+        break;
+      }
+      case 'earthquake': {
+        for (const e of this.enemies) {
+          if (e.dead) continue;
+          if (!e.boss) e.stun = Math.max(e.stun, 2);
+          else { e.chill = Math.max(e.chill, 3); e.chillAmt = Math.max(e.chillAmt, .5); }
+          e.armorBreak = Math.min(.9, e.armorBreak + .4);
+          Combat.hit(this, e, dmgBase * 2.2, { elem: 'earth', pen: .6 });
+        }
+        FX.flash('#d2a15e', .45); FX.shake(26); FX.stop(.12);
+        for (let i = 0; i < 24; i++) {
+          FX.spawn({
+            x: U.rand(this.ox, this.ox + this.gw * this.ts), y: U.rand(this.oy, this.oy + this.gh * this.ts),
+            vx: U.rand(-40, 40), vy: U.rand(-120, -40), gravity: 260,
+            life: .9, size: 7, color: '#d2a15e', shape: 'shard', vrot: U.rand(-8, 8)
+          });
+        }
+        SFX.play('explode');
+        break;
+      }
+      case 'judgement': {
+        let executed = 0;
+        for (const e of this.enemies) {
+          if (e.dead) continue;
+          if (!e.boss && e.hp / e.maxHp <= .4) {
+            e.shield = 0;
+            Combat.hit(this, e, e.hp * 10, { elem: 'holy', trueDmg: true });
+            executed++;
+          } else {
+            Combat.hit(this, e, dmgBase * 8, { elem: 'holy', trueDmg: true, holyBonus: 1, bossBonus: .5 });
+          }
+          FX.spawn({
+            x: e.x, y: e.y - 200, vx: 0, vy: 900, life: .3, size: 14, color: '#fff2b0', shape: 'spark'
+          });
+          FX.explosion(e.x, e.y, this.ts, '#fff2b0', '#ffffff');
+        }
+        FX.flash('#ffffff', .85); FX.shake(30); FX.stop(.2);
+        FX.popText(this.W / 2, this.H * .36, '최후의 심판', '#fff2b0', 34, { life: 1.8, vy: -26 });
+        if (executed) FX.popText(this.W / 2, this.H * .36 + 40, executed + '기 숙청', '#ffd24d', 20, { life: 1.6, vy: -20 });
+        SFX.play('mythic');
+        break;
+      }
     }
     this.checkAchievements();
     if (window.UI) UI.refresh();
@@ -757,6 +1052,8 @@ const Game = {
       mapsUnlocked: Object.keys(this.unlockedMaps).length,
       skillUses: this.stats.skillUses + this.metaStats.skillUses,
       maxUnits: Math.max(this.stats.maxUnits, this.metaStats.maxUnits),
+      collected: this.collectedCount(),
+      runs: this.metaStats.runs,
     };
     for (const a of ACHIEVEMENTS) {
       if (this.achieved[a.key]) continue;
@@ -877,6 +1174,8 @@ const Game = {
         case 'w': this.autoMergeAll(); break;
         case 'e': if (!this.waveActive) this.startWave(); break;
         case 'r': this.cycleSpeed(); break;
+        case 'a': this.autoArrange(); break;
+        case 'l': if (this.selected) this.toggleLock(this.selected); break;
         case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': {
           const s = SKILLS[parseInt(e.key) - 1];
           if (s) { if (s.type === 'target') { this.targetingSkill = s.key; if (window.UI) UI.setSkillTargeting(s.key); } else this.useSkill(s.key); }
@@ -952,6 +1251,10 @@ const Game = {
       if (z.dead) this.zones.splice(i, 1);
     }
 
+    GFX.updateWeather(dt, this);
+    VFX.update(dt);
+    if (window.Tutorial) Tutorial.tick();
+
     /* 음악 강도 */
     const intensity = U.clamp(this.enemies.length / 40 + (this.wave % 10 === 0 ? .4 : 0), 0, 1);
     SFX.musicTick(dt, intensity);
@@ -976,6 +1279,7 @@ const Game = {
     }
 
     Draw.drawMap(c, this);
+    VFX.drawGround(c);
     Draw.drawPlacement(c, this);
     for (const z of this.zones) Draw.drawZone(c, z, this);
 
@@ -995,8 +1299,17 @@ const Game = {
     for (const p of this.projectiles) Draw.drawProj(c, p, this);
     for (const b of this.beams) Draw.drawBeam(c, b, this);
 
+    /* 충격파 · 스피드라인 */
+    VFX.drawTop(c);
+
+    /* 환경광 */
+    GFX.ambient(c, this);
+
     /* 파티클 */
     FX.draw(c);
+
+    /* 날씨 */
+    GFX.drawWeather(c, this);
 
     /* 드래그 중인 유닛 */
     if (this.dragUnit && this.dragPos) {
