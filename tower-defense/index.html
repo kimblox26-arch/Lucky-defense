@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#05070b">
+<title>INFINITE TOWER DEFENSE — 무한의 탑 디펜스</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🏰</text></svg>">
+</head>
+<body>
+
+<canvas id="cv"></canvas>
+
+<!-- ======================================================= 상단 HUD -->
+<div id="hud" class="hud">
+  <div class="hud-row">
+    <div class="stat life"  id="statLife"><span class="ic">♥</span><b id="vLife">20</b></div>
+    <div class="stat gold"  id="statGold"><span class="ic">🪙</span><b id="vGold">0</b></div>
+    <div class="stat gem"   id="statGem"><span class="ic">💎</span><b id="vGem">0</b></div>
+    <div class="stat wave"  id="statWave"><span class="ic">🌊</span><b id="vWave">0</b><i id="vLoop"></i></div>
+  </div>
+  <div class="hud-row2">
+    <div class="manabar"><div class="fill" id="manaFill"></div><span id="vMana">0/100</span></div>
+    <div class="wavebar"><div class="fill" id="waveFill"></div><span id="vWaveProg">대기</span></div>
+  </div>
+  <div id="comboBox" class="combo hidden"><b id="vCombo">0</b><span>COMBO</span><i id="vComboMul">x1.0</i></div>
+</div>
+
+<!-- ======================================================= 시너지 패널 -->
+<div id="synPanel" class="syn-panel"></div>
+
+<!-- ======================================================= 스킬바 -->
+<div id="skillBar" class="skillbar"></div>
+
+<!-- ======================================================= 다음 웨이브 미리보기 -->
+<div id="wavePreview" class="wave-preview"></div>
+
+<!-- ======================================================= 하단 조작 -->
+<div id="bottom" class="bottom">
+  <button class="bbtn primary" id="btnSummon">
+    <span class="bico">✨</span>
+    <span class="blab">소환</span>
+    <span class="bsub" id="summonCost">30G</span>
+  </button>
+  <button class="bbtn" id="btnMerge">
+    <span class="bico">⇪</span>
+    <span class="blab">자동합성</span>
+    <span class="bsub" id="mergeCount">0쌍</span>
+  </button>
+  <button class="bbtn wavebtn" id="btnWave">
+    <span class="bico">⚔</span>
+    <span class="blab">웨이브</span>
+    <span class="bsub" id="waveSub">시작</span>
+  </button>
+  <button class="bbtn" id="btnResearch">
+    <span class="bico">⚗</span>
+    <span class="blab">연구</span>
+    <span class="bsub" id="researchSub">강화</span>
+  </button>
+  <button class="bbtn small" id="btnSpeed"><span class="bico" id="speedIco">▶</span><span class="bsub">x1</span></button>
+  <button class="bbtn small" id="btnPause"><span class="bico">⏸</span><span class="bsub">정지</span></button>
+  <button class="bbtn small" id="btnMenu"><span class="bico">☰</span><span class="bsub">메뉴</span></button>
+</div>
+
+<!-- ======================================================= 유닛 상세 -->
+<div id="unitPanel" class="unit-panel hidden">
+  <button class="close" id="unitClose">✕</button>
+  <div class="up-head">
+    <canvas id="upPortrait" width="120" height="120"></canvas>
+    <div class="up-title">
+      <div class="up-name" id="upName">—</div>
+      <div class="up-tags"><span id="upRarity" class="tag"></span><span id="upClass" class="tag"></span><span id="upElem" class="tag"></span></div>
+      <div class="up-stars" id="upStars"></div>
+    </div>
+  </div>
+  <div class="up-desc" id="upDesc"></div>
+  <div class="up-stats" id="upStats"></div>
+  <div class="up-target">
+    <span>타겟팅</span>
+    <div class="segs" id="upTargets"></div>
+  </div>
+  <div class="up-actions">
+    <button class="ubtn up" id="btnUpgrade"><b>강화</b><i id="upgCost">-</i></button>
+    <button class="ubtn mg" id="btnMergeOne"><b>합성</b><i id="mergeInfo">-</i></button>
+    <button class="ubtn sell" id="btnSell"><b>판매</b><i id="sellVal">-</i></button>
+  </div>
+</div>
+
+<!-- ======================================================= 모달 공통 -->
+<div id="modalWrap" class="modal-wrap hidden">
+  <div class="modal" id="modal">
+    <div class="modal-head">
+      <h2 id="modalTitle">제목</h2>
+      <button class="close" id="modalClose">✕</button>
+    </div>
+    <div class="modal-tabs" id="modalTabs"></div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<!-- ======================================================= 토스트/배너 -->
+<div id="toasts" class="toasts"></div>
+<div id="banner" class="banner hidden"></div>
+<div id="rarityBanner" class="rarity-banner hidden">
+  <canvas id="rbCanvas" width="180" height="180"></canvas>
+  <div class="rb-text"><div class="rb-rare" id="rbRare"></div><div class="rb-name" id="rbName"></div></div>
+</div>
+<div id="achPop" class="ach-pop hidden">
+  <div class="ap-ico" id="apIco">🏆</div>
+  <div><div class="ap-t" id="apTitle"></div><div class="ap-d" id="apDesc"></div><div class="ap-g" id="apGem"></div></div>
+</div>
+
+<!-- ======================================================= 타이틀 화면 -->
+<div id="title" class="title-screen">
+  <div class="tglow"></div>
+  <h1 class="tt">INFINITE<br><span>TOWER DEFENSE</span></h1>
+  <p class="tsub" id="titleSub"></p>
+  <div class="tmaps" id="titleMaps"></div>
+  <div class="tbtns">
+    <button class="tbtn play" id="btnStart">전투 시작</button>
+    <button class="tbtn" id="btnCodex">도감</button>
+    <button class="tbtn" id="btnAch">업적</button>
+    <button class="tbtn" id="btnPerks">명예 강화</button>
+    <button class="tbtn" id="btnSettings">설정</button>
+  </div>
+  <div class="tstats" id="titleStats"></div>
+  <div class="ttip" id="titleTip"></div>
+</div>
+
+<!-- ======================================================= 결과 화면 -->
+<div id="result" class="result-screen hidden">
+  <h2 id="resTitle">GAME OVER</h2>
+  <div class="res-grid" id="resGrid"></div>
+  <div class="res-btns">
+    <button class="tbtn play" id="btnRetry">다시 도전</button>
+    <button class="tbtn" id="btnToTitle">타이틀로</button>
+  </div>
+</div>
+
+<script src="js/util.js"></script>
+<script src="js/data.js"></script>
+<script src="js/render.js"></script>
+<script src="js/entities.js"></script>
+<script src="js/game.js"></script>
+<script src="js/ui.js"></script>
+</body>
+</html>
