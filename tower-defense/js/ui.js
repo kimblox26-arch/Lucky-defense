@@ -188,7 +188,10 @@ const UI = {
     $('researchSub').textContent = '유닛 ' + Game.units.length + '/' + Game.slotMax();
 
     this.refreshSynergy();
-    if (Game.selected) this.showUnitPanel(Game.selected);
+    /* 이미 열려 있는 패널의 수치만 갱신한다.
+       selected 만 보고 열어버리면 스킬 사용·소환처럼 refresh 를 부르는 모든 행동이
+       유닛 패널을 제멋대로 띄운다 (스킬 버튼을 눌렀는데 유닛창이 뜨던 원인). */
+    if (Game.selected && !$('unitPanel').classList.contains('hidden')) this.showUnitPanel(Game.selected);
     if (!$('modalWrap').classList.contains('hidden')) this.renderModal();
   },
 
