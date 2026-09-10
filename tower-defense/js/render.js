@@ -36,8 +36,41 @@ const Draw = {
       face: k.face || this.CLASS_FACE[def.cls] || 'normal',
       eyeCol: k.eyeCol || U.mixHex(el, '#1d1226', .66),
     };
+    const m = k.mount !== undefined ? k.mount : this.pickMount(def);
+    if (m) { L.mount = m; L.mountCol = k.mountCol || this.MOUNT_COL[m] || el; }
     this._unitLooks[def.key] = L;
     return L;
+  },
+
+  MOUNT_COL: {
+    wolf: '#8a97a8', boar: '#8d6c46', turtle: '#5aa06a', drake: '#d05a4a',
+    mech: '#9fb0c4', carpet: '#b4508a', cloud: '#dfe8f5', orb: '#8fa8ff',
+    broom: '#8a5f34', spirit: '#7fe0d0',
+  },
+  /** 클래스별로 어울리는 탈것 후보 (등급이 높을수록 화려한 쪽) */
+  MOUNT_BY_CLASS: {
+    archer: ['wolf', 'drake'], sniper: ['turtle', 'mech'],
+    guardian: ['boar', 'turtle'], assassin: ['wolf', 'spirit'],
+    mage: ['orb', 'carpet', 'broom'], warlock: ['spirit', 'broom'],
+    summoner: ['orb', 'spirit'], support: ['cloud', 'orb'],
+    bard: ['cloud', 'carpet'], artillery: ['mech', 'boar'],
+    engineer: ['mech'],
+  },
+  /**
+   * 유닛에게 탈것을 배정한다.
+   * 전부 태우면 실루엣이 뭉개지므로 등급이 높을수록 확률을 올려,
+   * 상위 등급이 한눈에 특별해 보이게 한다.
+   */
+  pickMount(def) {
+    const ri = RARITY_IDX[def.rarity];
+    const chance = [0, .08, .16, .28, .45, .6, .75, .9][ri];
+    /* 유닛 키로 결정론적 분기 — 같은 유닛은 항상 같은 탈것 */
+    let h = 0;
+    for (let i = 0; i < def.key.length; i++) h = (Math.imul(h, 31) + def.key.charCodeAt(i)) | 0;
+    h = Math.abs(h);
+    if ((h % 1000) / 1000 >= chance) return null;
+    const pool = this.MOUNT_BY_CLASS[def.cls] || ['wolf', 'orb'];
+    return pool[h % pool.length];
   },
 
   /** 클래스 → 표정 프리셋 */

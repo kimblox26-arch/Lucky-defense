@@ -1300,6 +1300,243 @@ const GFX = {
   /** 머리가 앉는 높이 (머리가 커진 만큼 위로 올려 목이 파묻히지 않게 한다) */
   HEAD_Y: .70,
 
+  /* ===================================================================
+   *  탈것 / 부유 받침
+   *  운빨겜처럼 유닛마다 늑대를 타거나 양탄자를 타거나 떠 있게 만든다.
+   *  전부 원점(0,0)이 "지면"이 되도록 그리고, rideY 만큼 탑승자를 올린다.
+   * =================================================================== */
+  MOUNT_RIDE: {
+    wolf: -.62, boar: -.66, drake: -.78, turtle: -.58,
+    carpet: -.34, cloud: -.46, orb: -.52, broom: -.40,
+    mech: -.72, spirit: -.44,
+  },
+  /* 탈것이 떠 있는 종류면 지면 그림자를 더 아래로 내린다 */
+  MOUNT_FLOAT: { carpet: 1, cloud: 1, orb: 1, broom: 1, spirit: 1 },
+
+  mount: {
+    /** 네 발 짐승 공통 몸체 (늑대/멧돼지/거북 등) */
+    _beast(c, S, R, t, o) {
+      o = o || {};
+      const sway = Math.sin(t * 3.2) * S * .03;
+      /* 다리 4개 */
+      for (let i = 0; i < 4; i++) {
+        const fr = i < 2, side = i % 2 ? 1 : -1;
+        const p = t * 5 + (fr ? 0 : Math.PI) + (side > 0 ? 0 : Math.PI);
+        const sw = Math.sin(p) * S * .1;
+        c.save();
+        c.translate((fr ? S * .34 : -S * .34) + sw * .5, -S * .12);
+        c.fillStyle = side > 0 ? R.base : R.sh;
+        c.beginPath(); c.roundRect(-S * .09, 0, S * .18, S * .3, S * .08); c.fill();
+        c.strokeStyle = '#1b1218'; c.lineWidth = S * .05; c.lineJoin = 'round'; c.stroke();
+        c.restore();
+      }
+      /* 몸통 */
+      const body = new Path2D();
+      body.ellipse(0, -S * .34 + sway, S * .58, S * (o.fat ? .34 : .28), 0, 0, U.TAU);
+      c.fillStyle = GFX.vgrad(c, 0, -S * .7, -S * .05, R.lit, R.sh);
+      c.fill(body);
+      c.strokeStyle = '#1b1218'; c.lineWidth = S * .075; c.stroke(body);
+      /* 머리 */
+      const hx = S * .56, hy = -S * .46 + sway;
+      const head = new Path2D();
+      head.ellipse(hx, hy, S * .26, S * .22, -.15, 0, U.TAU);
+      c.fillStyle = R.base; c.fill(head);
+      c.strokeStyle = '#1b1218'; c.lineWidth = S * .07; c.stroke(head);
+      /* 귀 / 뿔 */
+      if (o.ears) for (const d of [-1, 1]) {
+        c.fillStyle = R.sh;
+        c.beginPath();
+        c.moveTo(hx - S * .06, hy - S * .16);
+        c.lineTo(hx + d * S * .04 - S * .02, hy - S * .38);
+        c.lineTo(hx + S * .12, hy - S * .14);
+        c.closePath(); c.fill();
+        c.strokeStyle = '#1b1218'; c.lineWidth = S * .05; c.stroke();
+      }
+      if (o.tusk) for (const d of [-1, 1]) {
+        c.fillStyle = '#f4ecd8';
+        c.beginPath();
+        c.moveTo(hx + S * .16, hy + S * .1 + d * S * .04);
+        c.lineTo(hx + S * .34, hy - S * .04 + d * S * .03);
+        c.lineTo(hx + S * .17, hy + S * .17 + d * S * .04);
+        c.closePath(); c.fill();
+        c.strokeStyle = '#1b1218'; c.lineWidth = S * .035; c.stroke();
+      }
+      /* 눈 */
+      c.fillStyle = '#20161a';
+      c.beginPath(); c.arc(hx + S * .07, hy - S * .04, S * .045, 0, U.TAU); c.fill();
+      /* 꼬리 */
+      c.strokeStyle = R.sh; c.lineWidth = S * .12; c.lineCap = 'round';
+      c.beginPath();
+      c.moveTo(-S * .54, -S * .36);
+      c.quadraticCurveTo(-S * .76, -S * .5 + Math.sin(t * 4) * S * .08, -S * .82, -S * .24);
+      c.stroke();
+      c.lineCap = 'butt';
+    },
+    wolf(c, S, col, t) { GFX.mount._beast(c, S, GFX.ramp(col || '#8a97a8'), t, { ears: 1 }); },
+    boar(c, S, col, t) { GFX.mount._beast(c, S, GFX.ramp(col || '#8d6c46'), t, { fat: 1, tusk: 1 }); },
+    turtle(c, S, col, t) {
+      const R = GFX.ramp(col || '#5aa06a');
+      GFX.mount._beast(c, S, R, t, { fat: 1 });
+      /* 등껍질 */
+      const sh = new Path2D();
+      sh.ellipse(0, -S * .46, S * .56, S * .34, 0, Math.PI, U.TAU);
+      c.fillStyle = GFX.vgrad(c, 0, -S * .82, -S * .4, '#cf9a5a', '#8a5f34');
+      c.fill(sh);
+      c.strokeStyle = '#1b1218'; c.lineWidth = S * .075; c.stroke(sh);
+      c.strokeStyle = 'rgba(0,0,0,.28)'; c.lineWidth = S * .035;
+      for (let i = -1; i <= 1; i++) {
+        c.beginPath();
+        c.moveTo(i * S * .22, -S * .46);
+        c.lineTo(i * S * .3, -S * .74);
+        c.stroke();
+      }
+    },
+    drake(c, S, col, t) {
+      const R = GFX.ramp(col || '#d05a4a');
+      /* 날개 (뒤) */
+      const flap = Math.sin(t * 6) * .34;
+      for (const d of [-1, 1]) {
+        c.save();
+        c.translate(0, -S * .5);
+        c.rotate(d * (.5 + flap));
+        const w = new Path2D();
+        w.moveTo(0, 0);
+        w.quadraticCurveTo(d * S * .5, -S * .5, d * S * .92, -S * .16);
+        w.quadraticCurveTo(d * S * .52, -S * .04, 0, S * .1);
+        w.closePath();
+        c.fillStyle = GFX.vgrad(c, 0, -S * .5, S * .1, R.lit, R.sh);
+        c.fill(w);
+        c.strokeStyle = '#1b1218'; c.lineWidth = S * .06; c.lineJoin = 'round'; c.stroke(w);
+        c.restore();
+      }
+      GFX.mount._beast(c, S, R, t, { ears: 1 });
+    },
+    mech(c, S, col, t) {
+      const R = GFX.ramp(col || '#9fb0c4');
+      /* 다리 두 짝 */
+      for (const d of [-1, 1]) {
+        c.save();
+        c.translate(d * S * .3, -S * .1);
+        c.rotate(Math.sin(t * 4 + (d > 0 ? 0 : Math.PI)) * .16);
+        c.fillStyle = d > 0 ? R.base : R.sh;
+        c.beginPath(); c.roundRect(-S * .12, 0, S * .24, S * .34, S * .07); c.fill();
+        c.strokeStyle = '#1b1218'; c.lineWidth = S * .055; c.lineJoin = 'round'; c.stroke();
+        c.restore();
+      }
+      /* 본체 */
+      const b = new Path2D();
+      b.roundRect(-S * .5, -S * .6, S * 1.0, S * .5, S * .14);
+      c.fillStyle = GFX.metal(c, -S * .5, -S * .6, S * .5, -S * .1, R);
+      c.fill(b);
+      c.strokeStyle = '#1b1218'; c.lineWidth = S * .075; c.stroke(b);
+      /* 배기구 */
+      c.fillStyle = '#20161a';
+      for (let i = -1; i <= 1; i++) {
+        c.beginPath(); c.arc(i * S * .22, -S * .18, S * .05, 0, U.TAU); c.fill();
+      }
+      /* 경고등 */
+      c.fillStyle = `rgba(255,120,90,${.5 + Math.sin(t * 7) * .5})`;
+      c.beginPath(); c.arc(S * .38, -S * .5, S * .07, 0, U.TAU); c.fill();
+      c.strokeStyle = '#1b1218'; c.lineWidth = S * .04; c.stroke();
+    },
+    carpet(c, S, col, t) {
+      const R = GFX.ramp(col || '#b4508a');
+      const w = new Path2D();
+      const wave = (x) => Math.sin(t * 3 + x * 4) * S * .06;
+      w.moveTo(-S * .7, -S * .12 + wave(-.7));
+      w.quadraticCurveTo(0, -S * .24 + wave(0), S * .7, -S * .12 + wave(.7));
+      w.lineTo(S * .7, -S * .02 + wave(.7));
+      w.quadraticCurveTo(0, -S * .14 + wave(0), -S * .7, -S * .02 + wave(-.7));
+      w.closePath();
+      c.fillStyle = GFX.vgrad(c, 0, -S * .26, S * .02, R.lit, R.sh);
+      c.fill(w);
+      c.strokeStyle = '#1b1218'; c.lineWidth = S * .06; c.lineJoin = 'round'; c.stroke(w);
+      /* 술 장식 */
+      c.strokeStyle = '#ffd24d'; c.lineWidth = S * .035; c.lineCap = 'round';
+      for (const d of [-1, 1]) for (let i = 0; i < 3; i++) {
+        const bx = d * (S * .7 - i * S * .05);
+        c.beginPath();
+        c.moveTo(bx, -S * .06 + wave(d * .7));
+        c.lineTo(bx + d * S * .06, S * .06 + wave(d * .7));
+        c.stroke();
+      }
+      c.lineCap = 'butt';
+      /* 문양 */
+      c.strokeStyle = 'rgba(255,255,255,.4)'; c.lineWidth = S * .028;
+      c.beginPath(); c.moveTo(-S * .4, -S * .1 + wave(-.4)); c.lineTo(S * .4, -S * .1 + wave(.4)); c.stroke();
+    },
+    cloud(c, S, col, t) {
+      const R = GFX.ramp(col || '#dfe8f5');
+      const p = new Path2D();
+      const puff = [[-.5, -.06, .26], [-.16, -.16, .32], [.2, -.12, .28], [.5, -.02, .22]];
+      for (const [px, py, pr] of puff) {
+        p.ellipse(S * px, S * (py + Math.sin(t * 2.4 + px * 5) * .03), S * pr, S * pr * .74, 0, 0, U.TAU);
+      }
+      c.fillStyle = GFX.vgrad(c, 0, -S * .4, S * .1, '#ffffff', R.sh);
+      c.fill(p);
+      c.strokeStyle = '#1b1218'; c.lineWidth = S * .06; c.stroke(p);
+    },
+    orb(c, S, col, t) {
+      const R = GFX.ramp(col || '#8fa8ff');
+      /* 회전 룬 링 */
+      c.save();
+      c.translate(0, -S * .16);
+      c.strokeStyle = U.rgba(R.hi, .9); c.lineWidth = S * .055;
+      c.setLineDash([S * .13, S * .1]); c.lineDashOffset = -t * S * 1.4;
+      c.beginPath(); c.ellipse(0, 0, S * .56, S * .2, 0, 0, U.TAU); c.stroke();
+      c.setLineDash([]);
+      /* 원반 */
+      const d = new Path2D();
+      d.ellipse(0, 0, S * .42, S * .15, 0, 0, U.TAU);
+      c.fillStyle = GFX.vgrad(c, 0, -S * .16, S * .16, R.lit, R.sh);
+      c.fill(d);
+      c.strokeStyle = '#1b1218'; c.lineWidth = S * .06; c.stroke(d);
+      c.restore();
+    },
+    broom(c, S, col, t) {
+      const R = GFX.ramp(col || '#8a5f34');
+      const tilt = Math.sin(t * 2.6) * .06;
+      c.save();
+      c.translate(0, -S * .1);
+      c.rotate(tilt);
+      /* 자루 */
+      c.strokeStyle = R.base; c.lineWidth = S * .1; c.lineCap = 'round';
+      c.beginPath(); c.moveTo(-S * .6, S * .04); c.lineTo(S * .62, -S * .08); c.stroke();
+      c.strokeStyle = '#1b1218'; c.lineWidth = S * .14;
+      c.globalCompositeOperation = 'destination-over';
+      c.beginPath(); c.moveTo(-S * .6, S * .04); c.lineTo(S * .62, -S * .08); c.stroke();
+      c.globalCompositeOperation = 'source-over';
+      /* 빗자루 솔 */
+      c.strokeStyle = '#d8a44a'; c.lineWidth = S * .045;
+      for (let i = -2; i <= 2; i++) {
+        c.beginPath();
+        c.moveTo(-S * .56, S * .03);
+        c.lineTo(-S * .86, S * (.03 + i * .07));
+        c.stroke();
+      }
+      c.lineCap = 'butt';
+      c.restore();
+    },
+    spirit(c, S, col, t) {
+      const R = GFX.ramp(col || '#7fe0d0');
+      c.save();
+      c.globalAlpha = .85;
+      const p = new Path2D();
+      p.moveTo(-S * .44, -S * .1);
+      for (let i = 0; i <= 8; i++) {
+        const x = -S * .44 + (S * .88) * (i / 8);
+        p.lineTo(x, S * (.06 + Math.sin(t * 4 + i) * .06));
+      }
+      p.lineTo(S * .44, -S * .1);
+      p.quadraticCurveTo(0, -S * .34, -S * .44, -S * .1);
+      p.closePath();
+      c.fillStyle = GFX.vgrad(c, 0, -S * .34, S * .12, R.hi, U.rgba(R.base, .3));
+      c.fill(p);
+      c.strokeStyle = U.rgba(R.line, .8); c.lineWidth = S * .05; c.stroke(p);
+      c.restore();
+    },
+  },
+
   drawChar(c, x, y, S, look, st) {
     const t = st.t || 0;
     const R = GFX.ramp(look.color || '#8fa5c4');
@@ -1323,10 +1560,38 @@ const GFX = {
 
     /* 오라(뒤) */
     if (look.aura && GFX.aura[look.aura]) GFX.aura[look.aura](c, S, A.hi, t, look.auraCount || 5);
+
+    /* 탈것 — 탑승자보다 먼저 그리고, 그만큼 위로 올려 앉힌다 */
+    const mk = look.mount;
+    if (mk && GFX.mount[mk]) {
+      const floaty = GFX.MOUNT_FLOAT[mk] ? Math.sin(t * 1.8 + seed) * S * .05 : 0;
+      /* 탈것은 지면(원점 아래 .52)에 놓는다 */
+      const groundY = S * .52 + floaty;
+      /* 탑승자에 가려지지 않게 탈것을 조금 크게 그린다 */
+      const mS = S * 1.3;
+      c.save();
+      c.translate(0, groundY);
+      GFX.mount[mk](c, mS, look.mountCol || A.base, t);
+      c.restore();
+      /* 탑승자를 안장 높이에 앉힌다.
+         다리를 접은 자세라 실제 바닥은 몸통 아래끝(≈ S*.44)이고, 여기서
+         조금 더 내려 안장에 파묻히게 해야 "올라탄" 것처럼 보인다. */
+      const saddleY = groundY + mS * (GFX.MOUNT_RIDE[mk] || -.5);
+      c.translate(0, saddleY - S * .34);
+    }
+
     /* 날개(뒤) */
     if (look.wings && GFX.wings[look.wings]) GFX.wings[look.wings](c, S, look.wingCol || A.base, t);
-    /* 다리 */
-    if (look.legs && GFX.legs[look.legs]) GFX.legs[look.legs](c, S, R, ph, look.legStyle, t);
+    /* 다리 — 탈것에 올라탔으면 다리를 접어(짧게) 앉은 자세로 */
+    if (mk) {
+      if (look.legs && look.legs !== 'none' && GFX.legs.biped) {
+        c.save(); c.scale(1, .55);
+        GFX.legs.biped(c, S, R, 0, look.legStyle);
+        c.restore();
+      }
+    } else if (look.legs && GFX.legs[look.legs]) {
+      GFX.legs[look.legs](c, S, R, ph, look.legStyle, t);
+    }
     /* 뒷팔 */
     if (look.arms !== false) GFX.drawArm(c, S, R, -S * .3, -S * .12, Math.PI * .72 + Math.sin(ph) * .2, S * .32, S * .175);
     /* 몸통 */
@@ -1422,8 +1687,11 @@ const GFX = {
   _bakeChar(look, S, st) {
     const outlineW = GFX.outlineWidth(S);
     const pad = Math.ceil(outlineW * 2 + 6);
-    const w = Math.ceil(S * 3.8) + pad * 2, h = Math.ceil(S * 4.6) + pad * 2;
-    const ox = w / 2, oy = h * .66;
+    /* 탈것을 태우면 위(탑승자)로도 아래(탈것)로도 커진다 */
+    const mounted = !!(look.mount && GFX.mount[look.mount]);
+    const w = Math.ceil(S * (mounted ? 4.6 : 3.8)) + pad * 2;
+    const h = Math.ceil(S * (mounted ? 6.0 : 4.6)) + pad * 2;
+    const ox = w / 2, oy = h * (mounted ? .72 : .66);
     const av = this._scratch('_shadeCv', w, h);
     const ac = av.getContext('2d');
     ac.clearRect(0, 0, w, h);
