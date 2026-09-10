@@ -88,10 +88,17 @@ const Roulette = {
     const cv = document.getElementById('rlCv');
     if (!cv) return;
     const c = cv.getContext('2d');
-    const W = cv.width, H = cv.height, cx = W / 2, cy = H / 2, R = W * .46;
+    const W = cv.width, H = cv.height, cx = W / 2, cy = H / 2, R = W * .43;
     c.clearRect(0, 0, W, H);
     const n = this.SLOTS.length;
     const step = Math.PI * 2 / n;
+
+    /* 뒤편 후광 — 휠이 어둠 위에 떠 있게 */
+    const halo = c.createRadialGradient(cx, cy, R * .8, cx, cy, R * 1.28);
+    halo.addColorStop(0, 'rgba(255,210,77,.20)');
+    halo.addColorStop(1, 'rgba(255,210,77,0)');
+    c.fillStyle = halo;
+    c.beginPath(); c.arc(cx, cy, R * 1.28, 0, Math.PI * 2); c.fill();
 
     c.save();
     c.translate(cx, cy);
@@ -100,13 +107,21 @@ const Roulette = {
       const s = this.SLOTS[i];
       const a0 = i * step - Math.PI / 2 - step / 2;
       const a1 = a0 + step;
-      /* 부채꼴 */
-      const g = c.createRadialGradient(0, 0, R * .18, 0, 0, R);
-      g.addColorStop(0, U.mixHex(s.color, '#101423', .45));
-      g.addColorStop(1, U.mixHex(s.color, '#101423', .05));
+      /* 부채꼴 : 바깥으로 갈수록 색이 살아난다 (어두운 UI 와 맞물리게) */
+      const g = c.createRadialGradient(0, 0, R * .16, 0, 0, R);
+      g.addColorStop(0, U.mixHex(s.color, '#080b14', .12));
+      g.addColorStop(.55, U.mixHex(s.color, '#0d1120', .40));
+      g.addColorStop(1, U.mixHex(s.color, '#0d1120', .72));
       c.fillStyle = g;
       c.beginPath(); c.moveTo(0, 0); c.arc(0, 0, R, a0, a1); c.closePath(); c.fill();
-      c.strokeStyle = 'rgba(10,12,20,.85)'; c.lineWidth = 3; c.stroke();
+      /* 칸 경계 — 어두운 골 + 얇은 하이라이트 */
+      c.strokeStyle = 'rgba(6,8,14,.9)'; c.lineWidth = 3.5; c.stroke();
+      c.save();
+      c.rotate(a0);
+      c.strokeStyle = 'rgba(255,255,255,.10)'; c.lineWidth = 1.2;
+      c.beginPath(); c.moveTo(R * .17, 0); c.lineTo(R, 0); c.stroke();
+      c.restore();
+
       /* 아이콘 + 이름 */
       c.save();
       const mid = a0 + step / 2;
@@ -116,27 +131,49 @@ const Roulette = {
       if (flipped) { c.rotate(Math.PI); c.textAlign = 'left'; }
       else c.textAlign = 'right';
       c.textBaseline = 'middle';
-      const tx = flipped ? -R * .86 : R * .86;
-      c.font = '700 30px system-ui';
-      c.fillText(s.icon, tx, -10);
-      c.font = '800 13px system-ui';
-      c.fillStyle = '#f2f6ff';
-      c.fillText(s.name, flipped ? -R * .9 : R * .9, 14);
+      const tx = flipped ? -R * .84 : R * .84;
+      c.font = '700 32px system-ui';
+      c.shadowColor = 'rgba(0,0,0,.7)'; c.shadowBlur = 6; c.shadowOffsetY = 2;
+      c.fillText(s.icon, tx, -11);
+      c.font = '900 13.5px system-ui';
+      c.fillStyle = '#fff';
+      c.shadowColor = s.color; c.shadowBlur = 9; c.shadowOffsetY = 0;
+      c.fillText(s.name, flipped ? -R * .88 : R * .88, 15);
       c.restore();
     }
     c.restore();
 
+    /* 바깥 금테 — 안쪽 그림자 + 금속 그라데이션 + 리벳 */
+    c.save();
+    c.beginPath(); c.arc(cx, cy, R, 0, Math.PI * 2);
+    c.strokeStyle = 'rgba(0,0,0,.55)'; c.lineWidth = 8; c.stroke();
+    const rim = c.createLinearGradient(cx - R, cy - R, cx + R, cy + R);
+    rim.addColorStop(0, '#fff0b8'); rim.addColorStop(.35, '#e0a92c');
+    rim.addColorStop(.6, '#ffe98f'); rim.addColorStop(1, '#b8801a');
+    c.beginPath(); c.arc(cx, cy, R + 6, 0, Math.PI * 2);
+    c.strokeStyle = rim; c.lineWidth = 11; c.stroke();
+    for (let i = 0; i < n; i++) {
+      const a = i * step - Math.PI / 2 - step / 2 + this.angle;
+      const px = cx + Math.cos(a) * (R + 6), py = cy + Math.sin(a) * (R + 6);
+      c.beginPath(); c.arc(px, py, 3.4, 0, Math.PI * 2);
+      c.fillStyle = '#fff6d0'; c.fill();
+      c.strokeStyle = 'rgba(120,80,10,.7)'; c.lineWidth = 1; c.stroke();
+    }
+    c.restore();
+
     /* 가운데 허브 */
-    c.fillStyle = '#141a26';
+    const hub = c.createRadialGradient(cx - R * .05, cy - R * .06, R * .02, cx, cy, R * .17);
+    hub.addColorStop(0, '#2b3450'); hub.addColorStop(1, '#0c1019');
+    c.fillStyle = hub;
     c.beginPath(); c.arc(cx, cy, R * .17, 0, Math.PI * 2); c.fill();
-    c.strokeStyle = '#ffd24d'; c.lineWidth = 4; c.stroke();
-    c.fillStyle = '#ffd24d'; c.font = '800 22px system-ui';
+    c.strokeStyle = rim; c.lineWidth = 5; c.stroke();
+    c.font = '800 26px system-ui';
     c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.shadowColor = '#ffd24d'; c.shadowBlur = 14;
     c.fillText('🎡', cx, cy);
-    /* 바깥 테두리 */
-    c.strokeStyle = '#ffd24d'; c.lineWidth = 6;
-    c.beginPath(); c.arc(cx, cy, R + 3, 0, Math.PI * 2); c.stroke();
+    c.shadowBlur = 0;
   },
+
 
   pickSlot() {
     const list = this.SLOTS.map(s => ({ s, w: s.weight }));

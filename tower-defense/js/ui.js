@@ -298,23 +298,30 @@ const UI = {
     $('upStars').textContent = '★'.repeat(u.star) + '☆'.repeat(3 - u.star) + '  Lv.' + u.level;
     $('upDesc').textContent = d.desc;
 
+    /* 패널 전체가 등급색을 띠게 한다 */
+    p.style.setProperty('--rc', rar.color);
+
     const s = u.stat;
+    /* [아이콘, 이름, 값, 0~1 게이지] — 게이지가 있는 것만 막대를 그린다 */
     const rows = [
-      ['공격력', U.fmt(s.dmg)],
-      ['공격속도', s.spd.toFixed(2) + '/s'],
-      ['DPS', U.fmt(u.dps)],
-      ['사거리', s.rng > 20 ? '무한' : s.rng.toFixed(1)],
-      ['치명타', U.pct(s.crit) + ' / ' + Math.round(s.critMul * 100) + '%'],
-      ['방어관통', U.pct(s.pen)],
+      ['⚔', '공격력', U.fmt(s.dmg), null],
+      ['⏱', '공격속도', s.spd.toFixed(2) + '/s', U.clamp(s.spd / 8, 0, 1)],
+      ['🔥', 'DPS', U.fmt(u.dps), null],
+      ['🎯', '사거리', s.rng > 20 ? '무한' : s.rng.toFixed(1), U.clamp(s.rng / 8, 0, 1)],
+      ['💥', '치명타', U.pct(s.crit) + ' <i>×' + s.critMul.toFixed(1) + '</i>', U.clamp(s.crit, 0, 1)],
+      ['🪓', '방어관통', U.pct(s.pen), U.clamp(s.pen, 0, 1)],
     ];
-    if (s.splash > 0) rows.push(['범위', s.splash.toFixed(1)]);
-    if (s.chain > 0) rows.push(['연쇄', s.chain + '회']);
-    if (s.pierce > 0) rows.push(['관통', s.pierce + '체']);
-    if (s.multishot > 1) rows.push(['다중사격', s.multishot + '발']);
-    if (s.execute > 0) rows.push(['처형', U.pct(s.execute)]);
-    rows.push(['누적 피해', U.fmt(u.dmgDone)]);
-    rows.push(['처치', u.kills + '기']);
-    $('upStats').innerHTML = rows.map(r => `<div><span>${r[0]}</span><b>${r[1]}</b></div>`).join('');
+    if (s.splash > 0) rows.push(['🧨', '범위', s.splash.toFixed(1), null]);
+    if (s.chain > 0) rows.push(['⚡', '연쇄', s.chain + '회', null]);
+    if (s.pierce > 0) rows.push(['🏹', '관통', s.pierce + '체', null]);
+    if (s.multishot > 1) rows.push(['🎇', '다중사격', s.multishot + '발', null]);
+    if (s.execute > 0) rows.push(['☠', '처형', U.pct(s.execute), null]);
+    rows.push(['📊', '누적 피해', U.fmt(u.dmgDone), null]);
+    rows.push(['🗡', '처치', u.kills + '기', null]);
+    $('upStats').innerHTML = rows.map(r => `<div>
+      <span><em>${r[0]}</em>${r[1]}</span><b>${r[2]}</b>
+      ${r[3] != null ? `<u style="width:${(r[3] * 100).toFixed(0)}%"></u>` : ''}
+    </div>`).join('');
 
     document.querySelectorAll('#upTargets button').forEach(b =>
       b.classList.toggle('on', b.dataset.mode === u.targetMode));
@@ -345,17 +352,23 @@ const UI = {
 
   renderModal() {
     const tabs = [
-      { k: 'research', n: '⚗ 연구' },
-      { k: 'codex', n: '📖 도감' },
-      { k: 'ach', n: '🏆 업적' },
-      { k: 'skills', n: '✨ 스킬' },
-      { k: 'tools', n: '🛠 도구' },
-      { k: 'menu', n: '☰ 메뉴' },
+      { k: 'research', i: '⚗', n: '연구', c: '#7cff9c' },
+      { k: 'codex', i: '📖', n: '도감', c: '#4ea8ff' },
+      { k: 'ach', i: '🏆', n: '업적', c: '#ffd24d' },
+      { k: 'skills', i: '✨', n: '스킬', c: '#c48fff' },
+      { k: 'tools', i: '🛠', n: '도구', c: '#7fd8ff' },
+      { k: 'menu', i: '☰', n: '메뉴', c: '#8fa8cc' },
     ];
+    const cur = tabs.find(t => t.k === this.modalTab) || tabs[0];
+    /* 탭마다 고유색을 주고, 모달 전체가 그 색을 띠게 한다 */
+    $('modal').style.setProperty('--acc', cur.c);
     $('modalTabs').innerHTML = tabs.map(t =>
-      `<button class="${this.modalTab === t.k ? 'on' : ''}" data-tab="${t.k}">${t.n}</button>`).join('');
+      `<button class="${this.modalTab === t.k ? 'on' : ''}" data-tab="${t.k}" style="--tc:${t.c}">
+        <i>${t.i}</i><span>${t.n}</span></button>`).join('');
     $('modalTabs').querySelectorAll('button').forEach(b =>
       b.onclick = () => { this.modalTab = b.dataset.tab; this.renderModal(); SFX.play('click'); });
+    const onTab = $('modalTabs').querySelector('.on');
+    if (onTab) onTab.scrollIntoView({ block: 'nearest', inline: 'center' });
 
     const body = $('modalBody');
     body.scrollTop = 0;
@@ -406,11 +419,16 @@ const UI = {
         const lv = Game.research[r.key], max = lv >= r.max;
         const cost = Game.researchCost(r.key);
         const can = !max && Game.gold >= cost;
-        return `<div class="res-item ${max ? 'max' : ''}">
+        const pct = Math.round(lv / r.max * 100);
+        return `<div class="res-item ${max ? 'max' : ''}${can ? ' can' : ''}">
           <div class="ri">${r.icon}</div>
-          <div class="rt"><div class="rn">${r.name} <span class="rlv">Lv.${lv}/${r.max}</span></div>
-          <div class="rd">${r.desc}</div></div>
-          <button data-res="${r.key}" class="${can ? '' : 'dis'}">${max ? 'MAX' : U.fmt(cost) + 'G'}</button>
+          <div class="rt">
+            <div class="rn">${r.name} <span class="rlv">${lv}<i>/${r.max}</i></span></div>
+            <div class="rd">${r.desc}</div>
+            <div class="rbar"><div style="width:${pct}%"></div></div>
+          </div>
+          <button data-res="${r.key}" class="${max ? 'maxed' : can ? '' : 'dis'}">
+            ${max ? 'MAX' : `<b>${U.fmt(cost)}</b><i>G</i>`}</button>
         </div>`;
       }).join('');
   },
@@ -432,22 +450,37 @@ const UI = {
     if (this.codexTab === 'syn') { Lobby.renderSynergyList(host); return; }
     if (this.codexTab === 'enemy') {
       host.innerHTML = '<div class="cxgrid">' + ENEMIES.map((e, i) => `
-        <div class="cx" style="border-color:${e.boss ? '#ffd24d' : 'rgba(120,160,220,.25)'}">
+        <div class="cx got${e.boss ? ' boss' : ''}" style="--c:${e.boss ? '#ffd24d' : e.color}">
           <canvas width="130" height="130" data-en="${i}"></canvas>
           <div class="cx-n">${e.name}</div>
-          <div class="cx-r" style="color:${e.color}">${e.boss ? '👑 BOSS' : 'T' + e.tier}</div>
+          <div class="cx-r">${e.boss ? '👑 BOSS' : '티어 ' + e.tier}</div>
         </div>`).join('') + '</div>';
       host.querySelectorAll('[data-en]').forEach(cv => Draw.portraitEnemy(cv, ENEMIES[+cv.dataset.en]));
       return;
     }
     const found = Game.collection || {};
-    host.innerHTML = '<div class="cxgrid">' + UNITS.map((u, i) => {
+    /* 등급별 수집률을 먼저 보여 준다 — "얼마나 남았나" 가 곧 다음 판을 도는 이유다 */
+    const per = RARITY.map(r => ({ r, n: 0, t: 0 }));
+    for (const u of UNITS) { const i = RARITY_IDX[u.rarity]; per[i].t++; if (found[u.key]) per[i].n++; }
+    const total = UNITS.length, got = Object.keys(found).length;
+    const bar = `<div class="cx-sum">
+      <div class="cxs-top"><b>${got}</b><span>/ ${total}</span>
+        <i>${(got / total * 100).toFixed(1)}%</i></div>
+      <div class="cxs-bar">` + per.map(x =>
+        `<span style="flex:${x.t};--c:${x.r.color}" title="${x.r.name} ${x.n}/${x.t}">
+          <em style="width:${x.t ? x.n / x.t * 100 : 0}%"></em></span>`).join('') + `</div>
+      <div class="cxs-leg">` + per.map(x =>
+        `<span style="color:${x.r.color}">${x.r.name} <b>${x.n}/${x.t}</b></span>`).join('') + `</div>
+    </div>`;
+
+    host.innerHTML = bar + '<div class="cxgrid">' + UNITS.map((u, i) => {
       const r = RARITY[RARITY_IDX[u.rarity]];
       const seen = !!found[u.key];
-      return `<div class="cx ${seen ? '' : 'unseen'}" style="border-color:${seen ? r.color : 'rgba(120,160,220,.2)'}">
+      return `<div class="cx ${seen ? 'got' : 'unseen'}" style="--c:${r.color}">
         <canvas width="130" height="130" data-un="${i}"></canvas>
+        ${seen ? '' : '<span class="cx-lock">🔒</span>'}
         <div class="cx-n">${seen ? u.name : '???'}</div>
-        <div class="cx-r" style="color:${r.color}">${r.name}</div>
+        <div class="cx-r">${r.name}</div>
       </div>`;
     }).join('') + '</div>';
     host.querySelectorAll('[data-un]').forEach(cv => {
