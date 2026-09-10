@@ -154,6 +154,7 @@ const Game = {
 
     this.wave = 0; this.waveActive = false; this.waveKilled = 0; this.waveTotal = 0;
     this.spawnQueue = []; this.breakTime = 3.5; this.loop = 0;
+    this.buildRunPool();
 
     const boost = this.boosters || {};
     this.maxLife = 20 + (this.perks.life || 0) * 5 + (boost.startlife ? 10 : 0);
@@ -170,7 +171,8 @@ const Game = {
 
     this.research = {};
     RESEARCH.forEach(r => this.research[r.key] = 0);
-    this.buffs = { goldrush: 0, overdrive: 0, sanctuary: 0, timewarp: 0 };
+    this.buffs = { goldrush: 0, overdrive: 0, sanctuary: 0, timewarp: 0, timestop: 0, bloodpact: 0 };
+    this.bulwarkCharges = 0;
     this.skillCd = {};
     SKILLS.forEach(s => this.skillCd[s.key] = 0);
 
@@ -428,6 +430,34 @@ const Game = {
     const base = 30 + this.summonCount * 7.4;
     return Math.max(12, Math.floor(base * (1 - this.research.summoncost * .02)));
   },
+
+  /**
+   * 이번 판에 등장할 유닛 명단을 등급별로 추린다.
+   *
+   * 유닛 종류를 전부 뽑기 풀에 넣으면 같은 유닛 3기가 모이지 않아 합성이
+   * 사실상 불가능해진다 (404종으로 늘린 직후 자동플레이에서 합성 0회 ·
+   * 9웨이브 전멸을 확인했다). 그래서 판마다 등급별로 일부만 골라
+   * "이번 판의 명단"을 만든다. 늘어난 종류는 판이 바뀔 때마다 달라지는
+   * 다양성으로 살리고, 한 판 안에서는 중복이 충분히 나오게 한다.
+   */
+  ROSTER_PER_RARITY: { common: 8, uncommon: 9, rare: 10, epic: 11, legendary: 10, mythic: 9, ultimate: 8, primordial: 6 },
+
+  buildRunPool() {
+    this.runPool = {};
+    for (const r of RARITY) {
+      const all = UNITS_BY_RARITY[r.key] || [];
+      const want = Math.min(all.length, this.ROSTER_PER_RARITY[r.key] || 10);
+      this.runPool[r.key] = U.shuffle(all.slice()).slice(0, want);
+    }
+  },
+
+  /** 이번 판 명단 (UI 표시용) */
+  runRoster() {
+    if (!this.runPool) return [];
+    const out = [];
+    for (const r of RARITY) for (const d of (this.runPool[r.key] || [])) out.push(d);
+    return out;
+  },
   /** N연차 소환의 예상 총 비용 (무료 소환권은 앞에서부터 소모됨을 감안) */
   summonCostN(n) {
     let total = 0, free = this.freeSummons || 0, count = this.summonCount;
@@ -459,7 +489,7 @@ const Game = {
     this.summonCount++; this.stats.summons++;
 
     const rar = this.rollRarity();
-    const pool = UNITS_BY_RARITY[rar.key];
+    const pool = this.runPool ? this.runPool[rar.key] : UNITS_BY_RARITY[rar.key];
     const def = U.pick(pool);
     const free = this.freeTiles();
     if (!free.length) { this.gold += cost; if (!silent && window.UI) UI.toast('빈 칸이 없다!', '#ff6b6b'); return null; }
@@ -592,7 +622,7 @@ const Game = {
       const ri = RARITY_IDX[u.def.rarity];
       const nextIdx = Math.min(RARITY.length - 1, ri + 1);
       const nextRar = RARITY[nextIdx];
-      const pool = UNITS_BY_RARITY[nextRar.key];
+      const pool = (this.runPool && this.runPool[nextRar.key]) || UNITS_BY_RARITY[nextRar.key];
       const nd = U.pick(pool);
       this.removeUnit(u, false);
       const nu = new Unit(this, nd.key, 1, gx, gy);
@@ -1036,7 +1066,7 @@ const Game = {
           const free = this.freeTiles();
           if (!free.length) break;
           const rar = this.rollRarity();
-          const def = U.pick(UNITS_BY_RARITY[rar.key]);
+          const def = U.pick((this.runPool && this.runPool[rar.key]) || UNITS_BY_RARITY[rar.key]);
           const [gx, gy] = U.pick(free);
           const u = new Unit(this, def.key, 1, gx, gy);
           this.units.push(u);
@@ -1090,6 +1120,59 @@ const Game = {
         FX.popText(this.W / 2, this.H * .36, '최후의 심판', '#fff2b0', 34, { life: 1.8, vy: -26 });
         if (executed) FX.popText(this.W / 2, this.H * .36 + 40, executed + '기 숙청', '#ffd24d', 20, { life: 1.6, vy: -20 });
         SFX.play('mythic');
+        break;
+      }
+
+      /* ---- 추가 스킬 ---- */
+      case 'meteorshower': {
+        /* 메테오보다 넓게, 3파에 걸쳐 쏟아진다 */
+        const R = s.radius * this.ts;
+        for (let wave = 0; wave < 3; wave++) {
+          setTimeout(() => {
+            if (this.state !== 'playing') return;
+            for (let i = 0; i < 3; i++) {
+              const px = wx + U.rand(-R * .7, R * .7), py = wy + U.rand(-R * .7, R * .7);
+              FX.explosion(px, py, this.ts * 1.5, '#ff7a3c', '#ffe08a');
+              FX.ring(px, py, '#ff7a3c', this.ts * 1.7, .45);
+              for (const e of this.enemies) {
+                if (e.dead) continue;
+                if (U.dist2(e.x, e.y, px, py) > (this.ts * 1.7) ** 2) continue;
+                Combat.hit(this, e, dmgBase * 2.2, {
+                  elem: 'fire', status: { burn: { dps: dmgBase * .05, dur: 4 } }
+                });
+              }
+            }
+            FX.shake(11);
+          }, wave * 320);
+        }
+        FX.flash('#ff7a3c', .3);
+        FX.popText(wx, wy - this.ts * 2, '유성우!', '#ff7a3c', 24, { life: 1.2, vy: -24 });
+        break;
+      }
+      case 'timestop': {
+        /* timewarp 는 감속(0.3배)이지만 이쪽은 완전 정지 */
+        this.buffs.timestop = 5;
+        FX.flash('#b4a8ff', .5);
+        for (const e of this.enemies) FX.ring(e.x, e.y, '#b4a8ff', this.ts * .7, .5);
+        FX.popText(this.W / 2, this.H * .38, '시간 정지', '#b4a8ff', 32, { life: 1.6, vy: -22 });
+        SFX.play('mythic');
+        break;
+      }
+      case 'bloodpact': {
+        /* 강력한 대신 생명 1을 대가로 지불한다 */
+        this.buffs.bloodpact = 12;
+        if (this.life > 1) this.life -= 1;
+        FX.flash('#e04a5a', .45); FX.shake(14);
+        FX.popText(this.W / 2, this.H * .4, '피의 계약 −1 ♥', '#e04a5a', 26, { life: 1.6, vy: -24 });
+        if (window.UI) UI.refresh();
+        break;
+      }
+      case 'bulwark': {
+        this.bulwarkCharges = (this.bulwarkCharges || 0) + 3;
+        FX.flash('#7fd0ff', .35);
+        FX.ring(this.endX, this.endY, '#7fd0ff', this.ts * 2.4, .7);
+        FX.popText(this.endX, this.endY - this.ts, '장벽 ' + this.bulwarkCharges + '회', '#7fd0ff', 22, { life: 1.5, vy: -22 });
+        SFX.play('heal');
         break;
       }
     }
@@ -1289,7 +1372,7 @@ const Game = {
     let odWas = this.buffs.overdrive > 0;
     for (const k in this.buffs) if (this.buffs[k] > 0) this.buffs[k] -= dt;
     if (odWas && this.buffs.overdrive <= 0) this.refreshAll();
-    this.enemySpeedMul = this.buffs.timewarp > 0 ? .3 : 1;
+    this.enemySpeedMul = this.buffs.timestop > 0 ? 0 : this.buffs.timewarp > 0 ? .3 : 1;
 
     /* 스킬 쿨 */
     for (const k in this.skillCd) if (this.skillCd[k] > 0) this.skillCd[k] -= dt;

@@ -396,6 +396,19 @@ class Enemy {
       FX.ring(g.endX, g.endY, '#fff2b0', g.ts * 1.4, .4);
       return;
     }
+    /* 관리자 무적 */
+    if (window.Admin && Admin.godMode) {
+      FX.popText(g.endX, g.endY - 30, '무적', '#ff8a96', 18);
+      return;
+    }
+    /* 수호 장벽 : 남은 횟수만큼 누수를 대신 막는다 */
+    if (g.bulwarkCharges > 0) {
+      g.bulwarkCharges--;
+      FX.popText(g.endX, g.endY - 30, '장벽! 남은 ' + g.bulwarkCharges, '#7fd0ff', 18);
+      FX.ring(g.endX, g.endY, '#7fd0ff', g.ts * 1.6, .45);
+      SFX.play('heal');
+      return;
+    }
     g.life -= dmg;
     g.stats.leaks++;
     FX.flash('#ff2a2a', .5); FX.shake(10);
@@ -450,6 +463,7 @@ class Unit {
     dmg *= (1 + syn.dmg + g.bonus.dmg);
     dmg *= (1 + this.auraVal('dmg'));
     if (g.buffs.overdrive > 0) dmg *= 1.6;
+    if (g.buffs.bloodpact > 0) dmg *= 1.7;
 
     let spd = d.spd * (1 + g.research.spd * .04) * (1 + (syn.spd || 0)) * (1 + this.auraVal('spd'));
     if (g.buffs.overdrive > 0) spd *= 2.2;

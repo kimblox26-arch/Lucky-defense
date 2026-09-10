@@ -708,6 +708,1494 @@ const UNITS = [
     look: { legs: 'none', torso: 'brute', head: 'orb', hair: 'none', gear: 'antlers', weapon: 'none', skin: '#4ce8a0' },
     desc: '정령 10기 · 골드 획득 +80%.'
   },
+  /* ------- 생성 : common ------- */
+  {
+    key: 'phys_archer_co0', name: '무쇠 활잡이', rarity: 'common', cls: 'archer', elem: 'phys', dmg: 8, spd: 1.53, rng: 3.3, proj: 'arrow', crit: 0.1, critMul: 1.9,
+    look: { legs: 'biped', torso: 'leather', head: 'human', hair: 'pony', gear: 'none', weapon: 'bow', skin: '#f0c9a0', hairCol: '#3a2a1a' },
+    desc: '치명 10%.'
+  },
+  {
+    key: 'thunder_sniper_co1', name: '섬전 관측수', rarity: 'common', cls: 'sniper', elem: 'thunder', dmg: 12, spd: 0.46, rng: 6.3, proj: 'arrow', crit: 0.14, critMul: 2.2,
+    look: { legs: 'biped', torso: 'leather', head: 'human', hair: 'spiky', gear: 'none', weapon: 'crossbow', skin: '#f0c9a0', hairCol: '#3a2a1a' },
+    desc: '치명 14%.'
+  },
+  {
+    key: 'dark_mage_co2', name: '검은 술사', rarity: 'common', cls: 'mage', elem: 'dark', dmg: 9, spd: 0.81, rng: 3.1, proj: 'ball', splash: 0.71,
+    look: { legs: 'biped', torso: 'robe', head: 'human', hair: 'short', gear: 'none', weapon: 'staff', skin: '#ffe0c0', hairCol: '#6b4a2a' },
+    desc: '범위 폭발.'
+  },
+  {
+    key: 'void_artillery_co3', name: '균열 포격수', rarity: 'common', cls: 'artillery', elem: 'void', dmg: 16, spd: 0.48, rng: 3.4, proj: 'bomb', splash: 0.71,
+    look: { legs: 'biped', torso: 'leather', head: 'human', hair: 'short', gear: 'none', weapon: 'sling', skin: '#c89268', hairCol: '#d94f4f' },
+    desc: '범위 폭발.'
+  },
+  {
+    key: 'blood_guardian_co4', name: '핏빛 검사', rarity: 'common', cls: 'guardian', elem: 'blood', dmg: 12, spd: 0.85, rng: 1.8, proj: 'none', pen: 0.17,
+    look: { legs: 'biped', torso: 'plate', head: 'human', hair: 'spiky', gear: 'none', weapon: 'greatsword', skin: '#f2d0ad', hairCol: '#2b2b33' },
+    desc: '방어 17% 관통.'
+  },
+  {
+    key: 'fire_assassin_co5', name: '잿불 밀정', rarity: 'common', cls: 'assassin', elem: 'fire', dmg: 10, spd: 1.64, rng: 1.9, proj: 'none', burn: { dps: 0.12, dur: 4 },
+    look: { legs: 'biped', torso: 'leather', head: 'human', hair: 'spiky', gear: 'none', weapon: 'dagger', skin: '#d9a978', hairCol: '#c9a227' },
+    desc: '화상.'
+  },
+  {
+    key: 'poison_support_co6', name: '썩은 성직자', rarity: 'common', cls: 'support', elem: 'poison', dmg: 8, spd: 0.94, rng: 2.7, proj: 'ball', aura: { type: 'dmg', amt: 0.14, radius: 4 },
+    look: { legs: 'biped', torso: 'spectral', head: 'human', hair: 'pony', gear: 'none', weapon: 'flask', skin: '#f0c9a0', hairCol: '#d94f4f' },
+    desc: '공격력 오라 +14%.'
+  },
+  {
+    key: 'nature_bard_co7', name: '수호림 전율자', rarity: 'common', cls: 'bard', elem: 'nature', dmg: 8, spd: 1.27, rng: 3, proj: 'ball', aura: { type: 'dmg', amt: 0.16, radius: 2 }, regen: 0.02,
+    look: { legs: 'biped', torso: 'cloak', head: 'human', hair: 'pony', gear: 'none', weapon: 'banner', skin: '#e8bf95', hairCol: '#6b4a2a' },
+    desc: '생명 재생 · 공격력 오라 +16%.'
+  },
+  {
+    key: 'wind_summoner_co8', name: '유랑 조련사', rarity: 'common', cls: 'summoner', elem: 'wind', dmg: 10, spd: 1.06, rng: 2.8, proj: 'ball', summon: { count: 1, dmg: 3, spd: 1.2 }, multishot: 2,
+    look: { legs: 'biped', torso: 'robe', head: 'human', hair: 'short', gear: 'none', weapon: 'staff', skin: '#f2d0ad', hairCol: '#2b2b33' },
+    desc: '2연사 · 정령 1기 소환.'
+  },
+  {
+    key: 'time_engineer_co9', name: '영겁 조립공', rarity: 'common', cls: 'engineer', elem: 'time', dmg: 13, spd: 1.16, rng: 3.3, proj: 'bolt', slow: 0.24,
+    look: { legs: 'biped', torso: 'plate', head: 'human', hair: 'braid', gear: 'none', weapon: 'flask', skin: '#b9825a', hairCol: '#2b2b33' },
+    desc: '둔화 24%.'
+  },
+  {
+    key: 'ice_warlock_co10', name: '설야 금술사', rarity: 'common', cls: 'warlock', elem: 'ice', dmg: 14, spd: 0.83, rng: 3.1, proj: 'ball', poison: { dps: 0.14, dur: 6, stack: 2 },
+    look: { legs: 'biped', torso: 'cloak', head: 'human', hair: 'pony', gear: 'none', weapon: 'wand', skin: '#ffe0c0', hairCol: '#2b2b33' },
+    desc: '중독.'
+  },
+  {
+    key: 'dark_archer_co11', name: '검은 궁병', rarity: 'common', cls: 'archer', elem: 'dark', dmg: 9, spd: 1.54, rng: 3.3, proj: 'arrow', curse: 0.14,
+    look: { legs: 'biped', torso: 'leather', head: 'human', hair: 'pony', gear: 'none', weapon: 'bow', skin: '#f0c9a0', hairCol: '#4a3524' },
+    desc: '저주.'
+  },
+  {
+    key: 'void_sniper_co12', name: '단절 관측수', rarity: 'common', cls: 'sniper', elem: 'void', dmg: 23, spd: 0.6, rng: 6.2, proj: 'arrow', crit: 0.13, critMul: 2,
+    look: { legs: 'biped', torso: 'cloak', head: 'human', hair: 'long', gear: 'none', weapon: 'rifle', skin: '#c89268', hairCol: '#8a5a3a' },
+    desc: '치명 13%.'
+  },
+  {
+    key: 'blood_mage_co13', name: '붉은 사도', rarity: 'common', cls: 'mage', elem: 'blood', dmg: 14, spd: 1.13, rng: 3.2, proj: 'ball', splash: 0.76,
+    look: { legs: 'biped', torso: 'robe', head: 'human', hair: 'long', gear: 'none', weapon: 'orb', skin: '#e8bf95', hairCol: '#6b4a2a' },
+    desc: '범위 폭발.'
+  },
+  {
+    key: 'fire_artillery_co14', name: '겁화 폭격수', rarity: 'common', cls: 'artillery', elem: 'fire', dmg: 24, spd: 0.53, rng: 3.3, proj: 'bomb', burn: { dps: 0.29, dur: 4 },
+    look: { legs: 'biped', torso: 'leather', head: 'human', hair: 'pony', gear: 'none', weapon: 'sling', skin: '#e8bf95', hairCol: '#6b4a2a' },
+    desc: '화상.'
+  },
+  {
+    key: 'poison_guardian_co15', name: '괴저 파수꾼', rarity: 'common', cls: 'guardian', elem: 'poison', dmg: 18, spd: 0.96, rng: 1.9, proj: 'none', crit: 0.14, critMul: 1.9,
+    look: { legs: 'biped', torso: 'plate', head: 'human', hair: 'pony', gear: 'none', weapon: 'axe', skin: '#b9825a', hairCol: '#3a2a1a' },
+    desc: '치명 14%.'
+  },
+  {
+    key: 'nature_assassin_co16', name: '수호림 암살자', rarity: 'common', cls: 'assassin', elem: 'nature', dmg: 14, spd: 2.15, rng: 1.8, proj: 'none', crit: 0.1, critMul: 1.8,
+    look: { legs: 'biped', torso: 'leather', head: 'human', hair: 'braid', gear: 'none', weapon: 'dagger', skin: '#c89268', hairCol: '#d94f4f' },
+    desc: '치명 10%.'
+  },
+  {
+    key: 'wind_support_co17', name: '유랑 조율사', rarity: 'common', cls: 'support', elem: 'wind', dmg: 9, spd: 1.37, rng: 2.8, proj: 'ball', aura: { type: 'gold', amt: 0.07, radius: 3 },
+    look: { legs: 'biped', torso: 'spectral', head: 'human', hair: 'long', gear: 'none', weapon: 'tome', skin: '#e8bf95', hairCol: '#4a3524' },
+    desc: '골드 오라 +7%.'
+  },
+  {
+    key: 'time_bard_co18', name: '모래시계 음유시인', rarity: 'common', cls: 'bard', elem: 'time', dmg: 10, spd: 1.63, rng: 2.9, proj: 'ball', aura: { type: 'gold', amt: 0.15, radius: 3 }, slow: 0.16,
+    look: { legs: 'biped', torso: 'cloak', head: 'human', hair: 'short', gear: 'none', weapon: 'harp', skin: '#e8bf95', hairCol: '#8a5a3a' },
+    desc: '둔화 16% · 골드 오라 +15%.'
+  },
+  {
+    key: 'ice_summoner_co19', name: '서리 부름꾼', rarity: 'common', cls: 'summoner', elem: 'ice', dmg: 15, spd: 0.7, rng: 3, proj: 'ball', summon: { count: 1, dmg: 5, spd: 1.2 }, slow: 0.39,
+    look: { legs: 'float', torso: 'robe', head: 'human', hair: 'pony', gear: 'none', weapon: 'orb', skin: '#e8bf95', hairCol: '#8a5a3a' },
+    desc: '둔화 39% · 정령 1기 소환.'
+  },
+  {
+    key: 'holy_engineer_co20', name: '여명 기술자', rarity: 'common', cls: 'engineer', elem: 'holy', dmg: 22, spd: 1.01, rng: 3.3, proj: 'bolt', splash: 0.73,
+    look: { legs: 'biped', torso: 'core', head: 'human', hair: 'pony', gear: 'none', weapon: 'rifle', skin: '#d9a978', hairCol: '#d94f4f' },
+    desc: '범위 폭발.'
+  },
+  {
+    key: 'arcane_warlock_co21', name: '룬 금술사', rarity: 'common', cls: 'warlock', elem: 'arcane', dmg: 21, spd: 1, rng: 3.2, proj: 'ball', poison: { dps: 0.21, dur: 5, stack: 2 },
+    look: { legs: 'biped', torso: 'robe', head: 'human', hair: 'long', gear: 'none', weapon: 'scythe', skin: '#f2d0ad', hairCol: '#4a3524' },
+    desc: '중독.'
+  },
+  {
+    key: 'blood_archer_co22', name: '적혈 사궁', rarity: 'common', cls: 'archer', elem: 'blood', dmg: 15, spd: 1.4, rng: 3.2, proj: 'arrow', crit: 0.12, critMul: 2.1,
+    look: { legs: 'biped', torso: 'leather', head: 'human', hair: 'spiky', gear: 'none', weapon: 'crossbow', skin: '#f0c9a0', hairCol: '#2b2b33' },
+    desc: '치명 12%.'
+  },
+  {
+    key: 'fire_sniper_co23', name: '작열 저격수', rarity: 'common', cls: 'sniper', elem: 'fire', dmg: 24, spd: 0.45, rng: 5.8, proj: 'arrow', crit: 0.15, critMul: 2,
+    look: { legs: 'biped', torso: 'leather', head: 'human', hair: 'pony', gear: 'none', weapon: 'rifle', skin: '#f2d0ad', hairCol: '#8a5a3a' },
+    desc: '치명 15%.'
+  },
+  {
+    key: 'poison_mage_co24', name: '독무 주술사', rarity: 'common', cls: 'mage', elem: 'poison', dmg: 22, spd: 1.23, rng: 3.1, proj: 'ball', splash: 0.7,
+    look: { legs: 'biped', torso: 'robe', head: 'human', hair: 'pony', gear: 'none', weapon: 'wand', skin: '#e8bf95', hairCol: '#3a2a1a' },
+    desc: '범위 폭발.'
+  },
+  {
+    key: 'nature_artillery_co25', name: '이끼 투석수', rarity: 'common', cls: 'artillery', elem: 'nature', dmg: 24, spd: 0.59, rng: 3.5, proj: 'bomb', splash: 0.71,
+    look: { legs: 'biped', torso: 'plate', head: 'human', hair: 'long', gear: 'none', weapon: 'cannon', skin: '#d9a978', hairCol: '#c9a227' },
+    desc: '범위 폭발.'
+  },
+  /* ------- 생성 : uncommon ------- */
+  {
+    key: 'holy_sniper_un0', name: '성역 저격수', rarity: 'uncommon', cls: 'sniper', elem: 'holy', dmg: 19, spd: 0.8, rng: 5.9, proj: 'arrow', pen: 0.2,
+    look: { legs: 'biped', torso: 'leather', head: 'human', hair: 'pony', gear: 'none', weapon: 'crossbow', skin: '#d9a978', hairCol: '#d94f4f' },
+    desc: '방어 20% 관통.'
+  },
+  {
+    key: 'arcane_mage_un1', name: '고대 사도', rarity: 'uncommon', cls: 'mage', elem: 'arcane', dmg: 12, spd: 0.97, rng: 3.3, proj: 'ball', splash: 0.88,
+    look: { legs: 'biped', torso: 'robe', head: 'human', hair: 'spiky', gear: 'none', weapon: 'orb', skin: '#f0c9a0', hairCol: '#3a2a1a' },
+    desc: '범위 폭발.'
+  },
+  {
+    key: 'earth_artillery_un2', name: '바위 포격수', rarity: 'uncommon', cls: 'artillery', elem: 'earth', dmg: 22, spd: 0.79, rng: 3.3, proj: 'bomb', splash: 0.84,
+    look: { legs: 'biped', torso: 'leather', head: 'human', hair: 'long', gear: 'none', weapon: 'launcher', skin: '#b9825a', hairCol: '#2b2b33' },
+    desc: '범위 폭발.'
+  },
+  {
+    key: 'phys_guardian_un3', name: '강습 파수꾼', rarity: 'uncommon', cls: 'guardian', elem: 'phys', dmg: 16, spd: 0.89, rng: 1.8, proj: 'none', crit: 0.15, critMul: 2,
+    look: { legs: 'biped', torso: 'plate', head: 'human', hair: 'pony', gear: 'none', weapon: 'sword', skin: '#ffe0c0', hairCol: '#c9a227' },
+    desc: '치명 15%.'
+  },
+  {
+    key: 'thunder_assassin_un4', name: '번개 그림자', rarity: 'uncommon', cls: 'assassin', elem: 'thunder', dmg: 12, spd: 1.73, rng: 2.1, proj: 'none', chain: 3,
+    look: { legs: 'biped', torso: 'leather', head: 'human', hair: 'braid', gear: 'none', weapon: 'chakram', skin: '#e8bf95', hairCol: '#4a3524' },
+    desc: '3회 연쇄.'
+  },
+  {
+    key: 'dark_support_un5', name: '검은 축복자', rarity: 'uncommon', cls: 'support', elem: 'dark', dmg: 12, spd: 1, rng: 2.6, proj: 'ball', aura: { type: 'rng', amt: 0.13, radius: 2 }, curse: 0.19,
+    look: { legs: 'biped', torso: 'robe', head: 'human', hair: 'long', gear: 'none', weapon: 'tome', skin: '#c89268', hairCol: '#8e5b9e' },
+    desc: '저주 · 사거리 오라 +13%.'
+  },
+  {
+    key: 'void_bard_un6', name: '공허 전율자', rarity: 'uncommon', cls: 'bard', elem: 'void', dmg: 12, spd: 1.49, rng: 2.8, proj: 'ball', aura: { type: 'rng', amt: 0.1, radius: 3 }, pen: 0.23,
+    look: { legs: 'biped', torso: 'cloak', head: 'human', hair: 'spiky', gear: 'none', weapon: 'harp', skin: '#b9825a', hairCol: '#3a2a1a' },
+    desc: '방어 23% 관통 · 사거리 오라 +10%.'
+  },
+  {
+    key: 'blood_summoner_un7', name: '선혈 조련사', rarity: 'uncommon', cls: 'summoner', elem: 'blood', dmg: 13, spd: 0.91, rng: 3.1, proj: 'ball', summon: { count: 1, dmg: 4, spd: 1.2 }, lifesteal: 0.14,
+    look: { legs: 'float', torso: 'cloak', head: 'human', hair: 'pony', gear: 'none', weapon: 'staff', skin: '#f2d0ad', hairCol: '#d94f4f' },
+    desc: '흡혈 · 정령 1기 소환.'
+  },
+  {
+    key: 'fire_engineer_un8', name: '용광로 장인', rarity: 'uncommon', cls: 'engineer', elem: 'fire', dmg: 18, spd: 1.37, rng: 3.4, proj: 'bolt', splash: 0.83,
+    look: { legs: 'biped', torso: 'plate', head: 'human', hair: 'pony', gear: 'none', weapon: 'drone', skin: '#f2d0ad', hairCol: '#6b4a2a' },
+    desc: '범위 폭발.'
+  },
+  {
+    key: 'poison_warlock_un9', name: '농창 흑마법사', rarity: 'uncommon', cls: 'warlock', elem: 'poison', dmg: 19, spd: 1.08, rng: 3.1, proj: 'ball', poison: { dps: 0.19, dur: 4, stack: 2 },
+    look: { legs: 'biped', torso: 'cloak', head: 'human', hair: 'long', gear: 'none', weapon: 'wand', skin: '#f2d0ad', hairCol: '#6b4a2a' },
+    desc: '중독.'
+  },
+  {
+    key: 'nature_archer_un10', name: '초원 사궁', rarity: 'uncommon', cls: 'archer', elem: 'nature', dmg: 13, spd: 1.46, rng: 3.4, proj: 'arrow', crit: 0.1, critMul: 2.1,
+    look: { legs: 'biped', torso: 'leather', head: 'human', hair: 'pony', gear: 'none', weapon: 'crossbow', skin: '#ffe0c0', hairCol: '#6b4a2a' },
+    desc: '치명 10%.'
+  },
+  {
+    key: 'earth_sniper_un11', name: '암반 응시자', rarity: 'uncommon', cls: 'sniper', elem: 'earth', dmg: 29, spd: 0.65, rng: 5.6, proj: 'arrow', pen: 0.18,
+    look: { legs: 'biped', torso: 'cloak', head: 'human', hair: 'short', gear: 'none', weapon: 'rifle', skin: '#c89268', hairCol: '#c9a227' },
+    desc: '방어 18% 관통.'
+  },
+  {
+    key: 'phys_mage_un12', name: '백년 사도', rarity: 'uncommon', cls: 'mage', elem: 'phys', dmg: 22, spd: 0.82, rng: 3.3, proj: 'ball', splash: 0.88,
+    look: { legs: 'biped', torso: 'robe', head: 'human', hair: 'braid', gear: 'none', weapon: 'wand', skin: '#e8bf95', hairCol: '#8a5a3a' },
+    desc: '범위 폭발.'
+  },
+  {
+    key: 'thunder_artillery_un13', name: '낙뢰 척탄병', rarity: 'uncommon', cls: 'artillery', elem: 'thunder', dmg: 41, spd: 0.46, rng: 3.3, proj: 'bomb', splash: 0.64,
+    look: { legs: 'biped', torso: 'leather', head: 'human', hair: 'long', gear: 'none', weapon: 'launcher', skin: '#ffe0c0', hairCol: '#3a2a1a' },
+    desc: '범위 폭발.'
+  },
+  {
+    key: 'dark_guardian_un14', name: '그믐 중갑병', rarity: 'uncommon', cls: 'guardian', elem: 'dark', dmg: 29, spd: 0.91, rng: 1.9, proj: 'none', pen: 0.18,
+    look: { legs: 'biped', torso: 'plate', head: 'human', hair: 'pony', gear: 'none', weapon: 'hammer', skin: '#e8bf95', hairCol: '#8e5b9e' },
+    desc: '방어 18% 관통.'
+  },
+  {
+    key: 'void_assassin_un15', name: '무형 단검술사', rarity: 'uncommon', cls: 'assassin', elem: 'void', dmg: 23, spd: 2.13, rng: 1.9, proj: 'none', crit: 0.11, critMul: 2.2,
+    look: { legs: 'biped', torso: 'cloak', head: 'human', hair: 'pony', gear: 'none', weapon: 'chakram', skin: '#d9a978', hairCol: '#8a5a3a' },
+    desc: '치명 11%.'
+  },
+  {
+    key: 'blood_support_un16', name: '낭자한 수도자', rarity: 'uncommon', cls: 'support', elem: 'blood', dmg: 13, spd: 1.05, rng: 2.6, proj: 'ball', aura: { type: 'gold', amt: 0.14, radius: 4 }, lifesteal: 0.12,
+    look: { legs: 'biped', torso: 'robe', head: 'human', hair: 'spiky', gear: 'none', weapon: 'staff', skin: '#ffe0c0', hairCol: '#c9a227' },
+    desc: '흡혈 · 골드 오라 +14%.'
+  },
+  {
+    key: 'fire_bard_un17', name: '연옥 가인', rarity: 'uncommon', cls: 'bard', elem: 'fire', dmg: 15, spd: 1.66, rng: 2.8, proj: 'ball', aura: { type: 'dmg', amt: 0.19, radius: 4 },
+    look: { legs: 'biped', torso: 'robe', head: 'human', hair: 'spiky', gear: 'none', weapon: 'banner', skin: '#f2d0ad', hairCol: '#8e5b9e' },
+    desc: '공격력 오라 +19%.'
+  },
+  {
+    key: 'poison_summoner_un18', name: '창백한 군주', rarity: 'uncommon', cls: 'summoner', elem: 'poison', dmg: 23, spd: 1.04, rng: 3.2, proj: 'ball', summon: { count: 1, dmg: 7, spd: 1.2 }, poison: { dps: 0.23, dur: 7, stack: 6 },
+    look: { legs: 'float', torso: 'robe', head: 'human', hair: 'long', gear: 'none', weapon: 'staff', skin: '#f0c9a0', hairCol: '#4a3524' },
+    desc: '중독 · 정령 1기 소환.'
+  },
+  {
+    key: 'nature_engineer_un19', name: '이끼 조립공', rarity: 'uncommon', cls: 'engineer', elem: 'nature', dmg: 28, spd: 1.13, rng: 3.2, proj: 'bolt', splash: 0.89,
+    look: { legs: 'biped', torso: 'plate', head: 'human', hair: 'spiky', gear: 'none', weapon: 'drone', skin: '#ffe0c0', hairCol: '#3a2a1a' },
+    desc: '범위 폭발.'
+  },
+  {
+    key: 'wind_warlock_un20', name: '유랑 역술사', rarity: 'uncommon', cls: 'warlock', elem: 'wind', dmg: 28, spd: 1.08, rng: 3.4, proj: 'ball', poison: { dps: 0.28, dur: 4, stack: 2 },
+    look: { legs: 'biped', torso: 'robe', head: 'human', hair: 'pony', gear: 'none', weapon: 'scythe', skin: '#ffe0c0', hairCol: '#4a3524' },
+    desc: '중독.'
+  },
+  {
+    key: 'time_archer_un21', name: '정지된 사수', rarity: 'uncommon', cls: 'archer', elem: 'time', dmg: 20, spd: 1.87, rng: 3.4, proj: 'arrow',
+    look: { legs: 'biped', torso: 'cloak', head: 'human', hair: 'spiky', gear: 'none', weapon: 'bow', skin: '#f2d0ad', hairCol: '#c9a227' },
+    desc: '견실한 기본기.'
+  },
+  {
+    key: 'thunder_sniper_un22', name: '폭뢰 명사수', rarity: 'uncommon', cls: 'sniper', elem: 'thunder', dmg: 44, spd: 0.42, rng: 5.7, proj: 'arrow', pen: 0.14,
+    look: { legs: 'biped', torso: 'leather', head: 'human', hair: 'short', gear: 'none', weapon: 'crossbow', skin: '#e8bf95', hairCol: '#3a2a1a' },
+    desc: '방어 14% 관통.'
+  },
+  {
+    key: 'dark_mage_un23', name: '그림자 현자', rarity: 'uncommon', cls: 'mage', elem: 'dark', dmg: 31, spd: 0.99, rng: 3.3, proj: 'ball',
+    look: { legs: 'biped', torso: 'robe', head: 'human', hair: 'long', gear: 'none', weapon: 'wand', skin: '#f2d0ad', hairCol: '#3a2a1a' },
+    desc: '견실한 기본기.'
+  },
+  {
+    key: 'void_artillery_un24', name: '공동 파쇄자', rarity: 'uncommon', cls: 'artillery', elem: 'void', dmg: 46, spd: 0.75, rng: 3.2, proj: 'bomb', pen: 0.49,
+    look: { legs: 'biped', torso: 'plate', head: 'human', hair: 'braid', gear: 'none', weapon: 'launcher', skin: '#f0c9a0', hairCol: '#8e5b9e' },
+    desc: '방어 49% 관통.'
+  },
+  {
+    key: 'blood_guardian_un25', name: '혈맹 수호자', rarity: 'uncommon', cls: 'guardian', elem: 'blood', dmg: 40, spd: 1.05, rng: 1.8, proj: 'none', pen: 0.15,
+    look: { legs: 'biped', torso: 'plate', head: 'human', hair: 'spiky', gear: 'none', weapon: 'sword', skin: '#ffe0c0', hairCol: '#3a2a1a' },
+    desc: '방어 15% 관통.'
+  },
+  {
+    key: 'fire_assassin_un26', name: '화염 척살자', rarity: 'uncommon', cls: 'assassin', elem: 'fire', dmg: 32, spd: 2.49, rng: 2, proj: 'none', crit: 0.19, critMul: 2,
+    look: { legs: 'biped', torso: 'leather', head: 'human', hair: 'braid', gear: 'none', weapon: 'claw', skin: '#c89268', hairCol: '#8a5a3a' },
+    desc: '치명 19%.'
+  },
+  {
+    key: 'poison_support_un27', name: '맹독 축복자', rarity: 'uncommon', cls: 'support', elem: 'poison', dmg: 21, spd: 0.93, rng: 2.7, proj: 'ball', aura: { type: 'dmg', amt: 0.18, radius: 3 }, poison: { dps: 0.21, dur: 5, stack: 3 },
+    look: { legs: 'biped', torso: 'robe', head: 'human', hair: 'spiky', gear: 'none', weapon: 'flask', skin: '#b9825a', hairCol: '#d94f4f' },
+    desc: '중독 · 공격력 오라 +18%.'
+  },
+  {
+    key: 'nature_bard_un28', name: '야생 선창자', rarity: 'uncommon', cls: 'bard', elem: 'nature', dmg: 20, spd: 1.47, rng: 3.1, proj: 'ball', aura: { type: 'gold', amt: 0.12, radius: 3 }, regen: 0.06,
+    look: { legs: 'biped', torso: 'robe', head: 'human', hair: 'long', gear: 'none', weapon: 'harp', skin: '#e8bf95', hairCol: '#8e5b9e' },
+    desc: '생명 재생 · 골드 오라 +12%.'
+  },
+  {
+    key: 'wind_summoner_un29', name: '창공 소환사', rarity: 'uncommon', cls: 'summoner', elem: 'wind', dmg: 32, spd: 0.78, rng: 2.9, proj: 'ball', summon: { count: 1, dmg: 10, spd: 1.2 }, multishot: 2,
+    look: { legs: 'biped', torso: 'cloak', head: 'human', hair: 'spiky', gear: 'none', weapon: 'orb', skin: '#c89268', hairCol: '#6b4a2a' },
+    desc: '2연사 · 정령 1기 소환.'
+  },
+  {
+    key: 'time_engineer_un30', name: '태엽 기계공', rarity: 'uncommon', cls: 'engineer', elem: 'time', dmg: 38, spd: 1.41, rng: 3.4, proj: 'bolt', splash: 0.62,
+    look: { legs: 'biped', torso: 'plate', head: 'human', hair: 'short', gear: 'none', weapon: 'drone', skin: '#c89268', hairCol: '#8a5a3a' },
+    desc: '범위 폭발.'
+  },
+  {
+    key: 'ice_warlock_un31', name: '설야 역술사', rarity: 'uncommon', cls: 'warlock', elem: 'ice', dmg: 40, spd: 1.13, rng: 3.1, proj: 'ball', poison: { dps: 0.4, dur: 6, stack: 2 },
+    look: { legs: 'biped', torso: 'cloak', head: 'human', hair: 'spiky', gear: 'none', weapon: 'tome', skin: '#d9a978', hairCol: '#4a3524' },
+    desc: '중독.'
+  },
+  {
+    key: 'holy_archer_un32', name: '성역 궁수', rarity: 'uncommon', cls: 'archer', elem: 'holy', dmg: 29, spd: 1.48, rng: 3.4, proj: 'arrow', crit: 0.19, critMul: 2.1,
+    look: { legs: 'biped', torso: 'cloak', head: 'human', hair: 'spiky', gear: 'none', weapon: 'bow', skin: '#f2d0ad', hairCol: '#6b4a2a' },
+    desc: '치명 19%.'
+  },
+  {
+    key: 'void_sniper_un33', name: '침묵 응시자', rarity: 'uncommon', cls: 'sniper', elem: 'void', dmg: 46, spd: 0.72, rng: 5.7, proj: 'arrow', pen: 0.16,
+    look: { legs: 'biped', torso: 'leather', head: 'human', hair: 'pony', gear: 'none', weapon: 'rifle', skin: '#f0c9a0', hairCol: '#8e5b9e' },
+    desc: '방어 16% 관통.'
+  },
+  /* ------- 생성 : rare ------- */
+  {
+    key: 'wind_mage_ra0', name: '바람 술사', rarity: 'rare', cls: 'mage', elem: 'wind', dmg: 28, spd: 1.31, rng: 3.2, proj: 'ball', splash: 0.61,
+    look: { legs: 'biped', torso: 'robe', head: 'human', hair: 'long', gear: 'none', weapon: 'staff', skin: '#d9a978', hairCol: '#6b4a2a' },
+    desc: '범위 폭발.'
+  },
+  {
+    key: 'time_artillery_ra1', name: '시간 포격수', rarity: 'rare', cls: 'artillery', elem: 'time', dmg: 45, spd: 0.78, rng: 3.6, proj: 'bomb', splash: 0.78, slow: 0.27,
+    look: { legs: 'biped', torso: 'leather', head: 'human', hair: 'pony', gear: 'none', weapon: 'cannon', skin: '#ffe0c0', hairCol: '#4a3524' },
+    desc: '범위 폭발 · 둔화 27%.'
+  },
+  {
+    key: 'ice_guardian_ra2', name: '눈보라 파수꾼', rarity: 'rare', cls: 'guardian', elem: 'ice', dmg: 30, spd: 1.22, rng: 2, proj: 'none', pen: 0.17,
+    look: { legs: 'biped', torso: 'plate', head: 'human', hair: 'spiky', gear: 'none', weapon: 'halberd', skin: '#f2d0ad', hairCol: '#d94f4f' },
+    desc: '방어 17% 관통.'
+  },
+  {
+    key: 'holy_assassin_ra3', name: '신성 그림자', rarity: 'rare', cls: 'assassin', elem: 'holy', dmg: 27, spd: 2.23, rng: 2.1, proj: 'none', holyBonus: 0.48,
+    look: { legs: 'biped', torso: 'leather', head: 'human', hair: 'short', gear: 'none', weapon: 'claw', skin: '#c89268', hairCol: '#6b4a2a' },
+    desc: '견실한 기본기.'
+  },
+  {
+    key: 'arcane_support_ra4', name: '주문 조율사', rarity: 'rare', cls: 'support', elem: 'arcane', dmg: 26, spd: 1.2, rng: 2.9, proj: 'ball', aura: { type: 'spd', amt: 0.15, radius: 4 }, pen: 0.18,
+    look: { legs: 'biped', torso: 'spectral', head: 'human', hair: 'pony', gear: 'none', weapon: 'tome', skin: '#f2d0ad', hairCol: '#3a2a1a' },
+    desc: '방어 18% 관통 · 공속 오라 +15%.'
+  },
+  {
+    key: 'earth_bard_ra5', name: '바위 전율자', rarity: 'rare', cls: 'bard', elem: 'earth', dmg: 26, spd: 1.46, rng: 3.1, proj: 'ball', aura: { type: 'dmg', amt: 0.16, radius: 4 }, stun: 0.12,
+    look: { legs: 'biped', torso: 'robe', head: 'human', hair: 'spiky', gear: 'none', weapon: 'harp', skin: '#ffe0c0', hairCol: '#8e5b9e' },
+    desc: '기절 · 공격력 오라 +16%.'
+  },
+  {
+    key: 'phys_summoner_ra6', name: '맹진 군주', rarity: 'rare', cls: 'summoner', elem: 'phys', dmg: 28, spd: 0.8, rng: 2.9, proj: 'ball', summon: { count: 2, dmg: 8, spd: 1.2 },
+    look: { legs: 'biped', torso: 'cloak', head: 'human', hair: 'short', gear: 'none', weapon: 'tome', skin: '#b9825a', hairCol: '#3a2a1a' },
+    desc: '정령 2기 소환.'
+  },
+  {
+    key: 'thunder_engineer_ra7', name: '천둥 설계자', rarity: 'rare', cls: 'engineer', elem: 'thunder', dmg: 38, spd: 1.38, rng: 3.4, proj: 'bolt',
+    look: { legs: 'biped', torso: 'core', head: 'human', hair: 'short', gear: 'none', weapon: 'rifle', skin: '#ffe0c0', hairCol: '#c9a227' },
+    desc: '견실한 기본기.'
+  },
+  {
+    key: 'dark_warlock_ra8', name: '심연 금술사', rarity: 'rare', cls: 'warlock', elem: 'dark', dmg: 36, spd: 1.08, rng: 3.1, proj: 'ball', poison: { dps: 0.36, dur: 4, stack: 3 }, curse: 0.09,
+    look: { legs: 'biped', torso: 'robe', head: 'human', hair: 'short', gear: 'none', weapon: 'scythe', skin: '#c89268', hairCol: '#6b4a2a' },
+    desc: '중독 · 저주.'
+  },
+  {
+    key: 'void_archer_ra9', name: '무형 활잡이', rarity: 'rare', cls: 'archer', elem: 'void', dmg: 26, spd: 1.4, rng: 3.5, proj: 'arrow', pen: 0.29,
+    look: { legs: 'biped', torso: 'leather', head: 'human', hair: 'short', gear: 'none', weapon: 'bow', skin: '#f0c9a0', hairCol: '#4a3524' },
+    desc: '방어 29% 관통.'
+  },
+  {
+    key: 'blood_sniper_ra10', name: '붉은 장궁병', rarity: 'rare', cls: 'sniper', elem: 'blood', dmg: 57, spd: 0.77, rng: 5.7, proj: 'arrow', crit: 0.1, critMul: 1.9, lifesteal: 0.16,
+    look: { legs: 'biped', torso: 'cloak', head: 'human', hair: 'long', gear: 'none', weapon: 'crossbow', skin: '#e8bf95', hairCol: '#8e5b9e' },
+    desc: '치명 10% · 흡혈.'
+  },
+  {
+    key: 'ice_mage_ra11', name: '서리 마법사', rarity: 'rare', cls: 'mage', elem: 'ice', dmg: 41, spd: 1.3, rng: 3.5, proj: 'ball', slow: 0.24,
+    look: { legs: 'biped', torso: 'robe', head: 'human', hair: 'pony', gear: 'none', weapon: 'wand', skin: '#d9a978', hairCol: '#8a5a3a' },
+    desc: '둔화 24%.'
+  },
+  {
+    key: 'holy_artillery_ra12', name: '서광 파쇄자', rarity: 'rare', cls: 'artillery', elem: 'holy', dmg: 69, spd: 0.62, rng: 3.2, proj: 'bomb', splash: 0.9, holyBonus: 0.37,
+    look: { legs: 'biped', torso: 'leather', head: 'human', hair: 'short', gear: 'none', weapon: 'sling', skin: '#b9825a', hairCol: '#8e5b9e' },
+    desc: '범위 폭발.'
+  },
+  {
+    key: 'arcane_guardian_ra13', name: '술식 수호자', rarity: 'rare', cls: 'guardian', elem: 'arcane', dmg: 52, spd: 0.93, rng: 2, proj: 'none', pen: 0.18, crit: 0.14, critMul: 2.3,
+    look: { legs: 'biped', torso: 'plate', head: 'human', hair: 'braid', gear: 'none', weapon: 'hammer', skin: '#ffe0c0', hairCol: '#6b4a2a' },
+    desc: '방어 18% 관통 · 치명 14%.'
+  },
+  {
+    key: 'earth_assassin_ra14', name: '대지 암살자', rarity: 'rare', cls: 'assassin', elem: 'earth', dmg: 41, spd: 2.02, rng: 1.8, proj: 'none', crit: 0.11, critMul: 2, stun: 0.06,
+    look: { legs: 'biped', torso: 'leather', head: 'human', hair: 'short', gear: 'none', weapon: 'chakram', skin: '#d9a978', hairCol: '#2b2b33' },
+    desc: '치명 11% · 기절.'
+  },
+  {
+    key: 'phys_support_ra15', name: '역전의 축복자', rarity: 'rare', cls: 'support', elem: 'phys', dmg: 26, spd: 1.09, rng: 3, proj: 'ball', aura: { type: 'gold', amt: 0.17, radius: 3 },
+    look: { legs: 'biped', torso: 'spectral', head: 'human', hair: 'braid', gear: 'none', weapon: 'flask', skin: '#e8bf95', hairCol: '#6b4a2a' },
+    desc: '골드 오라 +17%.'
+  },
+  {
+    key: 'thunder_bard_ra16', name: '번개 음유시인', rarity: 'rare', cls: 'bard', elem: 'thunder', dmg: 29, spd: 1.27, rng: 2.9, proj: 'ball', aura: { type: 'gold', amt: 0.21, radius: 3 },
+    look: { legs: 'biped', torso: 'cloak', head: 'human', hair: 'spiky', gear: 'none', weapon: 'banner', skin: '#c89268', hairCol: '#8e5b9e' },
+    desc: '골드 오라 +21%.'
+  },
+  {
+    key: 'dark_summoner_ra17', name: '심연 사역자', rarity: 'rare', cls: 'summoner', elem: 'dark', dmg: 41, spd: 0.97, rng: 3.1, proj: 'ball', summon: { count: 2, dmg: 12, spd: 1.2 }, curse: 0.16,
+    look: { legs: 'biped', torso: 'robe', head: 'human', hair: 'spiky', gear: 'none', weapon: 'tome', skin: '#c89268', hairCol: '#6b4a2a' },
+    desc: '저주 · 정령 2기 소환.'
+  },
+  {
+    key: 'void_engineer_ra18', name: '허공 조립공', rarity: 'rare', cls: 'engineer', elem: 'void', dmg: 52, spd: 1.03, rng: 3.4, proj: 'bolt', splash: 0.63,
+    look: { legs: 'biped', torso: 'core', head: 'human', hair: 'braid', gear: 'none', weapon: 'drone', skin: '#ffe0c0', hairCol: '#2b2b33' },
+    desc: '범위 폭발.'
+  },
+  {
+    key: 'blood_warlock_ra19', name: '적혈 주박사', rarity: 'rare', cls: 'warlock', elem: 'blood', dmg: 52, spd: 0.85, rng: 3.4, proj: 'ball', poison: { dps: 0.52, dur: 6, stack: 3 }, curse: 0.09,
+    look: { legs: 'biped', torso: 'robe', head: 'human', hair: 'long', gear: 'none', weapon: 'tome', skin: '#e8bf95', hairCol: '#d94f4f' },
+    desc: '중독 · 저주.'
+  },
+  {
+    key: 'fire_archer_ra20', name: '섬화 사궁', rarity: 'rare', cls: 'archer', elem: 'fire', dmg: 42, spd: 1.41, rng: 3.3, proj: 'arrow', multishot: 2, crit: 0.15, critMul: 2.3,
+    look: { legs: 'biped', torso: 'cloak', head: 'human', hair: 'long', gear: 'none', weapon: 'crossbow', skin: '#b9825a', hairCol: '#4a3524' },
+    desc: '치명 15% · 2연사.'
+  },
+  {
+    key: 'poison_sniper_ra21', name: '부식 조준자', rarity: 'rare', cls: 'sniper', elem: 'poison', dmg: 88, spd: 0.67, rng: 6, proj: 'arrow',
+    look: { legs: 'biped', torso: 'cloak', head: 'human', hair: 'pony', gear: 'none', weapon: 'rifle', skin: '#f2d0ad', hairCol: '#2b2b33' },
+    desc: '견실한 기본기.'
+  },
+  {
+    key: 'arcane_mage_ra22', name: '오의 마법사', rarity: 'rare', cls: 'mage', elem: 'arcane', dmg: 58, spd: 0.87, rng: 3.5, proj: 'ball', splash: 0.76,
+    look: { legs: 'biped', torso: 'robe', head: 'human', hair: 'long', gear: 'none', weapon: 'staff', skin: '#e8bf95', hairCol: '#4a3524' },
+    desc: '범위 폭발.'
+  },
+  {
+    key: 'earth_artillery_ra23', name: '대지 파쇄자', rarity: 'rare', cls: 'artillery', elem: 'earth', dmg: 95, spd: 0.54, rng: 3.6, proj: 'bomb', stun: 0.13,
+    look: { legs: 'biped', torso: 'leather', head: 'human', hair: 'pony', gear: 'none', weapon: 'sling', skin: '#e8bf95', hairCol: '#4a3524' },
+    desc: '기절.'
+  },
+  {
+    key: 'phys_guardian_ra24', name: '강철 파수꾼', rarity: 'rare', cls: 'guardian', elem: 'phys', dmg: 67, spd: 1.04, rng: 2, proj: 'none', pen: 0.16, crit: 0.12, critMul: 2.3,
+    look: { legs: 'biped', torso: 'plate', head: 'human', hair: 'spiky', gear: 'none', weapon: 'halberd', skin: '#ffe0c0', hairCol: '#c9a227' },
+    desc: '방어 16% 관통 · 치명 12%.'
+  },
+  {
+    key: 'thunder_assassin_ra25', name: '낙뢰 그림자', rarity: 'rare', cls: 'assassin', elem: 'thunder', dmg: 55, spd: 2.15, rng: 1.8, proj: 'none', crit: 0.14, critMul: 2,
+    look: { legs: 'biped', torso: 'leather', head: 'human', hair: 'pony', gear: 'none', weapon: 'chakram', skin: '#e8bf95', hairCol: '#2b2b33' },
+    desc: '치명 14%.'
+  },
+  {
+    key: 'dark_support_ra26', name: '흑야 성직자', rarity: 'rare', cls: 'support', elem: 'dark', dmg: 34, spd: 1.2, rng: 2.7, proj: 'ball', aura: { type: 'dmg', amt: 0.15, radius: 4 },
+    look: { legs: 'biped', torso: 'robe', head: 'human', hair: 'braid', gear: 'none', weapon: 'tome', skin: '#b9825a', hairCol: '#4a3524' },
+    desc: '공격력 오라 +15%.'
+  },
+  {
+    key: 'void_bard_ra27', name: '공동 전율자', rarity: 'rare', cls: 'bard', elem: 'void', dmg: 36, spd: 1.44, rng: 3.2, proj: 'ball', aura: { type: 'spd', amt: 0.08, radius: 2 }, pen: 0.21,
+    look: { legs: 'biped', torso: 'cloak', head: 'human', hair: 'pony', gear: 'none', weapon: 'harp', skin: '#b9825a', hairCol: '#d94f4f' },
+    desc: '방어 21% 관통 · 공속 오라 +8%.'
+  },
+  {
+    key: 'blood_summoner_ra28', name: '진홍 지배자', rarity: 'rare', cls: 'summoner', elem: 'blood', dmg: 52, spd: 1.19, rng: 3.3, proj: 'ball', summon: { count: 2, dmg: 16, spd: 1.2 },
+    look: { legs: 'biped', torso: 'cloak', head: 'human', hair: 'long', gear: 'none', weapon: 'tome', skin: '#f0c9a0', hairCol: '#d94f4f' },
+    desc: '정령 2기 소환.'
+  },
+  {
+    key: 'fire_engineer_ra29', name: '연옥 설계자', rarity: 'rare', cls: 'engineer', elem: 'fire', dmg: 71, spd: 1.26, rng: 3.5, proj: 'bolt', splash: 0.9,
+    look: { legs: 'biped', torso: 'core', head: 'human', hair: 'short', gear: 'none', weapon: 'flask', skin: '#d9a978', hairCol: '#c9a227' },
+    desc: '범위 폭발.'
+  },
+  {
+    key: 'poison_warlock_ra30', name: '맹독 역술사', rarity: 'rare', cls: 'warlock', elem: 'poison', dmg: 62, spd: 0.97, rng: 3.2, proj: 'ball', poison: { dps: 0.62, dur: 6, stack: 3 }, curse: 0.12,
+    look: { legs: 'biped', torso: 'robe', head: 'human', hair: 'braid', gear: 'none', weapon: 'scythe', skin: '#d9a978', hairCol: '#8a5a3a' },
+    desc: '중독 · 저주.'
+  },
+  {
+    key: 'nature_archer_ra31', name: '이끼 연사수', rarity: 'rare', cls: 'archer', elem: 'nature', dmg: 52, spd: 1.7, rng: 3.4, proj: 'arrow',
+    look: { legs: 'biped', torso: 'cloak', head: 'human', hair: 'pony', gear: 'none', weapon: 'bow', skin: '#ffe0c0', hairCol: '#6b4a2a' },
+    desc: '견실한 기본기.'
+  },
+  {
+    key: 'wind_sniper_ra32', name: '질풍 응시자', rarity: 'rare', cls: 'sniper', elem: 'wind', dmg: 96, spd: 0.61, rng: 5.7, proj: 'arrow', pen: 0.25, pierce: 2,
+    look: { legs: 'biped', torso: 'leather', head: 'human', hair: 'spiky', gear: 'none', weapon: 'crossbow', skin: '#f2d0ad', hairCol: '#c9a227' },
+    desc: '방어 25% 관통 · 관통 사격.'
+  },
+  {
+    key: 'phys_mage_ra33', name: '강철 마법사', rarity: 'rare', cls: 'mage', elem: 'phys', dmg: 87, spd: 0.88, rng: 3.3, proj: 'ball', splash: 0.96,
+    look: { legs: 'biped', torso: 'robe', head: 'human', hair: 'spiky', gear: 'none', weapon: 'staff', skin: '#f2d0ad', hairCol: '#6b4a2a' },
+    desc: '범위 폭발.'
+  },
+  {
+    key: 'thunder_artillery_ra34', name: '천둥 포격수', rarity: 'rare', cls: 'artillery', elem: 'thunder', dmg: 96, spd: 0.51, rng: 3.3, proj: 'bomb', splash: 0.79, chain: 3,
+    look: { legs: 'biped', torso: 'plate', head: 'human', hair: 'braid', gear: 'none', weapon: 'cannon', skin: '#b9825a', hairCol: '#d94f4f' },
+    desc: '범위 폭발 · 3회 연쇄.'
+  },
+  {
+    key: 'dark_guardian_ra35', name: '심연 파수꾼', rarity: 'rare', cls: 'guardian', elem: 'dark', dmg: 93, spd: 1.19, rng: 2.1, proj: 'none', pen: 0.26, crit: 0.19, critMul: 2.4,
+    look: { legs: 'biped', torso: 'plate', head: 'human', hair: 'braid', gear: 'none', weapon: 'halberd', skin: '#f0c9a0', hairCol: '#8e5b9e' },
+    desc: '방어 26% 관통 · 치명 19%.'
+  },
+  {
+    key: 'void_assassin_ra36', name: '차원 척살자', rarity: 'rare', cls: 'assassin', elem: 'void', dmg: 74, spd: 2.23, rng: 2, proj: 'none', crit: 0.22, critMul: 2.4, pen: 0.28,
+    look: { legs: 'biped', torso: 'leather', head: 'human', hair: 'pony', gear: 'none', weapon: 'dagger', skin: '#ffe0c0', hairCol: '#2b2b33' },
+    desc: '방어 28% 관통 · 치명 22%.'
+  },
+  {
+    key: 'blood_support_ra37', name: '혈맹 조율사', rarity: 'rare', cls: 'support', elem: 'blood', dmg: 46, spd: 1.29, rng: 2.7, proj: 'ball', aura: { type: 'dmg', amt: 0.18, radius: 4 }, lifesteal: 0.07,
+    look: { legs: 'biped', torso: 'robe', head: 'human', hair: 'long', gear: 'none', weapon: 'tome', skin: '#f0c9a0', hairCol: '#d94f4f' },
+    desc: '흡혈 · 공격력 오라 +18%.'
+  },
+  {
+    key: 'fire_bard_ra38', name: '홍염 연주자', rarity: 'rare', cls: 'bard', elem: 'fire', dmg: 44, spd: 1.37, rng: 3, proj: 'ball', aura: { type: 'dmg', amt: 0.19, radius: 4 },
+    look: { legs: 'biped', torso: 'robe', head: 'human', hair: 'short', gear: 'none', weapon: 'banner', skin: '#f2d0ad', hairCol: '#c9a227' },
+    desc: '공격력 오라 +19%.'
+  },
+  {
+    key: 'poison_summoner_ra39', name: '괴저 지배자', rarity: 'rare', cls: 'summoner', elem: 'poison', dmg: 73, spd: 1.13, rng: 3.3, proj: 'ball', summon: { count: 2, dmg: 22, spd: 1.2 },
+    look: { legs: 'biped', torso: 'cloak', head: 'human', hair: 'spiky', gear: 'none', weapon: 'staff', skin: '#e8bf95', hairCol: '#6b4a2a' },
+    desc: '정령 2기 소환.'
+  },
+  {
+    key: 'nature_engineer_ra40', name: '야생 기계공', rarity: 'rare', cls: 'engineer', elem: 'nature', dmg: 88, spd: 1.35, rng: 3.4, proj: 'bolt', multishot: 2, splash: 0.97,
+    look: { legs: 'biped', torso: 'plate', head: 'human', hair: 'spiky', gear: 'none', weapon: 'rifle', skin: '#e8bf95', hairCol: '#d94f4f' },
+    desc: '범위 폭발 · 2연사.'
+  },
+  {
+    key: 'wind_warlock_ra41', name: '유랑 흑마법사', rarity: 'rare', cls: 'warlock', elem: 'wind', dmg: 90, spd: 1.06, rng: 3.4, proj: 'ball', poison: { dps: 0.9, dur: 6, stack: 3 }, curse: 0.11,
+    look: { legs: 'biped', torso: 'cloak', head: 'human', hair: 'spiky', gear: 'none', weapon: 'tome', skin: '#f2d0ad', hairCol: '#4a3524' },
+    desc: '중독 · 저주.'
+  },
+  /* ------- 생성 : epic ------- */
+  {
+    key: 'fire_artillery_ep0', name: '숙련 불티 포격수', rarity: 'epic', cls: 'artillery', elem: 'fire', dmg: 105, spd: 0.61, rng: 3.1, proj: 'bomb', splash: 0.69, stun: 0.09,
+    look: { legs: 'biped', torso: 'plate', head: 'human', hair: 'spiky', gear: 'hood', weapon: 'cannon', skin: '#f2d0ad', hairCol: '#c9a227' },
+    desc: '범위 폭발 · 기절.'
+  },
+  {
+    key: 'poison_guardian_ep1', name: '상급 역병 방패병', rarity: 'epic', cls: 'guardian', elem: 'poison', dmg: 68, spd: 1.28, rng: 2, proj: 'none', pen: 0.24, crit: 0.27, critMul: 2.6,
+    look: { legs: 'biped', torso: 'plate', head: 'human', hair: 'short', gear: 'mask', weapon: 'axe', skin: '#b9825a', hairCol: '#3a2a1a' },
+    desc: '방어 24% 관통 · 치명 27%.'
+  },
+  {
+    key: 'nature_assassin_ep2', name: '대지의 암살자', rarity: 'epic', cls: 'assassin', elem: 'nature', dmg: 60, spd: 1.94, rng: 2.2, proj: 'none', crit: 0.27, critMul: 2.4, regen: 0.06,
+    look: { legs: 'biped', torso: 'cloak', head: 'human', hair: 'short', gear: 'antlers', weapon: 'claw', skin: '#f2d0ad', hairCol: '#8a5a3a' },
+    desc: '치명 27% · 생명 재생.'
+  },
+  {
+    key: 'wind_support_ep3', name: '바람 조율사', rarity: 'epic', cls: 'support', elem: 'wind', dmg: 60, spd: 1.35, rng: 3, proj: 'ball', aura: { type: 'spd', amt: 0.22, radius: 3 }, multishot: 2,
+    look: { legs: 'biped', torso: 'spectral', head: 'human', hair: 'short', gear: 'horns', weapon: 'flask', skin: '#d9a978', hairCol: '#c9a227' },
+    desc: '2연사 · 공속 오라 +22%.'
+  },
+  {
+    key: 'time_bard_ep4', name: '숙련 모래시계 악사', rarity: 'epic', cls: 'bard', elem: 'time', dmg: 60, spd: 1.45, rng: 3, proj: 'ball', aura: { type: 'dmg', amt: 0.18, radius: 4 }, slow: 0.19,
+    look: { legs: 'biped', torso: 'cloak', head: 'human', hair: 'long', gear: 'halo', weapon: 'banner', skin: '#e8bf95', hairCol: '#c9a227' },
+    desc: '둔화 19% · 공격력 오라 +18%.'
+  },
+  {
+    key: 'ice_summoner_ep5', name: '상급 한기 사역자', rarity: 'epic', cls: 'summoner', elem: 'ice', dmg: 63, spd: 0.74, rng: 2.9, proj: 'ball', summon: { count: 2, dmg: 19, spd: 1.2 }, slow: 0.24,
+    look: { legs: 'float', torso: 'cloak', head: 'human', hair: 'pony', gear: 'antlers', weapon: 'staff', skin: '#f0c9a0', hairCol: '#d94f4f' },
+    desc: '둔화 24% · 정령 2기 소환.'
+  },
+  {
+    key: 'holy_engineer_ep6', name: '천상 장인', rarity: 'epic', cls: 'engineer', elem: 'holy', dmg: 76, spd: 1.07, rng: 3.3, proj: 'bolt', splash: 0.74, holyBonus: 0.27,
+    look: { legs: 'biped', torso: 'plate', head: 'human', hair: 'short', gear: 'mask', weapon: 'flask', skin: '#f0c9a0', hairCol: '#8a5a3a' },
+    desc: '범위 폭발.'
+  },
+  {
+    key: 'arcane_warlock_ep7', name: '상급 주문 마령술사', rarity: 'epic', cls: 'warlock', elem: 'arcane', dmg: 72, spd: 0.97, rng: 3, proj: 'ball', poison: { dps: 0.72, dur: 5, stack: 3 },
+    look: { legs: 'biped', torso: 'cloak', head: 'human', hair: 'pony', gear: 'crown', weapon: 'tome', skin: '#f0c9a0', hairCol: '#2b2b33' },
+    desc: '중독.'
+  },
+  {
+    key: 'earth_archer_ep8', name: '숙련 바위 연사수', rarity: 'epic', cls: 'archer', elem: 'earth', dmg: 60, spd: 1.82, rng: 4, proj: 'arrow', multishot: 2, crit: 0.15, critMul: 1.8,
+    look: { legs: 'biped', torso: 'leather', head: 'human', hair: 'spiky', gear: 'mask', weapon: 'crossbow', skin: '#ffe0c0', hairCol: '#c9a227' },
+    desc: '치명 15% · 2연사.'
+  },
+  {
+    key: 'phys_sniper_ep9', name: '숙련 무쇠 명사수', rarity: 'epic', cls: 'sniper', elem: 'phys', dmg: 135, spd: 0.67, rng: 7.4, proj: 'arrow', pen: 0.15, pierce: 2,
+    look: { legs: 'biped', torso: 'leather', head: 'human', hair: 'braid', gear: 'horns', weapon: 'rifle', skin: '#ffe0c0', hairCol: '#8e5b9e' },
+    desc: '방어 15% 관통 · 관통 사격.'
+  },
+  {
+    key: 'thunder_mage_ep10', name: '전광 사도', rarity: 'epic', cls: 'mage', elem: 'thunder', dmg: 92, spd: 0.99, rng: 3.1, proj: 'ball', splash: 0.73, chain: 3,
+    look: { legs: 'biped', torso: 'robe', head: 'human', hair: 'spiky', gear: 'antlers', weapon: 'orb', skin: '#b9825a', hairCol: '#3a2a1a' },
+    desc: '범위 폭발 · 3회 연쇄.'
+  },
+  {
+    key: 'nature_artillery_ep11', name: '숙련 푸른 포격수', rarity: 'epic', cls: 'artillery', elem: 'nature', dmg: 170, spd: 0.53, rng: 3.1, proj: 'bomb', splash: 0.64,
+    look: { legs: 'biped', torso: 'leather', head: 'human', hair: 'braid', gear: 'antlers', weapon: 'launcher', skin: '#f0c9a0', hairCol: '#6b4a2a' },
+    desc: '범위 폭발.'
+  },
+  {
+    key: 'wind_guardian_ep12', name: '숙련 창공 검사', rarity: 'epic', cls: 'guardian', elem: 'wind', dmg: 110, spd: 0.89, rng: 1.8, proj: 'none', pen: 0.19, crit: 0.15, critMul: 2.6,
+    look: { legs: 'biped', torso: 'plate', head: 'human', hair: 'pony', gear: 'antlers', weapon: 'greatsword', skin: '#b9825a', hairCol: '#4a3524' },
+    desc: '방어 19% 관통 · 치명 15%.'
+  },
+  {
+    key: 'time_assassin_ep13', name: '상급 모래시계 밀정', rarity: 'epic', cls: 'assassin', elem: 'time', dmg: 89, spd: 1.87, rng: 1.9, proj: 'none', crit: 0.25, critMul: 2.2, execute: 0.11,
+    look: { legs: 'biped', torso: 'cloak', head: 'human', hair: 'short', gear: 'crown', weapon: 'claw', skin: '#b9825a', hairCol: '#c9a227' },
+    desc: '치명 25% · 처형.'
+  },
+  {
+    key: 'ice_support_ep14', name: '숙련 삭풍 수도자', rarity: 'epic', cls: 'support', elem: 'ice', dmg: 60, spd: 1.16, rng: 2.9, proj: 'ball', aura: { type: 'spd', amt: 0.09, radius: 3 }, slow: 0.37,
+    look: { legs: 'biped', torso: 'spectral', head: 'human', hair: 'spiky', gear: 'mask', weapon: 'tome', skin: '#e8bf95', hairCol: '#6b4a2a' },
+    desc: '둔화 37% · 공속 오라 +9%.'
+  },
+  {
+    key: 'holy_bard_ep15', name: '서광 선창자', rarity: 'epic', cls: 'bard', elem: 'holy', dmg: 62, spd: 1.14, rng: 3.3, proj: 'ball', aura: { type: 'rng', amt: 0.15, radius: 3 }, holyBonus: 0.46,
+    look: { legs: 'biped', torso: 'robe', head: 'human', hair: 'braid', gear: 'crown', weapon: 'banner', skin: '#b9825a', hairCol: '#2b2b33' },
+    desc: '사거리 오라 +15%.'
+  },
+  {
+    key: 'arcane_summoner_ep16', name: '오의 조련사', rarity: 'epic', cls: 'summoner', elem: 'arcane', dmg: 98, spd: 0.91, rng: 3, proj: 'ball', summon: { count: 2, dmg: 29, spd: 1.2 }, pen: 0.24,
+    look: { legs: 'biped', torso: 'cloak', head: 'human', hair: 'spiky', gear: 'horns', weapon: 'tome', skin: '#f0c9a0', hairCol: '#8a5a3a' },
+    desc: '방어 24% 관통 · 정령 2기 소환.'
+  },
+  {
+    key: 'earth_engineer_ep17', name: '산악 기계공', rarity: 'epic', cls: 'engineer', elem: 'earth', dmg: 110, spd: 1.35, rng: 3.5, proj: 'bolt', stun: 0.12,
+    look: { legs: 'biped', torso: 'core', head: 'human', hair: 'pony', gear: 'halo', weapon: 'rifle', skin: '#b9825a', hairCol: '#2b2b33' },
+    desc: '기절.'
+  },
+  {
+    key: 'phys_warlock_ep18', name: '숙련 패도 금술사', rarity: 'epic', cls: 'warlock', elem: 'phys', dmg: 105, spd: 0.86, rng: 3.4, proj: 'ball',
+    look: { legs: 'biped', torso: 'cloak', head: 'human', hair: 'spiky', gear: 'crown', weapon: 'scythe', skin: '#f2d0ad', hairCol: '#2b2b33' },
+    desc: '견실한 기본기.'
+  },
+  {
+    key: 'thunder_archer_ep19', name: '상급 낙뢰 사수', rarity: 'epic', cls: 'archer', elem: 'thunder', dmg: 87, spd: 2.17, rng: 3.8, proj: 'arrow', chain: 3,
+    look: { legs: 'biped', torso: 'leather', head: 'human', hair: 'braid', gear: 'mask', weapon: 'crossbow', skin: '#d9a978', hairCol: '#d94f4f' },
+    desc: '3회 연쇄.'
+  },
+  {
+    key: 'dark_sniper_ep20', name: '나락 관측수', rarity: 'epic', cls: 'sniper', elem: 'dark', dmg: 205, spd: 0.7, rng: 5.6, proj: 'arrow', pen: 0.13, curse: 0.17,
+    look: { legs: 'biped', torso: 'cloak', head: 'human', hair: 'pony', gear: 'hood', weapon: 'rifle', skin: '#e8bf95', hairCol: '#2b2b33' },
+    desc: '방어 13% 관통 · 저주.'
+  },
+  {
+    key: 'void_mage_ep21', name: '무저 술사', rarity: 'epic', cls: 'mage', elem: 'void', dmg: 125, spd: 1.28, rng: 3.2, proj: 'ball', splash: 0.77, pen: 0.31,
+    look: { legs: 'biped', torso: 'robe', head: 'human', hair: 'pony', gear: 'hood', weapon: 'wand', skin: '#f0c9a0', hairCol: '#8e5b9e' },
+    desc: '범위 폭발 · 방어 31% 관통.'
+  },
+  {
+    key: 'time_artillery_ep22', name: '모래시계 포수', rarity: 'epic', cls: 'artillery', elem: 'time', dmg: 245, spd: 0.59, rng: 3.1, proj: 'bomb', splash: 0.86, slow: 0.2,
+    look: { legs: 'biped', torso: 'leather', head: 'human', hair: 'spiky', gear: 'horns', weapon: 'sling', skin: '#c89268', hairCol: '#4a3524' },
+    desc: '범위 폭발 · 둔화 20%.'
+  },
+  {
+    key: 'ice_guardian_ep23', name: '숙련 설야 검사', rarity: 'epic', cls: 'guardian', elem: 'ice', dmg: 160, spd: 1.22, rng: 1.7, proj: 'none', pen: 0.35, crit: 0.24, critMul: 2.6,
+    look: { legs: 'biped', torso: 'plate', head: 'human', hair: 'pony', gear: 'halo', weapon: 'greatsword', skin: '#e8bf95', hairCol: '#8a5a3a' },
+    desc: '방어 35% 관통 · 치명 24%.'
+  },
+  {
+    key: 'holy_assassin_ep24', name: '상급 신성 자객', rarity: 'epic', cls: 'assassin', elem: 'holy', dmg: 130, spd: 1.9, rng: 2, proj: 'none', crit: 0.15, critMul: 2, execute: 0.05,
+    look: { legs: 'biped', torso: 'cloak', head: 'human', hair: 'long', gear: 'halo', weapon: 'chakram', skin: '#d9a978', hairCol: '#3a2a1a' },
+    desc: '치명 15% · 처형.'
+  },
+  {
+    key: 'arcane_support_ep25', name: '숙련 오의 성직자', rarity: 'epic', cls: 'support', elem: 'arcane', dmg: 79, spd: 1.27, rng: 2.8, proj: 'ball', aura: { type: 'spd', amt: 0.17, radius: 3 }, pen: 0.31,
+    look: { legs: 'biped', torso: 'spectral', head: 'human', hair: 'long', gear: 'visor', weapon: 'flask', skin: '#c89268', hairCol: '#2b2b33' },
+    desc: '방어 31% 관통 · 공속 오라 +17%.'
+  },
+  {
+    key: 'earth_bard_ep26', name: '숙련 암반 연주자', rarity: 'epic', cls: 'bard', elem: 'earth', dmg: 77, spd: 1.38, rng: 2.9, proj: 'ball', aura: { type: 'dmg', amt: 0.17, radius: 3 },
+    look: { legs: 'biped', torso: 'robe', head: 'human', hair: 'short', gear: 'antlers', weapon: 'harp', skin: '#b9825a', hairCol: '#8a5a3a' },
+    desc: '공격력 오라 +17%.'
+  },
+  {
+    key: 'phys_summoner_ep27', name: '상급 강철 조련사', rarity: 'epic', cls: 'summoner', elem: 'phys', dmg: 125, spd: 1.18, rng: 2.9, proj: 'ball', summon: { count: 2, dmg: 38, spd: 1.2 },
+    look: { legs: 'biped', torso: 'cloak', head: 'human', hair: 'short', gear: 'antlers', weapon: 'tome', skin: '#f2d0ad', hairCol: '#4a3524' },
+    desc: '정령 2기 소환.'
+  },
+  {
+    key: 'thunder_engineer_ep28', name: '자전 정비사', rarity: 'epic', cls: 'engineer', elem: 'thunder', dmg: 170, spd: 1.08, rng: 3.3, proj: 'bolt', multishot: 2, splash: 1.05,
+    look: { legs: 'biped', torso: 'plate', head: 'human', hair: 'pony', gear: 'halo', weapon: 'drone', skin: '#f2d0ad', hairCol: '#6b4a2a' },
+    desc: '범위 폭발 · 2연사.'
+  },
+  {
+    key: 'dark_warlock_ep29', name: '상급 암흑 금술사', rarity: 'epic', cls: 'warlock', elem: 'dark', dmg: 170, spd: 1.01, rng: 3.2, proj: 'ball', poison: { dps: 1.7, dur: 4, stack: 3 }, curse: 0.07,
+    look: { legs: 'biped', torso: 'cloak', head: 'human', hair: 'long', gear: 'halo', weapon: 'tome', skin: '#ffe0c0', hairCol: '#c9a227' },
+    desc: '중독 · 저주.'
+  },
+  {
+    key: 'void_archer_ep30', name: '상급 공허 활잡이', rarity: 'epic', cls: 'archer', elem: 'void', dmg: 130, spd: 1.8, rng: 3.9, proj: 'arrow', crit: 0.13, critMul: 2.1, pen: 0.49,
+    look: { legs: 'biped', torso: 'cloak', head: 'human', hair: 'braid', gear: 'horns', weapon: 'bow', skin: '#e8bf95', hairCol: '#8a5a3a' },
+    desc: '방어 49% 관통 · 치명 13%.'
+  },
+  {
+    key: 'blood_sniper_ep31', name: '상급 진홍 저격수', rarity: 'epic', cls: 'sniper', elem: 'blood', dmg: 245, spd: 0.48, rng: 7, proj: 'arrow', pen: 0.13, pierce: 2,
+    look: { legs: 'biped', torso: 'cloak', head: 'human', hair: 'braid', gear: 'mask', weapon: 'crossbow', skin: '#e8bf95', hairCol: '#d94f4f' },
+    desc: '방어 13% 관통 · 관통 사격.'
+  },
+  {
+    key: 'fire_mage_ep32', name: '상급 불티 사도', rarity: 'epic', cls: 'mage', elem: 'fire', dmg: 180, spd: 1.2, rng: 3.2, proj: 'ball', splash: 0.97, burn: { dps: 2.16, dur: 4 },
+    look: { legs: 'biped', torso: 'robe', head: 'human', hair: 'long', gear: 'hood', weapon: 'staff', skin: '#ffe0c0', hairCol: '#8a5a3a' },
+    desc: '범위 폭발 · 화상.'
+  },
+  {
+    key: 'holy_artillery_ep33', name: '숙련 성스러운 폭격수', rarity: 'epic', cls: 'artillery', elem: 'holy', dmg: 260, spd: 0.49, rng: 3.9, proj: 'bomb', splash: 0.92, holyBonus: 0.38,
+    look: { legs: 'biped', torso: 'leather', head: 'human', hair: 'braid', gear: 'visor', weapon: 'cannon', skin: '#f2d0ad', hairCol: '#3a2a1a' },
+    desc: '범위 폭발.'
+  },
+  {
+    key: 'arcane_guardian_ep34', name: '숙련 주문 수호자', rarity: 'epic', cls: 'guardian', elem: 'arcane', dmg: 215, spd: 1.15, rng: 2, proj: 'none', pen: 0.31,
+    look: { legs: 'biped', torso: 'plate', head: 'human', hair: 'long', gear: 'antlers', weapon: 'spear', skin: '#b9825a', hairCol: '#6b4a2a' },
+    desc: '방어 31% 관통.'
+  },
+  {
+    key: 'earth_assassin_ep35', name: '상급 융기 그림자', rarity: 'epic', cls: 'assassin', elem: 'earth', dmg: 165, spd: 2.21, rng: 1.9, proj: 'none', crit: 0.11, critMul: 2.2, execute: 0.06,
+    look: { legs: 'biped', torso: 'leather', head: 'human', hair: 'spiky', gear: 'mask', weapon: 'dagger', skin: '#f2d0ad', hairCol: '#c9a227' },
+    desc: '치명 11% · 처형.'
+  },
+  {
+    key: 'phys_support_ep36', name: '숙련 역전의 조율사', rarity: 'epic', cls: 'support', elem: 'phys', dmg: 105, spd: 1.31, rng: 2.7, proj: 'ball', aura: { type: 'gold', amt: 0.11, radius: 3 },
+    look: { legs: 'biped', torso: 'spectral', head: 'human', hair: 'long', gear: 'antlers', weapon: 'flask', skin: '#e8bf95', hairCol: '#8a5a3a' },
+    desc: '골드 오라 +11%.'
+  },
+  {
+    key: 'thunder_bard_ep37', name: '숙련 천둥 음유시인', rarity: 'epic', cls: 'bard', elem: 'thunder', dmg: 120, spd: 1.34, rng: 2.8, proj: 'ball', aura: { type: 'gold', amt: 0.14, radius: 4 }, chain: 2,
+    look: { legs: 'biped', torso: 'cloak', head: 'human', hair: 'braid', gear: 'halo', weapon: 'harp', skin: '#d9a978', hairCol: '#c9a227' },
+    desc: '2회 연쇄 · 골드 오라 +14%.'
+  },
+  {
+    key: 'dark_summoner_ep38', name: '숙련 나락 지배자', rarity: 'epic', cls: 'summoner', elem: 'dark', dmg: 185, spd: 0.86, rng: 2.9, proj: 'ball', summon: { count: 2, dmg: 56, spd: 1.2 }, curse: 0.13,
+    look: { legs: 'biped', torso: 'cloak', head: 'human', hair: 'pony', gear: 'antlers', weapon: 'tome', skin: '#f0c9a0', hairCol: '#6b4a2a' },
+    desc: '저주 · 정령 2기 소환.'
+  },
+  {
+    key: 'void_engineer_ep39', name: '숙련 침묵 기계공', rarity: 'epic', cls: 'engineer', elem: 'void', dmg: 225, spd: 1.12, rng: 3.1, proj: 'bolt', multishot: 2,
+    look: { legs: 'biped', torso: 'core', head: 'human', hair: 'braid', gear: 'crown', weapon: 'drone', skin: '#e8bf95', hairCol: '#4a3524' },
+    desc: '2연사.'
+  },
+  {
+    key: 'blood_warlock_ep40', name: '상급 핏빛 흑마법사', rarity: 'epic', cls: 'warlock', elem: 'blood', dmg: 190, spd: 1.11, rng: 3, proj: 'ball', poison: { dps: 1.9, dur: 6, stack: 3 }, lifesteal: 0.16,
+    look: { legs: 'biped', torso: 'cloak', head: 'human', hair: 'braid', gear: 'mask', weapon: 'scythe', skin: '#b9825a', hairCol: '#2b2b33' },
+    desc: '중독 · 흡혈.'
+  },
+  {
+    key: 'fire_archer_ep41', name: '겁화 사궁', rarity: 'epic', cls: 'archer', elem: 'fire', dmg: 175, spd: 1.51, rng: 3.5, proj: 'arrow', crit: 0.17, critMul: 2.2,
+    look: { legs: 'biped', torso: 'leather', head: 'human', hair: 'pony', gear: 'horns', weapon: 'crossbow', skin: '#b9825a', hairCol: '#4a3524' },
+    desc: '치명 17%.'
+  },
+  {
+    key: 'poison_sniper_ep42', name: '숙련 역병 저격수', rarity: 'epic', cls: 'sniper', elem: 'poison', dmg: 260, spd: 0.65, rng: 7, proj: 'arrow', pen: 0.28, pierce: 2,
+    look: { legs: 'biped', torso: 'leather', head: 'human', hair: 'spiky', gear: 'horns', weapon: 'rifle', skin: '#e8bf95', hairCol: '#8a5a3a' },
+    desc: '방어 28% 관통 · 관통 사격.'
+  },
+  {
+    key: 'nature_mage_ep43', name: '만엽 마법사', rarity: 'epic', cls: 'mage', elem: 'nature', dmg: 235, spd: 1.15, rng: 3.4, proj: 'ball', splash: 1.07, regen: 0.06,
+    look: { legs: 'biped', torso: 'robe', head: 'human', hair: 'short', gear: 'hood', weapon: 'staff', skin: '#e8bf95', hairCol: '#8a5a3a' },
+    desc: '범위 폭발 · 생명 재생.'
+  },
+  {
+    key: 'earth_artillery_ep44', name: '상급 토석 투석수', rarity: 'epic', cls: 'artillery', elem: 'earth', dmg: 260, spd: 0.49, rng: 3.6, proj: 'bomb', splash: 0.67, stun: 0.08,
+    look: { legs: 'biped', torso: 'plate', head: 'human', hair: 'spiky', gear: 'mask', weapon: 'launcher', skin: '#ffe0c0', hairCol: '#c9a227' },
+    desc: '범위 폭발 · 기절.'
+  },
+  {
+    key: 'phys_guardian_ep45', name: '철갑 중갑병', rarity: 'epic', cls: 'guardian', elem: 'phys', dmg: 260, spd: 1.25, rng: 2, proj: 'none', pen: 0.33,
+    look: { legs: 'biped', torso: 'plate', head: 'human', hair: 'long', gear: 'antlers', weapon: 'greatsword', skin: '#f2d0ad', hairCol: '#d94f4f' },
+    desc: '방어 33% 관통.'
+  },
+  {
+    key: 'thunder_assassin_ep46', name: '숙련 낙뢰 그림자', rarity: 'epic', cls: 'assassin', elem: 'thunder', dmg: 215, spd: 2.46, rng: 2.1, proj: 'none', crit: 0.18, critMul: 1.9, execute: 0.05,
+    look: { legs: 'biped', torso: 'cloak', head: 'human', hair: 'spiky', gear: 'hood', weapon: 'dagger', skin: '#d9a978', hairCol: '#8e5b9e' },
+    desc: '치명 18% · 처형.'
+  },
+  {
+    key: 'dark_support_ep47', name: '숙련 암흑 조율사', rarity: 'epic', cls: 'support', elem: 'dark', dmg: 125, spd: 0.9, rng: 2.8, proj: 'ball', aura: { type: 'spd', amt: 0.17, radius: 4 }, curse: 0.11,
+    look: { legs: 'biped', torso: 'spectral', head: 'human', hair: 'pony', gear: 'halo', weapon: 'tome', skin: '#f2d0ad', hairCol: '#8a5a3a' },
+    desc: '저주 · 공속 오라 +17%.'
+  },
+  /* ------- 생성 : legendary ------- */
+  {
+    key: 'dark_guardian_le0', name: '흑야 수호자', rarity: 'legendary', cls: 'guardian', elem: 'dark', dmg: 245, spd: 0.83, rng: 2.2, proj: 'none', pen: 0.33, crit: 0.26, critMul: 2,
+    look: { legs: 'biped', torso: 'plate', head: 'human', hair: 'short', gear: 'antlers', weapon: 'spear', skin: '#e8bf95', hairCol: '#2b2b33', wings: 'energy' },
+    desc: '방어 33% 관통 · 치명 26%.'
+  },
+  {
+    key: 'void_assassin_le1', name: '전설의 별빛 없는 밀정', rarity: 'legendary', cls: 'assassin', elem: 'void', dmg: 190, spd: 1.81, rng: 2, proj: 'none',
+    look: { legs: 'biped', torso: 'leather', head: 'human', hair: 'pony', gear: 'antlers', weapon: 'claw', skin: '#b9825a', hairCol: '#2b2b33', wings: 'insectWing' },
+    desc: '견실한 기본기.'
+  },
+  {
+    key: 'blood_support_le2', name: '대 혈맹 수도자', rarity: 'legendary', cls: 'support', elem: 'blood', dmg: 180, spd: 1.14, rng: 3, proj: 'ball', aura: { type: 'spd', amt: 0.12, radius: 2 }, lifesteal: 0.07,
+    look: { legs: 'biped', torso: 'robe', head: 'human', hair: 'long', gear: 'crown', weapon: 'flask', skin: '#b9825a', hairCol: '#2b2b33', wings: 'energy' },
+    desc: '흡혈 · 공속 오라 +12%.'
+  },
+  {
+    key: 'fire_bard_le3', name: '잿불 선창자', rarity: 'legendary', cls: 'bard', elem: 'fire', dmg: 180, spd: 1.49, rng: 3.2, proj: 'ball', aura: { type: 'spd', amt: 0.09, radius: 3 }, burn: { dps: 2.16, dur: 4 },
+    look: { legs: 'biped', torso: 'robe', head: 'human', hair: 'short', gear: 'halo', weapon: 'harp', skin: '#e8bf95', hairCol: '#3a2a1a', wings: 'insectWing' },
+    desc: '화상 · 공속 오라 +9%.'
+  },
+  {
+    key: 'poison_summoner_le4', name: '창백한 지배자', rarity: 'legendary', cls: 'summoner', elem: 'poison', dmg: 195, spd: 0.75, rng: 3.5, proj: 'ball', summon: { count: 2, dmg: 59, spd: 1.2 },
+    look: { legs: 'biped', torso: 'robe', head: 'human', hair: 'long', gear: 'visor', weapon: 'staff', skin: '#e8bf95', hairCol: '#4a3524', wings: 'feather' },
+    desc: '정령 2기 소환.'
+  },
+  {
+    key: 'nature_engineer_le5', name: '대 만엽 장인', rarity: 'legendary', cls: 'engineer', elem: 'nature', dmg: 285, spd: 1.57, rng: 3.6, proj: 'bolt', multishot: 3, splash: 0.66, regen: 0.05,
+    look: { legs: 'biped', torso: 'plate', head: 'human', hair: 'braid', gear: 'horns', weapon: 'flask', skin: '#b9825a', hairCol: '#d94f4f', wings: 'insectWing' },
+    desc: '범위 폭발 · 3연사 · 생명 재생.'
+  },
+  {
+    key: 'wind_warlock_le6', name: '전설의 삭풍 주박사', rarity: 'legendary', cls: 'warlock', elem: 'wind', dmg: 295, spd: 1.01, rng: 3.3, proj: 'ball', poison: { dps: 2.95, dur: 4, stack: 4 }, curse: 0.16,
+    look: { legs: 'biped', torso: 'cloak', head: 'human', hair: 'spiky', gear: 'halo', weapon: 'scythe', skin: '#ffe0c0', hairCol: '#6b4a2a', wings: 'energy' },
+    desc: '중독 · 저주.'
+  },
+  {
+    key: 'time_archer_le7', name: '대 연대 활잡이', rarity: 'legendary', cls: 'archer', elem: 'time', dmg: 200, spd: 1.64, rng: 3.2, proj: 'arrow', crit: 0.25, critMul: 1.9, slow: 0.28,
+    look: { legs: 'biped', torso: 'cloak', head: 'human', hair: 'braid', gear: 'antlers', weapon: 'crossbow', skin: '#d9a978', hairCol: '#c9a227', wings: 'insectWing' },
+    desc: '치명 25% · 둔화 28%.'
+  },
+  {
+    key: 'ice_sniper_le8', name: '대 눈보라 응시자', rarity: 'legendary', cls: 'sniper', elem: 'ice', dmg: 480, spd: 0.72, rng: 7.1, proj: 'arrow', pen: 0.4, pierce: 2, crit: 0.21, critMul: 2.3,
+    look: { legs: 'biped', torso: 'cloak', head: 'human', hair: 'braid', gear: 'hood', weapon: 'rifle', skin: '#b9825a', hairCol: '#8a5a3a', wings: 'feather' },
+    desc: '방어 40% 관통 · 치명 21% · 관통 사격.'
+  },
+  {
+    key: 'holy_mage_le9', name: '성스러운 마도사', rarity: 'legendary', cls: 'mage', elem: 'holy', dmg: 370, spd: 1.33, rng: 3.2, proj: 'ball', splash: 0.79, holyBonus: 0.43,
+    look: { legs: 'biped', torso: 'robe', head: 'human', hair: 'pony', gear: 'horns', weapon: 'wand', skin: '#d9a978', hairCol: '#8e5b9e', wings: 'insectWing' },
+    desc: '범위 폭발.'
+  },
+  {
+    key: 'arcane_artillery_le10', name: '대 신비 투석수', rarity: 'legendary', cls: 'artillery', elem: 'arcane', dmg: 720, spd: 0.55, rng: 3.9, proj: 'bomb', stun: 0.07, pen: 0.2,
+    look: { legs: 'biped', torso: 'plate', head: 'human', hair: 'long', gear: 'hood', weapon: 'sling', skin: '#b9825a', hairCol: '#4a3524', wings: 'feather' },
+    desc: '방어 20% 관통 · 기절.'
+  },
+  {
+    key: 'blood_guardian_le11', name: '고명한 적혈 검사', rarity: 'legendary', cls: 'guardian', elem: 'blood', dmg: 475, spd: 0.97, rng: 2, proj: 'none', pen: 0.35, crit: 0.25, critMul: 2.6, lifesteal: 0.14,
+    look: { legs: 'biped', torso: 'plate', head: 'human', hair: 'pony', gear: 'halo', weapon: 'axe', skin: '#f0c9a0', hairCol: '#6b4a2a', wings: 'feather' },
+    desc: '방어 35% 관통 · 치명 25% · 흡혈.'
+  },
+  {
+    key: 'fire_assassin_le12', name: '전설의 홍염 단검술사', rarity: 'legendary', cls: 'assassin', elem: 'fire', dmg: 385, spd: 2.16, rng: 1.9, proj: 'none', burn: { dps: 4.62, dur: 4 },
+    look: { legs: 'biped', torso: 'leather', head: 'human', hair: 'spiky', gear: 'antlers', weapon: 'dagger', skin: '#b9825a', hairCol: '#4a3524', wings: 'bat' },
+    desc: '화상.'
+  },
+  {
+    key: 'poison_support_le13', name: '창백한 축복자', rarity: 'legendary', cls: 'support', elem: 'poison', dmg: 210, spd: 1.05, rng: 3.2, proj: 'ball', aura: { type: 'spd', amt: 0.18, radius: 4 }, poison: { dps: 2.1, dur: 7, stack: 4 },
+    look: { legs: 'biped', torso: 'spectral', head: 'human', hair: 'short', gear: 'hood', weapon: 'flask', skin: '#b9825a', hairCol: '#4a3524', wings: 'feather' },
+    desc: '중독 · 공속 오라 +18%.'
+  },
+  {
+    key: 'nature_bard_le14', name: '고명한 야생 가인', rarity: 'legendary', cls: 'bard', elem: 'nature', dmg: 265, spd: 1.33, rng: 3.1, proj: 'ball', aura: { type: 'dmg', amt: 0.25, radius: 2 }, regen: 0.04,
+    look: { legs: 'biped', torso: 'robe', head: 'human', hair: 'long', gear: 'visor', weapon: 'banner', skin: '#ffe0c0', hairCol: '#4a3524', wings: 'feather' },
+    desc: '생명 재생 · 공격력 오라 +25%.'
+  },
+  {
+    key: 'wind_summoner_le15', name: '고명한 선풍 조련사', rarity: 'legendary', cls: 'summoner', elem: 'wind', dmg: 375, spd: 0.85, rng: 3.1, proj: 'ball', summon: { count: 2, dmg: 113, spd: 1.2 }, multishot: 2,
+    look: { legs: 'biped', torso: 'robe', head: 'human', hair: 'pony', gear: 'horns', weapon: 'tome', skin: '#f0c9a0', hairCol: '#6b4a2a', wings: 'feather' },
+    desc: '2연사 · 정령 2기 소환.'
+  },
+  {
+    key: 'time_engineer_le16', name: '순환 기술자', rarity: 'legendary', cls: 'engineer', elem: 'time', dmg: 550, spd: 1.12, rng: 3.2, proj: 'bolt', multishot: 3, slow: 0.23,
+    look: { legs: 'biped', torso: 'plate', head: 'human', hair: 'short', gear: 'antlers', weapon: 'flask', skin: '#ffe0c0', hairCol: '#3a2a1a', wings: 'energy' },
+    desc: '3연사 · 둔화 23%.'
+  },
+  {
+    key: 'ice_warlock_le17', name: '전설의 눈보라 역술사', rarity: 'legendary', cls: 'warlock', elem: 'ice', dmg: 490, spd: 0.76, rng: 3.6, proj: 'ball', poison: { dps: 4.9, dur: 6, stack: 4 }, curse: 0.14, slow: 0.42,
+    look: { legs: 'biped', torso: 'cloak', head: 'human', hair: 'short', gear: 'mask', weapon: 'tome', skin: '#c89268', hairCol: '#8e5b9e', wings: 'insectWing' },
+    desc: '중독 · 둔화 42% · 저주.'
+  },
+  {
+    key: 'holy_archer_le18', name: '고명한 성스러운 사궁', rarity: 'legendary', cls: 'archer', elem: 'holy', dmg: 400, spd: 1.65, rng: 3.9, proj: 'arrow', multishot: 3, crit: 0.27, critMul: 2.2, holyBonus: 0.37,
+    look: { legs: 'biped', torso: 'leather', head: 'human', hair: 'braid', gear: 'mask', weapon: 'crossbow', skin: '#f2d0ad', hairCol: '#2b2b33', wings: 'insectWing' },
+    desc: '치명 27% · 3연사.'
+  },
+  {
+    key: 'arcane_sniper_le19', name: '현자의 응시자', rarity: 'legendary', cls: 'sniper', elem: 'arcane', dmg: 920, spd: 0.48, rng: 6.4, proj: 'arrow', pen: 0.31,
+    look: { legs: 'biped', torso: 'leather', head: 'human', hair: 'braid', gear: 'hood', weapon: 'crossbow', skin: '#d9a978', hairCol: '#c9a227', wings: 'bat' },
+    desc: '방어 31% 관통.'
+  },
+  {
+    key: 'earth_mage_le20', name: '대 단단한 마도사', rarity: 'legendary', cls: 'mage', elem: 'earth', dmg: 600, spd: 0.83, rng: 3.2, proj: 'ball', stun: 0.05,
+    look: { legs: 'biped', torso: 'robe', head: 'human', hair: 'braid', gear: 'horns', weapon: 'orb', skin: '#b9825a', hairCol: '#2b2b33', wings: 'feather' },
+    desc: '기절.'
+  },
+  {
+    key: 'phys_artillery_le21', name: '대 역전의 포수', rarity: 'legendary', cls: 'artillery', elem: 'phys', dmg: 1150, spd: 0.48, rng: 3.2, proj: 'bomb', splash: 0.65,
+    look: { legs: 'biped', torso: 'leather', head: 'human', hair: 'long', gear: 'horns', weapon: 'launcher', skin: '#f0c9a0', hairCol: '#8a5a3a', wings: 'feather' },
+    desc: '범위 폭발.'
+  },
+  {
+    key: 'poison_guardian_le22', name: '창백한 수호자', rarity: 'legendary', cls: 'guardian', elem: 'poison', dmg: 795, spd: 1.24, rng: 1.8, proj: 'none', pen: 0.25, crit: 0.3, critMul: 2.2,
+    look: { legs: 'biped', torso: 'plate', head: 'human', hair: 'pony', gear: 'halo', weapon: 'hammer', skin: '#c89268', hairCol: '#8a5a3a', wings: 'feather' },
+    desc: '방어 25% 관통 · 치명 30%.'
+  },
+  {
+    key: 'nature_assassin_le23', name: '고명한 만엽 단검술사', rarity: 'legendary', cls: 'assassin', elem: 'nature', dmg: 540, spd: 1.8, rng: 2.3, proj: 'none', crit: 0.2, critMul: 2.7, regen: 0.06,
+    look: { legs: 'biped', torso: 'leather', head: 'human', hair: 'braid', gear: 'halo', weapon: 'chakram', skin: '#ffe0c0', hairCol: '#8e5b9e', wings: 'feather' },
+    desc: '치명 20% · 생명 재생.'
+  },
+  {
+    key: 'wind_support_le24', name: '전설의 창공 성직자', rarity: 'legendary', cls: 'support', elem: 'wind', dmg: 400, spd: 1.3, rng: 3.1, proj: 'ball', aura: { type: 'dmg', amt: 0.15, radius: 4 }, multishot: 2,
+    look: { legs: 'biped', torso: 'spectral', head: 'human', hair: 'spiky', gear: 'halo', weapon: 'staff', skin: '#c89268', hairCol: '#4a3524', wings: 'bat' },
+    desc: '2연사 · 공격력 오라 +15%.'
+  },
+  {
+    key: 'time_bard_le25', name: '고명한 모래시계 연주자', rarity: 'legendary', cls: 'bard', elem: 'time', dmg: 455, spd: 1.14, rng: 2.8, proj: 'ball', aura: { type: 'dmg', amt: 0.12, radius: 3 }, slow: 0.23,
+    look: { legs: 'biped', torso: 'cloak', head: 'human', hair: 'short', gear: 'visor', weapon: 'harp', skin: '#f2d0ad', hairCol: '#2b2b33', wings: 'feather' },
+    desc: '둔화 23% · 공격력 오라 +12%.'
+  },
+  {
+    key: 'ice_summoner_le26', name: '전설의 눈보라 소환사', rarity: 'legendary', cls: 'summoner', elem: 'ice', dmg: 575, spd: 1.1, rng: 3.5, proj: 'ball', summon: { count: 2, dmg: 173, spd: 1.2 }, slow: 0.41,
+    look: { legs: 'float', torso: 'robe', head: 'human', hair: 'braid', gear: 'hood', weapon: 'tome', skin: '#f0c9a0', hairCol: '#6b4a2a', wings: 'bat' },
+    desc: '둔화 41% · 정령 2기 소환.'
+  },
+  {
+    key: 'holy_engineer_le27', name: '천상 정비사', rarity: 'legendary', cls: 'engineer', elem: 'holy', dmg: 780, spd: 1.11, rng: 3.1, proj: 'bolt', multishot: 3,
+    look: { legs: 'biped', torso: 'core', head: 'human', hair: 'short', gear: 'mask', weapon: 'flask', skin: '#ffe0c0', hairCol: '#3a2a1a', wings: 'bat' },
+    desc: '3연사.'
+  },
+  {
+    key: 'arcane_warlock_le28', name: '오의 마령술사', rarity: 'legendary', cls: 'warlock', elem: 'arcane', dmg: 840, spd: 0.99, rng: 3.1, proj: 'ball', poison: { dps: 8.4, dur: 4, stack: 4 }, pen: 0.22,
+    look: { legs: 'biped', torso: 'robe', head: 'human', hair: 'pony', gear: 'visor', weapon: 'tome', skin: '#ffe0c0', hairCol: '#4a3524', wings: 'insectWing' },
+    desc: '방어 22% 관통 · 중독.'
+  },
+  {
+    key: 'earth_archer_le29', name: '대 암반 사궁', rarity: 'legendary', cls: 'archer', elem: 'earth', dmg: 605, spd: 2.17, rng: 3.5, proj: 'arrow', crit: 0.15, critMul: 2.3, stun: 0.14,
+    look: { legs: 'biped', torso: 'leather', head: 'human', hair: 'spiky', gear: 'horns', weapon: 'bow', skin: '#f2d0ad', hairCol: '#8a5a3a', wings: 'insectWing' },
+    desc: '치명 15% · 기절.'
+  },
+  {
+    key: 'phys_sniper_le30', name: '고명한 패도 명사수', rarity: 'legendary', cls: 'sniper', elem: 'phys', dmg: 1250, spd: 0.63, rng: 7, proj: 'arrow', pen: 0.32, pierce: 2, crit: 0.15, critMul: 2,
+    look: { legs: 'biped', torso: 'cloak', head: 'human', hair: 'braid', gear: 'mask', weapon: 'crossbow', skin: '#ffe0c0', hairCol: '#4a3524', wings: 'feather' },
+    desc: '방어 32% 관통 · 치명 15% · 관통 사격.'
+  },
+  {
+    key: 'thunder_mage_le31', name: '자전 주술사', rarity: 'legendary', cls: 'mage', elem: 'thunder', dmg: 1000, spd: 0.84, rng: 3.1, proj: 'ball', splash: 1.12, chain: 4,
+    look: { legs: 'biped', torso: 'robe', head: 'human', hair: 'short', gear: 'halo', weapon: 'staff', skin: '#e8bf95', hairCol: '#8e5b9e', wings: 'insectWing' },
+    desc: '범위 폭발 · 4회 연쇄.'
+  },
+  {
+    key: 'dark_artillery_le32', name: '흑요 포수', rarity: 'legendary', cls: 'artillery', elem: 'dark', dmg: 1400, spd: 0.66, rng: 3.4, proj: 'bomb', splash: 1, curse: 0.19,
+    look: { legs: 'biped', torso: 'plate', head: 'human', hair: 'long', gear: 'mask', weapon: 'cannon', skin: '#c89268', hairCol: '#4a3524', wings: 'energy' },
+    desc: '범위 폭발 · 저주.'
+  },
+  {
+    key: 'wind_guardian_le33', name: '대 바람 검사', rarity: 'legendary', cls: 'guardian', elem: 'wind', dmg: 1250, spd: 1.28, rng: 1.9, proj: 'none', pen: 0.27, multishot: 2,
+    look: { legs: 'biped', torso: 'plate', head: 'human', hair: 'pony', gear: 'antlers', weapon: 'hammer', skin: '#d9a978', hairCol: '#c9a227', wings: 'bat' },
+    desc: '방어 27% 관통 · 2연사.'
+  },
+  {
+    key: 'time_assassin_le34', name: '순환 그림자', rarity: 'legendary', cls: 'assassin', elem: 'time', dmg: 920, spd: 2.1, rng: 2.2, proj: 'none', crit: 0.23, critMul: 2.6, execute: 0.14, slow: 0.28,
+    look: { legs: 'biped', torso: 'leather', head: 'human', hair: 'braid', gear: 'hood', weapon: 'claw', skin: '#c89268', hairCol: '#c9a227', wings: 'feather' },
+    desc: '치명 23% · 둔화 28% · 처형.'
+  },
+  {
+    key: 'ice_support_le35', name: '서리 사제', rarity: 'legendary', cls: 'support', elem: 'ice', dmg: 525, spd: 1.01, rng: 2.9, proj: 'ball', aura: { type: 'gold', amt: 0.13, radius: 4 }, slow: 0.23,
+    look: { legs: 'biped', torso: 'spectral', head: 'human', hair: 'pony', gear: 'hood', weapon: 'staff', skin: '#d9a978', hairCol: '#4a3524', wings: 'bat' },
+    desc: '둔화 23% · 골드 오라 +13%.'
+  },
+  {
+    key: 'holy_bard_le36', name: '대 성스러운 전율자', rarity: 'legendary', cls: 'bard', elem: 'holy', dmg: 655, spd: 1.43, rng: 3, proj: 'ball', aura: { type: 'rng', amt: 0.18, radius: 2 },
+    look: { legs: 'biped', torso: 'cloak', head: 'human', hair: 'long', gear: 'hood', weapon: 'harp', skin: '#d9a978', hairCol: '#3a2a1a', wings: 'feather' },
+    desc: '사거리 오라 +18%.'
+  },
+  {
+    key: 'arcane_summoner_le37', name: '전설의 마력 조련사', rarity: 'legendary', cls: 'summoner', elem: 'arcane', dmg: 870, spd: 0.71, rng: 3.5, proj: 'ball', summon: { count: 2, dmg: 261, spd: 1.2 }, pen: 0.16,
+    look: { legs: 'biped', torso: 'cloak', head: 'human', hair: 'long', gear: 'visor', weapon: 'staff', skin: '#f2d0ad', hairCol: '#d94f4f', wings: 'insectWing' },
+    desc: '방어 16% 관통 · 정령 2기 소환.'
+  },
+  {
+    key: 'earth_engineer_le38', name: '전설의 융기 기계공', rarity: 'legendary', cls: 'engineer', elem: 'earth', dmg: 1050, spd: 1.12, rng: 3.3, proj: 'bolt', multishot: 3, splash: 1.16, stun: 0.13,
+    look: { legs: 'biped', torso: 'core', head: 'human', hair: 'pony', gear: 'visor', weapon: 'drone', skin: '#e8bf95', hairCol: '#d94f4f', wings: 'insectWing' },
+    desc: '범위 폭발 · 3연사 · 기절.'
+  },
+  {
+    key: 'phys_warlock_le39', name: '전설의 백년 주박사', rarity: 'legendary', cls: 'warlock', elem: 'phys', dmg: 1050, spd: 0.8, rng: 3.3, proj: 'ball', poison: { dps: 10.5, dur: 4, stack: 4 }, curse: 0.07,
+    look: { legs: 'biped', torso: 'robe', head: 'human', hair: 'braid', gear: 'halo', weapon: 'tome', skin: '#f2d0ad', hairCol: '#8a5a3a', wings: 'feather' },
+    desc: '중독 · 저주.'
+  },
+  {
+    key: 'thunder_archer_le40', name: '폭뢰 사궁', rarity: 'legendary', cls: 'archer', elem: 'thunder', dmg: 830, spd: 1.67, rng: 3.5, proj: 'arrow', crit: 0.19, critMul: 2.7,
+    look: { legs: 'biped', torso: 'cloak', head: 'human', hair: 'pony', gear: 'mask', weapon: 'crossbow', skin: '#b9825a', hairCol: '#d94f4f', wings: 'bat' },
+    desc: '치명 19%.'
+  },
+  {
+    key: 'dark_sniper_le41', name: '고명한 암흑 명사수', rarity: 'legendary', cls: 'sniper', elem: 'dark', dmg: 1400, spd: 0.73, rng: 6.7, proj: 'arrow', pen: 0.4, crit: 0.15, critMul: 2.6,
+    look: { legs: 'biped', torso: 'cloak', head: 'human', hair: 'long', gear: 'antlers', weapon: 'crossbow', skin: '#f0c9a0', hairCol: '#8a5a3a', wings: 'insectWing' },
+    desc: '방어 40% 관통 · 치명 15%.'
+  },
+  {
+    key: 'void_mage_le42', name: '대 무형 현자', rarity: 'legendary', cls: 'mage', elem: 'void', dmg: 1350, spd: 0.92, rng: 3.6, proj: 'ball',
+    look: { legs: 'biped', torso: 'robe', head: 'human', hair: 'pony', gear: 'mask', weapon: 'orb', skin: '#b9825a', hairCol: '#8a5a3a', wings: 'feather' },
+    desc: '견실한 기본기.'
+  },
+  {
+    key: 'blood_artillery_le43', name: '전설의 혈족 투석수', rarity: 'legendary', cls: 'artillery', elem: 'blood', dmg: 1400, spd: 0.71, rng: 3.7, proj: 'bomb', splash: 0.82, lifesteal: 0.06,
+    look: { legs: 'biped', torso: 'leather', head: 'human', hair: 'long', gear: 'crown', weapon: 'sling', skin: '#ffe0c0', hairCol: '#2b2b33', wings: 'insectWing' },
+    desc: '범위 폭발 · 흡혈.'
+  },
+  {
+    key: 'ice_guardian_le44', name: '대 설야 수호자', rarity: 'legendary', cls: 'guardian', elem: 'ice', dmg: 1400, spd: 1.19, rng: 2.1, proj: 'none', pen: 0.16, slow: 0.34,
+    look: { legs: 'biped', torso: 'plate', head: 'human', hair: 'long', gear: 'antlers', weapon: 'axe', skin: '#f2d0ad', hairCol: '#d94f4f', wings: 'bat' },
+    desc: '방어 16% 관통 · 둔화 34%.'
+  },
+  {
+    key: 'holy_assassin_le45', name: '정화의 밀정', rarity: 'legendary', cls: 'assassin', elem: 'holy', dmg: 1200, spd: 2.29, rng: 2.1, proj: 'none', crit: 0.27, critMul: 2.4, holyBonus: 0.29,
+    look: { legs: 'biped', torso: 'cloak', head: 'human', hair: 'short', gear: 'antlers', weapon: 'dagger', skin: '#f0c9a0', hairCol: '#d94f4f', wings: 'insectWing' },
+    desc: '치명 27%.'
+  },
+  /* ------- 생성 : mythic ------- */
+  {
+    key: 'earth_assassin_my0', name: '신화의 대지 단검술사', rarity: 'mythic', cls: 'assassin', elem: 'earth', dmg: 480, spd: 2.5, rng: 2.1, proj: 'none', stun: 0.13,
+    look: { legs: 'biped', torso: 'leather', head: 'human', hair: 'pony', gear: 'horns', weapon: 'dagger', skin: '#f0c9a0', hairCol: '#d94f4f', wings: 'feather' },
+    desc: '기절.'
+  },
+  {
+    key: 'phys_support_my1', name: '전승의 패도 성직자', rarity: 'mythic', cls: 'support', elem: 'phys', dmg: 480, spd: 1.33, rng: 3.1, proj: 'ball', aura: { type: 'spd', amt: 0.22, radius: 2 },
+    look: { legs: 'biped', torso: 'spectral', head: 'human', hair: 'pony', gear: 'visor', weapon: 'staff', skin: '#e8bf95', hairCol: '#4a3524', wings: 'bat' },
+    desc: '공속 오라 +22%.'
+  },
+  {
+    key: 'thunder_bard_my2', name: '전승의 뇌전 선창자', rarity: 'mythic', cls: 'bard', elem: 'thunder', dmg: 480, spd: 1.55, rng: 3.2, proj: 'ball', aura: { type: 'spd', amt: 0.2, radius: 4 },
+    look: { legs: 'biped', torso: 'robe', head: 'human', hair: 'short', gear: 'horns', weapon: 'harp', skin: '#ffe0c0', hairCol: '#2b2b33', wings: 'energy' },
+    desc: '공속 오라 +20%.'
+  },
+  {
+    key: 'dark_summoner_my3', name: '전승의 나락 부름꾼', rarity: 'mythic', cls: 'summoner', elem: 'dark', dmg: 535, spd: 1.18, rng: 2.9, proj: 'ball', summon: { count: 2, dmg: 161, spd: 1.2 }, curse: 0.18,
+    look: { legs: 'biped', torso: 'robe', head: 'human', hair: 'short', gear: 'hood', weapon: 'orb', skin: '#b9825a', hairCol: '#4a3524', wings: 'bat' },
+    desc: '저주 · 정령 2기 소환.'
+  },
+  {
+    key: 'void_engineer_my4', name: '전승의 균열 기계공', rarity: 'mythic', cls: 'engineer', elem: 'void', dmg: 670, spd: 1.4, rng: 3.7, proj: 'bolt', multishot: 3, splash: 0.7,
+    look: { legs: 'biped', torso: 'plate', head: 'human', hair: 'spiky', gear: 'antlers', weapon: 'rifle', skin: '#f0c9a0', hairCol: '#4a3524', wings: 'bat' },
+    desc: '범위 폭발 · 3연사.'
+  },
+  {
+    key: 'blood_warlock_my5', name: '초월한 혈맹 금술사', rarity: 'mythic', cls: 'warlock', elem: 'blood', dmg: 760, spd: 0.91, rng: 3.2, proj: 'ball', poison: { dps: 7.6, dur: 4, stack: 4 }, curse: 0.06, lifesteal: 0.08,
+    look: { legs: 'biped', torso: 'robe', head: 'human', hair: 'long', gear: 'halo', weapon: 'tome', skin: '#ffe0c0', hairCol: '#6b4a2a', wings: 'insectWing' },
+    desc: '중독 · 흡혈 · 저주.'
+  },
+  {
+    key: 'fire_archer_my6', name: '신화의 불티 사수', rarity: 'mythic', cls: 'archer', elem: 'fire', dmg: 570, spd: 1.92, rng: 3.3, proj: 'arrow', multishot: 3, crit: 0.14, critMul: 2.3, burn: { dps: 6.84, dur: 5 },
+    look: { legs: 'biped', torso: 'leather', head: 'human', hair: 'braid', gear: 'horns', weapon: 'crossbow', skin: '#b9825a', hairCol: '#8a5a3a', wings: 'bat' },
+    desc: '치명 14% · 3연사 · 화상.'
+  },
+  {
+    key: 'poison_sniper_my7', name: '전승의 독무 조준자', rarity: 'mythic', cls: 'sniper', elem: 'poison', dmg: 1350, spd: 0.4, rng: 6.7, proj: 'arrow', pen: 0.12, pierce: 2, crit: 0.3, critMul: 2.8,
+    look: { legs: 'biped', torso: 'leather', head: 'human', hair: 'braid', gear: 'crown', weapon: 'rifle', skin: '#f0c9a0', hairCol: '#2b2b33', wings: 'energy' },
+    desc: '방어 12% 관통 · 치명 30% · 관통 사격.'
+  },
+  {
+    key: 'nature_mage_my8', name: '초월한 덩굴 마도사', rarity: 'mythic', cls: 'mage', elem: 'nature', dmg: 960, spd: 0.88, rng: 4, proj: 'ball', splash: 0.84,
+    look: { legs: 'biped', torso: 'robe', head: 'human', hair: 'braid', gear: 'hood', weapon: 'orb', skin: '#f0c9a0', hairCol: '#6b4a2a', wings: 'bat' },
+    desc: '범위 폭발.'
+  },
+  {
+    key: 'wind_artillery_my9', name: '신화의 선풍 파쇄자', rarity: 'mythic', cls: 'artillery', elem: 'wind', dmg: 1500, spd: 0.67, rng: 3.4, proj: 'bomb', splash: 0.74, stun: 0.1, multishot: 2,
+    look: { legs: 'biped', torso: 'plate', head: 'human', hair: 'pony', gear: 'hood', weapon: 'sling', skin: '#d9a978', hairCol: '#3a2a1a', wings: 'energy' },
+    desc: '범위 폭발 · 2연사 · 기절.'
+  },
+  {
+    key: 'time_guardian_my10', name: '전승의 시간 방패병', rarity: 'mythic', cls: 'guardian', elem: 'time', dmg: 1250, spd: 1.15, rng: 1.8, proj: 'none', pen: 0.31, crit: 0.23, critMul: 1.8, slow: 0.17,
+    look: { legs: 'biped', torso: 'plate', head: 'human', hair: 'long', gear: 'halo', weapon: 'axe', skin: '#e8bf95', hairCol: '#d94f4f', wings: 'insectWing' },
+    desc: '방어 31% 관통 · 치명 23% · 둔화 17%.'
+  },
+  {
+    key: 'thunder_assassin_my11', name: '전승의 낙뢰 암살자', rarity: 'mythic', cls: 'assassin', elem: 'thunder', dmg: 870, spd: 2.3, rng: 2.1, proj: 'none', crit: 0.14, critMul: 2.8, execute: 0.09,
+    look: { legs: 'biped', torso: 'leather', head: 'human', hair: 'spiky', gear: 'antlers', weapon: 'claw', skin: '#f0c9a0', hairCol: '#8e5b9e', wings: 'insectWing' },
+    desc: '치명 14% · 처형.'
+  },
+  {
+    key: 'dark_support_my12', name: '초월한 흑요 치유사', rarity: 'mythic', cls: 'support', elem: 'dark', dmg: 510, spd: 1.01, rng: 3.1, proj: 'ball', aura: { type: 'spd', amt: 0.22, radius: 3 }, curse: 0.2,
+    look: { legs: 'biped', torso: 'robe', head: 'human', hair: 'long', gear: 'crown', weapon: 'flask', skin: '#c89268', hairCol: '#8a5a3a', wings: 'feather' },
+    desc: '저주 · 공속 오라 +22%.'
+  },
+  {
+    key: 'void_bard_my13', name: '초월한 단절 연주자', rarity: 'mythic', cls: 'bard', elem: 'void', dmg: 675, spd: 1.2, rng: 3, proj: 'ball', aura: { type: 'gold', amt: 0.18, radius: 2 },
+    look: { legs: 'biped', torso: 'cloak', head: 'human', hair: 'long', gear: 'hood', weapon: 'banner', skin: '#ffe0c0', hairCol: '#d94f4f', wings: 'insectWing' },
+    desc: '골드 오라 +18%.'
+  },
+  {
+    key: 'blood_summoner_my14', name: '전승의 붉은 부름꾼', rarity: 'mythic', cls: 'summoner', elem: 'blood', dmg: 965, spd: 0.94, rng: 2.8, proj: 'ball', summon: { count: 2, dmg: 290, spd: 1.2 }, lifesteal: 0.09,
+    look: { legs: 'biped', torso: 'robe', head: 'human', hair: 'spiky', gear: 'visor', weapon: 'staff', skin: '#e8bf95', hairCol: '#c9a227', wings: 'feather' },
+    desc: '흡혈 · 정령 2기 소환.'
+  },
+  {
+    key: 'fire_engineer_my15', name: '전승의 용광로 기계공', rarity: 'mythic', cls: 'engineer', elem: 'fire', dmg: 1400, spd: 1.37, rng: 3.5, proj: 'bolt', splash: 0.62, burn: { dps: 16.8, dur: 5 },
+    look: { legs: 'biped', torso: 'core', head: 'human', hair: 'spiky', gear: 'hood', weapon: 'drone', skin: '#d9a978', hairCol: '#8e5b9e', wings: 'bat' },
+    desc: '범위 폭발 · 화상.'
+  },
+  {
+    key: 'poison_warlock_my16', name: '전승의 맹독 역술사', rarity: 'mythic', cls: 'warlock', elem: 'poison', dmg: 1450, spd: 1.05, rng: 3.2, proj: 'ball', poison: { dps: 14.5, dur: 5, stack: 4 }, curse: 0.07,
+    look: { legs: 'biped', torso: 'cloak', head: 'human', hair: 'braid', gear: 'visor', weapon: 'tome', skin: '#c89268', hairCol: '#c9a227', wings: 'energy' },
+    desc: '중독 · 저주.'
+  },
+  {
+    key: 'nature_archer_my17', name: '초월한 덩굴 사궁', rarity: 'mythic', cls: 'archer', elem: 'nature', dmg: 965, spd: 1.61, rng: 4, proj: 'arrow', crit: 0.11, critMul: 2.5, regen: 0.02,
+    look: { legs: 'biped', torso: 'leather', head: 'human', hair: 'braid', gear: 'visor', weapon: 'crossbow', skin: '#ffe0c0', hairCol: '#d94f4f', wings: 'feather' },
+    desc: '치명 11% · 생명 재생.'
+  },
+  {
+    key: 'wind_sniper_my18', name: '초월한 삭풍 응시자', rarity: 'mythic', cls: 'sniper', elem: 'wind', dmg: 2400, spd: 0.75, rng: 6.6, proj: 'arrow', pen: 0.38, pierce: 2, crit: 0.34, critMul: 2,
+    look: { legs: 'biped', torso: 'leather', head: 'human', hair: 'short', gear: 'hood', weapon: 'crossbow', skin: '#ffe0c0', hairCol: '#8e5b9e', wings: 'bat' },
+    desc: '방어 38% 관통 · 치명 34% · 관통 사격.'
+  },
+  {
+    key: 'time_mage_my19', name: '신화의 모래시계 현자', rarity: 'mythic', cls: 'mage', elem: 'time', dmg: 1550, spd: 1.15, rng: 3.6, proj: 'ball', splash: 0.84, slow: 0.15,
+    look: { legs: 'biped', torso: 'robe', head: 'human', hair: 'braid', gear: 'halo', weapon: 'wand', skin: '#c89268', hairCol: '#2b2b33', wings: 'bat' },
+    desc: '범위 폭발 · 둔화 15%.'
+  },
+  {
+    key: 'ice_artillery_my20', name: '초월한 빙하 척탄병', rarity: 'mythic', cls: 'artillery', elem: 'ice', dmg: 3000, spd: 0.56, rng: 3.3, proj: 'bomb', splash: 0.73,
+    look: { legs: 'biped', torso: 'plate', head: 'human', hair: 'short', gear: 'mask', weapon: 'launcher', skin: '#c89268', hairCol: '#2b2b33', wings: 'energy' },
+    desc: '범위 폭발.'
+  },
+  {
+    key: 'holy_guardian_my21', name: '정화의 기사', rarity: 'mythic', cls: 'guardian', elem: 'holy', dmg: 1800, spd: 1.11, rng: 1.9, proj: 'none', crit: 0.2, critMul: 2.2,
+    look: { legs: 'biped', torso: 'plate', head: 'human', hair: 'pony', gear: 'halo', weapon: 'spear', skin: '#f0c9a0', hairCol: '#2b2b33', wings: 'energy' },
+    desc: '치명 20%.'
+  },
+  {
+    key: 'void_assassin_my22', name: '신화의 공동 단검술사', rarity: 'mythic', cls: 'assassin', elem: 'void', dmg: 1650, spd: 2.04, rng: 2.2, proj: 'none', crit: 0.14, critMul: 2.6, pen: 0.27,
+    look: { legs: 'biped', torso: 'cloak', head: 'human', hair: 'spiky', gear: 'halo', weapon: 'dagger', skin: '#ffe0c0', hairCol: '#c9a227', wings: 'energy' },
+    desc: '방어 27% 관통 · 치명 14%.'
+  },
+  {
+    key: 'blood_support_my23', name: '초월한 혈맹 사제', rarity: 'mythic', cls: 'support', elem: 'blood', dmg: 900, spd: 1.04, rng: 3.1, proj: 'ball', aura: { type: 'rng', amt: 0.11, radius: 3 },
+    look: { legs: 'biped', torso: 'robe', head: 'human', hair: 'braid', gear: 'crown', weapon: 'staff', skin: '#b9825a', hairCol: '#8a5a3a', wings: 'feather' },
+    desc: '사거리 오라 +11%.'
+  },
+  {
+    key: 'fire_bard_my24', name: '신화의 잿불 연주자', rarity: 'mythic', cls: 'bard', elem: 'fire', dmg: 1200, spd: 1.53, rng: 3.2, proj: 'ball', aura: { type: 'spd', amt: 0.11, radius: 4 }, burn: { dps: 14.4, dur: 5 },
+    look: { legs: 'biped', torso: 'cloak', head: 'human', hair: 'spiky', gear: 'halo', weapon: 'harp', skin: '#ffe0c0', hairCol: '#d94f4f', wings: 'bat' },
+    desc: '화상 · 공속 오라 +11%.'
+  },
+  {
+    key: 'poison_summoner_my25', name: '전승의 독아 소환사', rarity: 'mythic', cls: 'summoner', elem: 'poison', dmg: 1600, spd: 1.17, rng: 2.9, proj: 'ball', summon: { count: 2, dmg: 480, spd: 1.2 }, poison: { dps: 16, dur: 7, stack: 5 },
+    look: { legs: 'float', torso: 'robe', head: 'human', hair: 'spiky', gear: 'hood', weapon: 'staff', skin: '#f0c9a0', hairCol: '#8e5b9e', wings: 'energy' },
+    desc: '중독 · 정령 2기 소환.'
+  },
+  {
+    key: 'nature_engineer_my26', name: '전승의 초원 정비사', rarity: 'mythic', cls: 'engineer', elem: 'nature', dmg: 2050, spd: 1.16, rng: 3.3, proj: 'bolt', splash: 0.73, regen: 0.03,
+    look: { legs: 'biped', torso: 'plate', head: 'human', hair: 'braid', gear: 'halo', weapon: 'rifle', skin: '#f2d0ad', hairCol: '#3a2a1a', wings: 'bat' },
+    desc: '범위 폭발 · 생명 재생.'
+  },
+  {
+    key: 'wind_warlock_my27', name: '신화의 창공 흑마법사', rarity: 'mythic', cls: 'warlock', elem: 'wind', dmg: 2100, spd: 0.97, rng: 3, proj: 'ball', multishot: 2,
+    look: { legs: 'biped', torso: 'robe', head: 'human', hair: 'braid', gear: 'horns', weapon: 'tome', skin: '#e8bf95', hairCol: '#c9a227', wings: 'insectWing' },
+    desc: '2연사.'
+  },
+  {
+    key: 'time_archer_my28', name: '초월한 시간 궁수', rarity: 'mythic', cls: 'archer', elem: 'time', dmg: 1650, spd: 2.15, rng: 3.8, proj: 'arrow', crit: 0.25, critMul: 2,
+    look: { legs: 'biped', torso: 'cloak', head: 'human', hair: 'long', gear: 'hood', weapon: 'bow', skin: '#d9a978', hairCol: '#d94f4f', wings: 'bat' },
+    desc: '치명 25%.'
+  },
+  {
+    key: 'ice_sniper_my29', name: '신화의 삭풍 장궁병', rarity: 'mythic', cls: 'sniper', elem: 'ice', dmg: 3200, spd: 0.73, rng: 7, proj: 'arrow', pen: 0.17, pierce: 2, crit: 0.3, critMul: 2.6,
+    look: { legs: 'biped', torso: 'cloak', head: 'human', hair: 'long', gear: 'halo', weapon: 'rifle', skin: '#b9825a', hairCol: '#3a2a1a', wings: 'insectWing' },
+    desc: '방어 17% 관통 · 치명 30% · 관통 사격.'
+  },
+  {
+    key: 'holy_mage_my30', name: '신화의 천상 술사', rarity: 'mythic', cls: 'mage', elem: 'holy', dmg: 2650, spd: 0.91, rng: 3.8, proj: 'ball', splash: 0.76,
+    look: { legs: 'biped', torso: 'robe', head: 'human', hair: 'pony', gear: 'halo', weapon: 'orb', skin: '#f0c9a0', hairCol: '#6b4a2a', wings: 'feather' },
+    desc: '범위 폭발.'
+  },
+  {
+    key: 'arcane_artillery_my31', name: '현자의 척탄병', rarity: 'mythic', cls: 'artillery', elem: 'arcane', dmg: 3200, spd: 0.74, rng: 3.7, proj: 'bomb', splash: 1.26,
+    look: { legs: 'biped', torso: 'leather', head: 'human', hair: 'pony', gear: 'crown', weapon: 'launcher', skin: '#b9825a', hairCol: '#4a3524', wings: 'energy' },
+    desc: '범위 폭발.'
+  },
+  {
+    key: 'earth_guardian_my32', name: '초월한 지축 수호자', rarity: 'mythic', cls: 'guardian', elem: 'earth', dmg: 3000, spd: 0.92, rng: 1.9, proj: 'none', pen: 0.19, crit: 0.25, critMul: 1.9, stun: 0.08,
+    look: { legs: 'biped', torso: 'plate', head: 'human', hair: 'long', gear: 'antlers', weapon: 'sword', skin: '#d9a978', hairCol: '#8a5a3a', wings: 'insectWing' },
+    desc: '방어 19% 관통 · 치명 25% · 기절.'
+  },
+  {
+    key: 'fire_assassin_my33', name: '초월한 겁화 단검술사', rarity: 'mythic', cls: 'assassin', elem: 'fire', dmg: 2400, spd: 2.02, rng: 2, proj: 'none', crit: 0.13, critMul: 2.1, execute: 0.09, burn: { dps: 28.8, dur: 4 },
+    look: { legs: 'biped', torso: 'leather', head: 'human', hair: 'short', gear: 'antlers', weapon: 'dagger', skin: '#c89268', hairCol: '#4a3524', wings: 'feather' },
+    desc: '치명 13% · 화상 · 처형.'
+  },
+  {
+    key: 'poison_support_my34', name: '초월한 독아 성직자', rarity: 'mythic', cls: 'support', elem: 'poison', dmg: 1350, spd: 1.36, rng: 2.9, proj: 'ball', aura: { type: 'dmg', amt: 0.22, radius: 2 }, poison: { dps: 13.5, dur: 5, stack: 3 },
+    look: { legs: 'biped', torso: 'spectral', head: 'human', hair: 'long', gear: 'mask', weapon: 'flask', skin: '#d9a978', hairCol: '#8a5a3a', wings: 'insectWing' },
+    desc: '중독 · 공격력 오라 +22%.'
+  },
+  {
+    key: 'nature_bard_my35', name: '신화의 만엽 음유시인', rarity: 'mythic', cls: 'bard', elem: 'nature', dmg: 1700, spd: 1.35, rng: 3.3, proj: 'ball', aura: { type: 'gold', amt: 0.11, radius: 4 },
+    look: { legs: 'biped', torso: 'robe', head: 'human', hair: 'spiky', gear: 'mask', weapon: 'harp', skin: '#c89268', hairCol: '#8e5b9e', wings: 'feather' },
+    desc: '골드 오라 +11%.'
+  },
+  {
+    key: 'wind_summoner_my36', name: '신화의 유랑 부름꾼', rarity: 'mythic', cls: 'summoner', elem: 'wind', dmg: 2250, spd: 0.71, rng: 3, proj: 'ball', summon: { count: 2, dmg: 675, spd: 1.2 },
+    look: { legs: 'biped', torso: 'robe', head: 'human', hair: 'long', gear: 'horns', weapon: 'tome', skin: '#b9825a', hairCol: '#d94f4f', wings: 'feather' },
+    desc: '정령 2기 소환.'
+  },
+  {
+    key: 'time_engineer_my37', name: '신화의 모래시계 설계자', rarity: 'mythic', cls: 'engineer', elem: 'time', dmg: 3050, spd: 1.22, rng: 3.7, proj: 'bolt', splash: 0.7, slow: 0.19,
+    look: { legs: 'biped', torso: 'core', head: 'human', hair: 'short', gear: 'hood', weapon: 'flask', skin: '#e8bf95', hairCol: '#8a5a3a', wings: 'energy' },
+    desc: '범위 폭발 · 둔화 19%.'
+  },
+  {
+    key: 'ice_warlock_my38', name: '신화의 결빙 흑마법사', rarity: 'mythic', cls: 'warlock', elem: 'ice', dmg: 2700, spd: 1.12, rng: 3.2, proj: 'ball', poison: { dps: 27, dur: 5, stack: 4 }, curse: 0.1, slow: 0.42,
+    look: { legs: 'biped', torso: 'robe', head: 'human', hair: 'pony', gear: 'horns', weapon: 'scythe', skin: '#b9825a', hairCol: '#3a2a1a', wings: 'energy' },
+    desc: '중독 · 둔화 42% · 저주.'
+  },
+  {
+    key: 'holy_archer_my39', name: '초월한 천상 궁수', rarity: 'mythic', cls: 'archer', elem: 'holy', dmg: 2150, spd: 1.65, rng: 4.1, proj: 'arrow', holyBonus: 0.38,
+    look: { legs: 'biped', torso: 'leather', head: 'human', hair: 'short', gear: 'halo', weapon: 'bow', skin: '#ffe0c0', hairCol: '#6b4a2a', wings: 'feather' },
+    desc: '견실한 기본기.'
+  },
+  /* ------- 생성 : ultimate ------- */
+  {
+    key: 'ice_support_ul0', name: '천계의 설야 수도자', rarity: 'ultimate', cls: 'support', elem: 'ice', dmg: 4800, spd: 0.96, rng: 2.7, proj: 'ball', aura: { type: 'gold', amt: 0.27, radius: 2 }, slow: 0.42,
+    look: { legs: 'biped', torso: 'robe', head: 'dragonHead', gear: 'hood', weapon: 'tome', skin: '#e8bf95', hairCol: '#4a3524', wings: 'bat' },
+    desc: '둔화 42% · 골드 오라 +27%.'
+  },
+  {
+    key: 'holy_bard_ul1', name: '초월 여명 악사', rarity: 'ultimate', cls: 'bard', elem: 'holy', dmg: 4800, spd: 1.5, rng: 3.2, proj: 'ball', aura: { type: 'dmg', amt: 0.15, radius: 2 }, holyBonus: 0.2,
+    look: { legs: 'biped', torso: 'robe', head: 'orb', gear: 'horns', weapon: 'harp', skin: '#b9825a', hairCol: '#8a5a3a', wings: 'bat' },
+    desc: '공격력 오라 +15%.'
+  },
+  {
+    key: 'arcane_summoner_ul2', name: '극의 룬 부름꾼', rarity: 'ultimate', cls: 'summoner', elem: 'arcane', dmg: 4800, spd: 1, rng: 3.5, proj: 'ball', summon: { count: 3, dmg: 1440, spd: 1.2 }, pen: 0.31,
+    look: { legs: 'biped', torso: 'robe', head: 'demonHead', gear: 'crown', weapon: 'tome', skin: '#d9a978', hairCol: '#4a3524', wings: 'energy' },
+    desc: '방어 31% 관통 · 정령 3기 소환.'
+  },
+  {
+    key: 'earth_engineer_ul3', name: '천계의 지맥 장인', rarity: 'ultimate', cls: 'engineer', elem: 'earth', dmg: 5500, spd: 1.5, rng: 3.2, proj: 'bolt', multishot: 3, splash: 1.01, stun: 0.1,
+    look: { legs: 'biped', torso: 'core', head: 'demonHead', gear: 'halo', weapon: 'flask', skin: '#d9a978', hairCol: '#d94f4f', wings: 'feather' },
+    desc: '범위 폭발 · 3연사 · 기절.'
+  },
+  {
+    key: 'phys_warlock_ul4', name: '극의 무쇠 금술사', rarity: 'ultimate', cls: 'warlock', elem: 'phys', dmg: 6700, spd: 1.15, rng: 3.7, proj: 'ball',
+    look: { legs: 'biped', torso: 'robe', head: 'human', hair: 'spiky', gear: 'horns', weapon: 'wand', skin: '#f2d0ad', hairCol: '#6b4a2a', wings: 'energy' },
+    desc: '견실한 기본기.'
+  },
+  {
+    key: 'thunder_archer_ul5', name: '극의 천둥 궁수', rarity: 'ultimate', cls: 'archer', elem: 'thunder', dmg: 5300, spd: 2.06, rng: 3.2, proj: 'arrow', multishot: 3, crit: 0.32, critMul: 2.9,
+    look: { legs: 'biped', torso: 'leather', head: 'human', hair: 'long', gear: 'hood', weapon: 'bow', skin: '#e8bf95', hairCol: '#8e5b9e', wings: 'bat' },
+    desc: '치명 32% · 3연사.'
+  },
+  {
+    key: 'dark_sniper_ul6', name: '초월 나락 응시자', rarity: 'ultimate', cls: 'sniper', elem: 'dark', dmg: 10100, spd: 0.58, rng: 6.2, proj: 'arrow', pen: 0.15, pierce: 3, crit: 0.24, critMul: 1.9,
+    look: { legs: 'biped', torso: 'cloak', head: 'orb', gear: 'mask', weapon: 'crossbow', skin: '#e8bf95', hairCol: '#4a3524', wings: 'insectWing' },
+    desc: '방어 15% 관통 · 치명 24% · 관통 사격.'
+  },
+  {
+    key: 'void_mage_ul7', name: '초월 허공 마도사', rarity: 'ultimate', cls: 'mage', elem: 'void', dmg: 8100, spd: 1.24, rng: 3.4, proj: 'ball', splash: 0.73,
+    look: { legs: 'biped', torso: 'robe', head: 'demonHead', gear: 'crown', weapon: 'orb', skin: '#d9a978', hairCol: '#6b4a2a', wings: 'bat' },
+    desc: '범위 폭발.'
+  },
+  {
+    key: 'blood_artillery_ul8', name: '초월 흡혈 투석수', rarity: 'ultimate', cls: 'artillery', elem: 'blood', dmg: 14400, spd: 0.79, rng: 3.9, proj: 'bomb', splash: 1.06, lifesteal: 0.15,
+    look: { legs: 'biped', torso: 'plate', head: 'dragonHead', gear: 'antlers', weapon: 'launcher', skin: '#d9a978', hairCol: '#c9a227', wings: 'insectWing' },
+    desc: '범위 폭발 · 흡혈.'
+  },
+  {
+    key: 'fire_guardian_ul9', name: '천계의 홍염 파수꾼', rarity: 'ultimate', cls: 'guardian', elem: 'fire', dmg: 9450, spd: 0.9, rng: 1.7, proj: 'none', crit: 0.16, critMul: 2.8, burn: { dps: 113.4, dur: 5 },
+    look: { legs: 'biped', torso: 'plate', head: 'demonHead', gear: 'mask', weapon: 'axe', skin: '#f2d0ad', hairCol: '#4a3524', wings: 'bat' },
+    desc: '치명 16% · 화상.'
+  },
+  {
+    key: 'poison_assassin_ul10', name: '창백한 밀정', rarity: 'ultimate', cls: 'assassin', elem: 'poison', dmg: 7500, spd: 2.59, rng: 2, proj: 'none', crit: 0.27, critMul: 2.7, execute: 0.11,
+    look: { legs: 'biped', torso: 'leather', head: 'human', hair: 'pony', gear: 'crown', weapon: 'dagger', skin: '#b9825a', hairCol: '#d94f4f', wings: 'energy' },
+    desc: '치명 27% · 처형.'
+  },
+  {
+    key: 'arcane_support_ul11', name: '초월 신비 수도자', rarity: 'ultimate', cls: 'support', elem: 'arcane', dmg: 5050, spd: 1.07, rng: 3.3, proj: 'ball', aura: { type: 'dmg', amt: 0.28, radius: 4 }, pen: 0.3,
+    look: { legs: 'biped', torso: 'robe', head: 'demonHead', gear: 'visor', weapon: 'flask', skin: '#f0c9a0', hairCol: '#2b2b33', wings: 'energy' },
+    desc: '방어 30% 관통 · 공격력 오라 +28%.'
+  },
+  {
+    key: 'earth_bard_ul12', name: '천계의 반석 음유시인', rarity: 'ultimate', cls: 'bard', elem: 'earth', dmg: 5950, spd: 1.2, rng: 3.5, proj: 'ball', aura: { type: 'dmg', amt: 0.28, radius: 2 },
+    look: { legs: 'biped', torso: 'cloak', head: 'demonHead', gear: 'horns', weapon: 'harp', skin: '#f2d0ad', hairCol: '#c9a227', wings: 'bat' },
+    desc: '공격력 오라 +28%.'
+  },
+  {
+    key: 'phys_summoner_ul13', name: '극의 불굴 소환사', rarity: 'ultimate', cls: 'summoner', elem: 'phys', dmg: 8500, spd: 1.02, rng: 3.1, proj: 'ball', summon: { count: 3, dmg: 2550, spd: 1.2 },
+    look: { legs: 'biped', torso: 'robe', head: 'dragonHead', gear: 'hood', weapon: 'tome', skin: '#ffe0c0', hairCol: '#8a5a3a', wings: 'energy' },
+    desc: '정령 3기 소환.'
+  },
+  {
+    key: 'thunder_engineer_ul14', name: '극의 뇌명 기계공', rarity: 'ultimate', cls: 'engineer', elem: 'thunder', dmg: 10800, spd: 1.33, rng: 3.1, proj: 'bolt', splash: 0.61,
+    look: { legs: 'biped', torso: 'plate', head: 'demonHead', gear: 'mask', weapon: 'drone', skin: '#b9825a', hairCol: '#8a5a3a', wings: 'bat' },
+    desc: '범위 폭발.'
+  },
+  {
+    key: 'dark_warlock_ul15', name: '초월 어스름 주박사', rarity: 'ultimate', cls: 'warlock', elem: 'dark', dmg: 12550, spd: 0.72, rng: 3.4, proj: 'ball', poison: { dps: 125.5, dur: 6, stack: 5 },
+    look: { legs: 'biped', torso: 'cloak', head: 'demonHead', gear: 'visor', weapon: 'wand', skin: '#ffe0c0', hairCol: '#4a3524', wings: 'energy' },
+    desc: '중독.'
+  },
+  {
+    key: 'void_archer_ul16', name: '초월 무형 궁수', rarity: 'ultimate', cls: 'archer', elem: 'void', dmg: 9150, spd: 1.91, rng: 4.3, proj: 'arrow', multishot: 3,
+    look: { legs: 'biped', torso: 'cloak', head: 'orb', gear: 'halo', weapon: 'crossbow', skin: '#ffe0c0', hairCol: '#6b4a2a', wings: 'energy' },
+    desc: '3연사.'
+  },
+  {
+    key: 'blood_sniper_ul17', name: '초월 진홍 관측수', rarity: 'ultimate', cls: 'sniper', elem: 'blood', dmg: 17850, spd: 0.78, rng: 7, proj: 'arrow', pen: 0.14, crit: 0.18, critMul: 2.1, lifesteal: 0.17,
+    look: { legs: 'biped', torso: 'cloak', head: 'orb', gear: 'horns', weapon: 'crossbow', skin: '#c89268', hairCol: '#6b4a2a', wings: 'bat' },
+    desc: '방어 14% 관통 · 치명 18% · 흡혈.'
+  },
+  {
+    key: 'fire_mage_ul18', name: '천계의 겁화 마법사', rarity: 'ultimate', cls: 'mage', elem: 'fire', dmg: 15350, spd: 1.21, rng: 3.1, proj: 'ball', burn: { dps: 184.2, dur: 4 },
+    look: { legs: 'biped', torso: 'robe', head: 'human', hair: 'pony', gear: 'crown', weapon: 'wand', skin: '#d9a978', hairCol: '#8e5b9e', wings: 'energy' },
+    desc: '화상.'
+  },
+  {
+    key: 'poison_artillery_ul19', name: '극의 늪지 투석수', rarity: 'ultimate', cls: 'artillery', elem: 'poison', dmg: 24000, spd: 0.73, rng: 3.7, proj: 'bomb', splash: 1.06, stun: 0.05, poison: { dps: 240, dur: 7, stack: 5 },
+    look: { legs: 'biped', torso: 'plate', head: 'demonHead', gear: 'halo', weapon: 'sling', skin: '#c89268', hairCol: '#8e5b9e', wings: 'bat' },
+    desc: '범위 폭발 · 중독 · 기절.'
+  },
+  {
+    key: 'nature_guardian_ul20', name: '천계의 초원 검사', rarity: 'ultimate', cls: 'guardian', elem: 'nature', dmg: 17250, spd: 0.88, rng: 2, proj: 'none', crit: 0.3, critMul: 1.9,
+    look: { legs: 'biped', torso: 'plate', head: 'human', hair: 'long', gear: 'horns', weapon: 'hammer', skin: '#d9a978', hairCol: '#8a5a3a', wings: 'energy' },
+    desc: '치명 30%.'
+  },
+  {
+    key: 'wind_assassin_ul21', name: '극의 표풍 자객', rarity: 'ultimate', cls: 'assassin', elem: 'wind', dmg: 13000, spd: 1.72, rng: 2.2, proj: 'none', crit: 0.21, critMul: 2, execute: 0.07, multishot: 2,
+    look: { legs: 'biped', torso: 'leather', head: 'dragonHead', gear: 'antlers', weapon: 'chakram', skin: '#e8bf95', hairCol: '#4a3524', wings: 'feather' },
+    desc: '치명 21% · 2연사 · 처형.'
+  },
+  {
+    key: 'phys_support_ul22', name: '초월 강철 사제', rarity: 'ultimate', cls: 'support', elem: 'phys', dmg: 7400, spd: 1.19, rng: 3, proj: 'ball', aura: { type: 'gold', amt: 0.14, radius: 3 },
+    look: { legs: 'biped', torso: 'spectral', head: 'orb', gear: 'antlers', weapon: 'tome', skin: '#ffe0c0', hairCol: '#c9a227', wings: 'bat' },
+    desc: '골드 오라 +14%.'
+  },
+  {
+    key: 'thunder_bard_ul23', name: '천계의 뇌명 전율자', rarity: 'ultimate', cls: 'bard', elem: 'thunder', dmg: 10250, spd: 1.49, rng: 3.3, proj: 'ball', aura: { type: 'dmg', amt: 0.27, radius: 2 }, chain: 3,
+    look: { legs: 'biped', torso: 'robe', head: 'orb', gear: 'antlers', weapon: 'harp', skin: '#d9a978', hairCol: '#2b2b33', wings: 'bat' },
+    desc: '3회 연쇄 · 공격력 오라 +27%.'
+  },
+  {
+    key: 'dark_summoner_ul24', name: '천계의 흑요 소환사', rarity: 'ultimate', cls: 'summoner', elem: 'dark', dmg: 15250, spd: 0.98, rng: 3.7, proj: 'ball', summon: { count: 3, dmg: 4575, spd: 1.2 }, curse: 0.09,
+    look: { legs: 'float', torso: 'robe', head: 'demonHead', gear: 'horns', weapon: 'tome', skin: '#ffe0c0', hairCol: '#d94f4f', wings: 'feather' },
+    desc: '저주 · 정령 3기 소환.'
+  },
+  {
+    key: 'void_engineer_ul25', name: '초월 허공 설계자', rarity: 'ultimate', cls: 'engineer', elem: 'void', dmg: 17900, spd: 1.17, rng: 3.1, proj: 'bolt', multishot: 3, splash: 1.17, pen: 0.26,
+    look: { legs: 'biped', torso: 'core', head: 'orb', gear: 'visor', weapon: 'drone', skin: '#b9825a', hairCol: '#2b2b33', wings: 'feather' },
+    desc: '범위 폭발 · 방어 26% 관통 · 3연사.'
+  },
+  {
+    key: 'blood_warlock_ul26', name: '초월 혈맹 저주술사', rarity: 'ultimate', cls: 'warlock', elem: 'blood', dmg: 19000, spd: 0.8, rng: 3.7, proj: 'ball', poison: { dps: 190, dur: 5, stack: 5 }, curse: 0.11,
+    look: { legs: 'biped', torso: 'cloak', head: 'orb', gear: 'crown', weapon: 'scythe', skin: '#b9825a', hairCol: '#3a2a1a', wings: 'energy' },
+    desc: '중독 · 저주.'
+  },
+  {
+    key: 'fire_archer_ul27', name: '천계의 용광로 활잡이', rarity: 'ultimate', cls: 'archer', elem: 'fire', dmg: 12900, spd: 1.79, rng: 3.6, proj: 'arrow', multishot: 3, crit: 0.35, critMul: 2.5, burn: { dps: 154.8, dur: 5 },
+    look: { legs: 'biped', torso: 'leather', head: 'demonHead', gear: 'antlers', weapon: 'bow', skin: '#d9a978', hairCol: '#8e5b9e', wings: 'insectWing' },
+    desc: '치명 35% · 3연사 · 화상.'
+  },
+  {
+    key: 'poison_sniper_ul28', name: '초월 썩은 관측수', rarity: 'ultimate', cls: 'sniper', elem: 'poison', dmg: 24000, spd: 0.72, rng: 6.1, proj: 'arrow', poison: { dps: 240, dur: 5, stack: 5 },
+    look: { legs: 'biped', torso: 'cloak', head: 'demonHead', gear: 'halo', weapon: 'rifle', skin: '#c89268', hairCol: '#d94f4f', wings: 'insectWing' },
+    desc: '중독.'
+  },
+  {
+    key: 'nature_mage_ul29', name: '극의 야생 현자', rarity: 'ultimate', cls: 'mage', elem: 'nature', dmg: 19500, spd: 1.2, rng: 3, proj: 'ball', splash: 0.7,
+    look: { legs: 'biped', torso: 'robe', head: 'orb', gear: 'halo', weapon: 'orb', skin: '#d9a978', hairCol: '#6b4a2a', wings: 'insectWing' },
+    desc: '범위 폭발.'
+  },
+  {
+    key: 'wind_artillery_ul30', name: '천계의 질풍 파쇄자', rarity: 'ultimate', cls: 'artillery', elem: 'wind', dmg: 24000, spd: 0.7, rng: 3.1, proj: 'bomb', splash: 0.81,
+    look: { legs: 'biped', torso: 'plate', head: 'human', hair: 'braid', gear: 'horns', weapon: 'cannon', skin: '#e8bf95', hairCol: '#d94f4f', wings: 'feather' },
+    desc: '범위 폭발.'
+  },
+  {
+    key: 'time_guardian_ul31', name: '천계의 순환 기사', rarity: 'ultimate', cls: 'guardian', elem: 'time', dmg: 23800, spd: 1.04, rng: 1.8, proj: 'none', pen: 0.34, crit: 0.17, critMul: 2.5, slow: 0.26,
+    look: { legs: 'biped', torso: 'plate', head: 'demonHead', gear: 'hood', weapon: 'greatsword', skin: '#b9825a', hairCol: '#8a5a3a', wings: 'feather' },
+    desc: '방어 34% 관통 · 치명 17% · 둔화 26%.'
+  },
+  {
+    key: 'ice_assassin_ul32', name: '극의 빙정 척살자', rarity: 'ultimate', cls: 'assassin', elem: 'ice', dmg: 19250, spd: 1.95, rng: 2, proj: 'none', crit: 0.37, critMul: 2.5, execute: 0.15, slow: 0.42,
+    look: { legs: 'biped', torso: 'leather', head: 'human', hair: 'braid', gear: 'halo', weapon: 'chakram', skin: '#d9a978', hairCol: '#d94f4f', wings: 'bat' },
+    desc: '치명 37% · 둔화 42% · 처형.'
+  },
+  {
+    key: 'dark_support_ul33', name: '천계의 나락 치유사', rarity: 'ultimate', cls: 'support', elem: 'dark', dmg: 11000, spd: 0.9, rng: 2.8, proj: 'ball', aura: { type: 'spd', amt: 0.17, radius: 2 }, curse: 0.14,
+    look: { legs: 'biped', torso: 'spectral', head: 'orb', gear: 'horns', weapon: 'staff', skin: '#c89268', hairCol: '#3a2a1a', wings: 'feather' },
+    desc: '저주 · 공속 오라 +17%.'
+  },
+  /* ------- 생성 : primordial ------- */
+  {
+    key: 'nature_bard_pr0', name: '대지의 연주자', rarity: 'primordial', cls: 'bard', elem: 'nature', dmg: 30000, spd: 1.23, rng: 3.4, proj: 'ball', aura: { type: 'gold', amt: 0.29, radius: 3 }, regen: 0.06,
+    look: { legs: 'biped', torso: 'robe', head: 'human', hair: 'long', gear: 'hood', weapon: 'harp', skin: '#d9a978', hairCol: '#d94f4f', wings: 'energy' },
+    desc: '생명 재생 · 골드 오라 +29%.'
+  },
+  {
+    key: 'wind_summoner_pr1', name: '태초의 창공 사역자', rarity: 'primordial', cls: 'summoner', elem: 'wind', dmg: 30000, spd: 1.06, rng: 3.1, proj: 'ball', summon: { count: 3, dmg: 9000, spd: 1.2 },
+    look: { legs: 'biped', torso: 'cloak', head: 'orb', gear: 'horns', weapon: 'staff', skin: '#f0c9a0', hairCol: '#8a5a3a', wings: 'bat' },
+    desc: '정령 3기 소환.'
+  },
+  {
+    key: 'time_engineer_pr2', name: '태초의 시류 정비사', rarity: 'primordial', cls: 'engineer', elem: 'time', dmg: 34650, spd: 1.1, rng: 3.8, proj: 'bolt', splash: 1.21, slow: 0.23,
+    look: { legs: 'biped', torso: 'plate', head: 'orb', gear: 'antlers', weapon: 'rifle', skin: '#f2d0ad', hairCol: '#6b4a2a', wings: 'bat' },
+    desc: '범위 폭발 · 둔화 23%.'
+  },
+  {
+    key: 'ice_warlock_pr3', name: '창세의 빙정 저주술사', rarity: 'primordial', cls: 'warlock', elem: 'ice', dmg: 33000, spd: 1.09, rng: 3.3, proj: 'ball', poison: { dps: 330, dur: 4, stack: 5 }, curse: 0.22, slow: 0.33,
+    look: { legs: 'biped', torso: 'robe', head: 'human', hair: 'braid', gear: 'mask', weapon: 'wand', skin: '#f0c9a0', hairCol: '#2b2b33', wings: 'feather' },
+    desc: '중독 · 둔화 33% · 저주.'
+  },
+  {
+    key: 'holy_archer_pr4', name: '태초의 성역 연사수', rarity: 'primordial', cls: 'archer', elem: 'holy', dmg: 30000, spd: 1.64, rng: 4.1, proj: 'arrow', crit: 0.15, critMul: 2.2, holyBonus: 0.25,
+    look: { legs: 'biped', torso: 'cloak', head: 'dragonHead', gear: 'visor', weapon: 'crossbow', skin: '#c89268', hairCol: '#c9a227', wings: 'bat' },
+    desc: '치명 15%.'
+  },
+  {
+    key: 'arcane_sniper_pr5', name: '창세의 마력 명사수', rarity: 'primordial', cls: 'sniper', elem: 'arcane', dmg: 60100, spd: 0.5, rng: 7, proj: 'arrow', pen: 0.32, crit: 0.42, critMul: 2.5,
+    look: { legs: 'biped', torso: 'leather', head: 'demonHead', gear: 'mask', weapon: 'crossbow', skin: '#f2d0ad', hairCol: '#4a3524', wings: 'bat' },
+    desc: '방어 32% 관통 · 치명 42%.'
+  },
+  {
+    key: 'earth_mage_pr6', name: '창세의 대지 주술사', rarity: 'primordial', cls: 'mage', elem: 'earth', dmg: 39400, spd: 1.25, rng: 3.3, proj: 'ball', stun: 0.06,
+    look: { legs: 'biped', torso: 'robe', head: 'dragonHead', gear: 'horns', weapon: 'orb', skin: '#c89268', hairCol: '#c9a227', wings: 'bat' },
+    desc: '기절.'
+  },
+  {
+    key: 'phys_artillery_pr7', name: '원초 강습 폭격수', rarity: 'primordial', cls: 'artillery', elem: 'phys', dmg: 67150, spd: 0.69, rng: 4.1, proj: 'bomb', splash: 1.02, stun: 0.07,
+    look: { legs: 'biped', torso: 'plate', head: 'demonHead', gear: 'halo', weapon: 'sling', skin: '#e8bf95', hairCol: '#8a5a3a', wings: 'bat' },
+    desc: '범위 폭발 · 기절.'
+  },
+  {
+    key: 'thunder_guardian_pr8', name: '원초 섬전 검사', rarity: 'primordial', cls: 'guardian', elem: 'thunder', dmg: 55800, spd: 1.3, rng: 2.3, proj: 'none', pen: 0.57, crit: 0.21, critMul: 2.1, chain: 2,
+    look: { legs: 'biped', torso: 'plate', head: 'demonHead', gear: 'visor', weapon: 'hammer', skin: '#f0c9a0', hairCol: '#4a3524', wings: 'energy' },
+    desc: '방어 57% 관통 · 치명 21% · 2회 연쇄.'
+  },
+  {
+    key: 'dark_assassin_pr9', name: '원초 검은 자객', rarity: 'primordial', cls: 'assassin', elem: 'dark', dmg: 44450, spd: 1.92, rng: 2.4, proj: 'none', crit: 0.36, critMul: 2.2, execute: 0.15, curse: 0.12,
+    look: { legs: 'biped', torso: 'cloak', head: 'orb', gear: 'hood', weapon: 'chakram', skin: '#d9a978', hairCol: '#6b4a2a', wings: 'feather' },
+    desc: '치명 36% · 처형 · 저주.'
+  },
+  {
+    key: 'void_support_pr10', name: '태초의 차원 수도자', rarity: 'primordial', cls: 'support', elem: 'void', dmg: 30000, spd: 1.04, rng: 2.8, proj: 'ball', aura: { type: 'spd', amt: 0.29, radius: 2 }, pen: 0.2,
+    look: { legs: 'biped', torso: 'robe', head: 'dragonHead', gear: 'horns', weapon: 'staff', skin: '#ffe0c0', hairCol: '#8a5a3a', wings: 'feather' },
+    desc: '방어 20% 관통 · 공속 오라 +29%.'
+  },
+  {
+    key: 'time_bard_pr11', name: '태초의 시간 악사', rarity: 'primordial', cls: 'bard', elem: 'time', dmg: 30000, spd: 1.47, rng: 3.4, proj: 'ball', aura: { type: 'gold', amt: 0.13, radius: 2 }, slow: 0.21,
+    look: { legs: 'biped', torso: 'robe', head: 'human', hair: 'braid', gear: 'hood', weapon: 'harp', skin: '#ffe0c0', hairCol: '#2b2b33', wings: 'bat' },
+    desc: '둔화 21% · 골드 오라 +13%.'
+  },
+  {
+    key: 'ice_summoner_pr12', name: '원초 삭풍 부름꾼', rarity: 'primordial', cls: 'summoner', elem: 'ice', dmg: 42900, spd: 0.86, rng: 2.9, proj: 'ball', summon: { count: 3, dmg: 12870, spd: 1.2 },
+    look: { legs: 'biped', torso: 'robe', head: 'orb', gear: 'hood', weapon: 'orb', skin: '#e8bf95', hairCol: '#8e5b9e', wings: 'energy' },
+    desc: '정령 3기 소환.'
+  },
+  {
+    key: 'holy_engineer_pr13', name: '정화의 설계자', rarity: 'primordial', cls: 'engineer', elem: 'holy', dmg: 50300, spd: 1.3, rng: 4, proj: 'bolt', splash: 1.2,
+    look: { legs: 'biped', torso: 'core', head: 'human', hair: 'long', gear: 'crown', weapon: 'rifle', skin: '#b9825a', hairCol: '#c9a227', wings: 'feather' },
+    desc: '범위 폭발.'
+  },
+  {
+    key: 'arcane_warlock_pr14', name: '창세의 신비 마령술사', rarity: 'primordial', cls: 'warlock', elem: 'arcane', dmg: 52350, spd: 1, rng: 3.4, proj: 'ball', curse: 0.09,
+    look: { legs: 'biped', torso: 'cloak', head: 'orb', gear: 'mask', weapon: 'tome', skin: '#f2d0ad', hairCol: '#c9a227', wings: 'insectWing' },
+    desc: '저주.'
+  },
+  {
+    key: 'earth_archer_pr15', name: '태초의 반석 궁병', rarity: 'primordial', cls: 'archer', elem: 'earth', dmg: 46250, spd: 1.95, rng: 4.1, proj: 'arrow', multishot: 3, crit: 0.31, critMul: 2.9, stun: 0.09,
+    look: { legs: 'biped', torso: 'cloak', head: 'dragonHead', gear: 'visor', weapon: 'bow', skin: '#f2d0ad', hairCol: '#8e5b9e', wings: 'insectWing' },
+    desc: '치명 31% · 3연사 · 기절.'
+  },
+  {
+    key: 'phys_sniper_pr16', name: '원초 천군 저격수', rarity: 'primordial', cls: 'sniper', elem: 'phys', dmg: 88000, spd: 0.41, rng: 7.3, proj: 'arrow', pen: 0.54, crit: 0.16, critMul: 2,
+    look: { legs: 'biped', torso: 'leather', head: 'demonHead', gear: 'halo', weapon: 'rifle', skin: '#b9825a', hairCol: '#4a3524', wings: 'insectWing' },
+    desc: '방어 54% 관통 · 치명 16%.'
+  },
+  {
+    key: 'thunder_mage_pr17', name: '창세의 천둥 사도', rarity: 'primordial', cls: 'mage', elem: 'thunder', dmg: 60750, spd: 1.29, rng: 4.1, proj: 'ball', splash: 1.19, chain: 4,
+    look: { legs: 'biped', torso: 'robe', head: 'orb', gear: 'horns', weapon: 'wand', skin: '#d9a978', hairCol: '#8e5b9e', wings: 'insectWing' },
+    desc: '범위 폭발 · 4회 연쇄.'
+  },
+  {
+    key: 'dark_artillery_pr18', name: '원초 나락 파쇄자', rarity: 'primordial', cls: 'artillery', elem: 'dark', dmg: 88000, spd: 0.45, rng: 3.9, proj: 'bomb', splash: 0.96, stun: 0.15, curse: 0.12,
+    look: { legs: 'biped', torso: 'leather', head: 'human', hair: 'short', gear: 'hood', weapon: 'cannon', skin: '#f0c9a0', hairCol: '#8e5b9e', wings: 'insectWing' },
+    desc: '범위 폭발 · 기절 · 저주.'
+  },
+  {
+    key: 'void_guardian_pr19', name: '원초 공동 검사', rarity: 'primordial', cls: 'guardian', elem: 'void', dmg: 88000, spd: 0.83, rng: 2, proj: 'none', pen: 0.36,
+    look: { legs: 'biped', torso: 'plate', head: 'dragonHead', gear: 'crown', weapon: 'sword', skin: '#b9825a', hairCol: '#2b2b33', wings: 'bat' },
+    desc: '방어 36% 관통.'
+  },
+  {
+    key: 'blood_assassin_pr20', name: '태초의 혈향 암살자', rarity: 'primordial', cls: 'assassin', elem: 'blood', dmg: 65000, spd: 2.09, rng: 2.3, proj: 'none', crit: 0.14, critMul: 2.3,
+    look: { legs: 'biped', torso: 'leather', head: 'demonHead', gear: 'visor', weapon: 'chakram', skin: '#c89268', hairCol: '#8e5b9e', wings: 'energy' },
+    desc: '치명 14%.'
+  },
+  {
+    key: 'fire_support_pr21', name: '태초의 겁화 사제', rarity: 'primordial', cls: 'support', elem: 'fire', dmg: 39800, spd: 1.14, rng: 3.2, proj: 'ball', aura: { type: 'rng', amt: 0.16, radius: 2 },
+    look: { legs: 'biped', torso: 'robe', head: 'demonHead', gear: 'crown', weapon: 'staff', skin: '#c89268', hairCol: '#8a5a3a', wings: 'insectWing' },
+    desc: '사거리 오라 +16%.'
+  },
+  {
+    key: 'holy_bard_pr22', name: '원초 백광 악사', rarity: 'primordial', cls: 'bard', elem: 'holy', dmg: 47550, spd: 1.47, rng: 3.3, proj: 'ball', aura: { type: 'rng', amt: 0.26, radius: 2 }, holyBonus: 0.29,
+    look: { legs: 'biped', torso: 'cloak', head: 'orb', gear: 'mask', weapon: 'harp', skin: '#e8bf95', hairCol: '#8e5b9e', wings: 'energy' },
+    desc: '사거리 오라 +26%.'
+  },
+  {
+    key: 'arcane_summoner_pr23', name: '창세의 고대 소환사', rarity: 'primordial', cls: 'summoner', elem: 'arcane', dmg: 63550, spd: 0.87, rng: 3, proj: 'ball', summon: { count: 3, dmg: 19065, spd: 1.2 },
+    look: { legs: 'float', torso: 'cloak', head: 'human', hair: 'short', gear: 'mask', weapon: 'tome', skin: '#b9825a', hairCol: '#c9a227', wings: 'bat' },
+    desc: '정령 3기 소환.'
+  },
+  {
+    key: 'earth_engineer_pr24', name: '원초 융기 기술자', rarity: 'primordial', cls: 'engineer', elem: 'earth', dmg: 80550, spd: 1.45, rng: 3.3, proj: 'bolt', splash: 0.87, stun: 0.11,
+    look: { legs: 'biped', torso: 'core', head: 'demonHead', gear: 'hood', weapon: 'flask', skin: '#d9a978', hairCol: '#2b2b33', wings: 'insectWing' },
+    desc: '범위 폭발 · 기절.'
+  },
+  {
+    key: 'phys_warlock_pr25', name: '역전의 금술사', rarity: 'primordial', cls: 'warlock', elem: 'phys', dmg: 80700, spd: 1.17, rng: 3.2, proj: 'ball', poison: { dps: 807, dur: 6, stack: 5 }, curse: 0.09,
+    look: { legs: 'biped', torso: 'cloak', head: 'demonHead', gear: 'mask', weapon: 'wand', skin: '#d9a978', hairCol: '#4a3524', wings: 'insectWing' },
+    desc: '중독 · 저주.'
+  },
 ];
 const UNIT_MAP = {}; UNITS.forEach(u => UNIT_MAP[u.key] = u);
 const UNITS_BY_RARITY = {};
@@ -1251,6 +2739,439 @@ const ENEMIES = [
     resist: { phys: .7, fire: .7, ice: .7, arcane: .7, holy: .6, dark: .6, void: .5, time: .8 }, scale: 3.4,
     look: { legs: 'float', torso: 'spectral', head: 'orb', gear: 'crown', weapon: 'scythe', wings: 'energy' }
   },
+  /* ---------------- 생성 : 추가 몬스터 ---------------- */
+  {
+    key: 'g_goblinoid_t0_0', name: '그을린 홉고블린', tier: 0, color: '#8fbf5a', hp: 0.91, spd: 1.18, armor: 0, bounty: 0.81,
+    look: { legs: 'biped', torso: 'leather', head: 'beastHead', weapon: 'none' }
+  },
+  {
+    key: 'g_undead_t0_1', name: '그을린 망령', tier: 0, color: '#cfd6e0', hp: 0.53, spd: 1.08, armor: 1, bounty: 1.1, flags: ['undead'],
+    look: { legs: 'biped', torso: 'bone', head: 'skull', weapon: 'none' }
+  },
+  {
+    key: 'g_beast_t0_2', name: '얼어붙은 멧돼지', tier: 0, color: '#c49a68', hp: 0.57, spd: 1.17, armor: 0, bounty: 0.8, flags: ['regen'],
+    look: { legs: 'quad', torso: 'scaled', head: 'beastHead', weapon: 'none' }
+  },
+  {
+    key: 'g_insect_t0_3', name: '살진 전갈', tier: 0, color: '#4aa08a', hp: 0.97, spd: 0.89, armor: 0, bounty: 0.81,
+    look: { legs: 'quad', torso: 'chitin', head: 'insectHead', weapon: 'none' }
+  },
+  {
+    key: 'g_demon_t0_4', name: '굶주린 마졸', tier: 0, color: '#e07a5a', hp: 0.86, spd: 0.85, armor: 1, bounty: 1.02,
+    look: { legs: 'biped', torso: 'brute', head: 'demonHead', weapon: 'none' }
+  },
+  {
+    key: 'g_elemental_t0_5', name: '창백한 얼음정령', tier: 0, color: '#7fd8ff', hp: 0.72, spd: 1.14, armor: 0, bounty: 0.88, scale: 1.14,
+    look: { legs: 'float', torso: 'core', head: 'orb', weapon: 'none' }
+  },
+  {
+    key: 'g_construct_t0_6', name: '저주받은 철갑차', tier: 0, color: '#9fb0c4', hp: 0.72, spd: 1.25, armor: 0, bounty: 1.12, flags: ['armored'], scale: 1.36,
+    look: { legs: 'track', torso: 'core', head: 'machine', weapon: 'none' }
+  },
+  {
+    key: 'g_slime_t0_7', name: '저주받은 포자체', tier: 0, color: '#e07cd0', hp: 0.82, spd: 1.26, armor: 0, bounty: 0.85, flags: ['split'], splitInto: 'slimelet', splitN: 2,
+    look: { legs: 'none', torso: 'blob', head: 'none', weapon: 'none' }
+  },
+  {
+    key: 'g_void_t0_8', name: '독기 서린 침묵자', tier: 0, color: '#a06ff0', hp: 0.85, spd: 0.86, armor: 0, bounty: 0.69, flags: ['ghost'],
+    look: { legs: 'wisp', torso: 'spectral', head: 'orb', weapon: 'none' }
+  },
+  {
+    key: 'g_goblinoid_t0_9', name: '피에 젖은 홉고블린', tier: 0, color: '#7cae4a', hp: 0.8, spd: 1.31, armor: 0, bounty: 1.06,
+    look: { legs: 'biped', torso: 'leather', head: 'beastHead', weapon: 'none' }
+  },
+  {
+    key: 'g_undead_t0_10', name: '녹슨 시귀', tier: 0, color: '#b8c2d0', hp: 0.54, spd: 1.14, armor: 0, bounty: 1.08, flags: ['undead'], scale: 1.35,
+    look: { legs: 'biped', torso: 'bone', head: 'skull', weapon: 'none' }
+  },
+  {
+    key: 'g_beast_t0_11', name: '굶주린 살쾡이', tier: 0, color: '#c49a68', hp: 0.54, spd: 1.08, armor: 0, bounty: 0.72, scale: 1.1,
+    look: { legs: 'quad', torso: 'scaled', head: 'beastHead', weapon: 'none' }
+  },
+  {
+    key: 'g_insect_t0_12', name: '음험한 풍뎅이', tier: 0, color: '#8a5bd0', hp: 0.74, spd: 1.2, armor: 0, bounty: 0.6, scale: 1.36,
+    look: { legs: 'quad', torso: 'chitin', head: 'insectHead', weapon: 'none' }
+  },
+  {
+    key: 'g_demon_t0_13', name: '야윈 흉수', tier: 0, color: '#d05a4a', hp: 0.79, spd: 1.17, armor: 0, bounty: 0.72, scale: 1.4,
+    look: { legs: 'biped', torso: 'brute', head: 'demonHead', weapon: 'none' }
+  },
+  {
+    key: 'g_undead_t1_0', name: '그을린 해골', tier: 1, color: '#cfd6e0', hp: 2.28, spd: 0.92, armor: 2, bounty: 1.09, flags: ['undead'], scale: 1.49,
+    look: { legs: 'biped', torso: 'bone', head: 'skull', weapon: 'none' }
+  },
+  {
+    key: 'g_beast_t1_1', name: '광포한 큰쥐', tier: 1, color: '#a98255', hp: 2.91, spd: 1.2, armor: 2, bounty: 1.14, flags: ['fast', 'regen'],
+    look: { legs: 'quad', torso: 'scaled', head: 'beastHead', weapon: 'none' }
+  },
+  {
+    key: 'g_insect_t1_2', name: '야윈 지네', tier: 1, color: '#5b7fd0', hp: 1.68, spd: 1.07, armor: 0, bounty: 1.27, flags: ['fast'], scale: 1.37,
+    look: { legs: 'quad', torso: 'chitin', head: 'insectHead', weapon: 'none' }
+  },
+  {
+    key: 'g_demon_t1_3', name: '두 머리 흉수', tier: 1, color: '#d05a4a', hp: 1.84, spd: 0.89, armor: 0, bounty: 1.71, scale: 1.11,
+    look: { legs: 'biped', torso: 'brute', head: 'demonHead', weapon: 'none' }
+  },
+  {
+    key: 'g_elemental_t1_4', name: '얼어붙은 불정령', tier: 1, color: '#7fd8ff', hp: 1.41, spd: 0.84, armor: 5, bounty: 1.38,
+    look: { legs: 'float', torso: 'core', head: 'orb', weapon: 'none' }
+  },
+  {
+    key: 'g_construct_t1_5', name: '사나운 파수기', tier: 1, color: '#b4c4d4', hp: 2.08, spd: 0.92, armor: 7, bounty: 2.16, flags: ['armored'],
+    look: { legs: 'track', torso: 'core', head: 'machine', weapon: 'none' }
+  },
+  {
+    key: 'g_slime_t1_6', name: '사나운 젤리', tier: 1, color: '#e07cd0', hp: 1.76, spd: 1.27, armor: 7, bounty: 1.25, flags: ['split'], splitInto: 'slimelet', splitN: 2,
+    look: { legs: 'none', torso: 'blob', head: 'none', weapon: 'none' }
+  },
+  {
+    key: 'g_void_t1_7', name: '얼어붙은 균열자', tier: 1, color: '#7f5fd0', hp: 1.85, spd: 1.09, armor: 0, bounty: 1.57, flags: ['ghost'],
+    look: { legs: 'wisp', torso: 'spectral', head: 'orb', weapon: 'none' }
+  },
+  {
+    key: 'g_goblinoid_t1_8', name: '단단한 오크', tier: 1, color: '#7cae4a', hp: 2.08, spd: 1.22, armor: 2, bounty: 1.33,
+    look: { legs: 'biped', torso: 'leather', head: 'beastHead', weapon: 'none' }
+  },
+  {
+    key: 'g_undead_t1_9', name: '단단한 망령', tier: 1, color: '#9aa6b8', hp: 2.6, spd: 1.02, armor: 9, bounty: 1.22, flags: ['undead', 'fast'],
+    look: { legs: 'biped', torso: 'bone', head: 'skull', weapon: 'none' }
+  },
+  {
+    key: 'g_beast_t1_10', name: '피에 젖은 늑대', tier: 1, color: '#8d6c46', hp: 1.48, spd: 1.16, armor: 2, bounty: 1.65, scale: 1.33,
+    look: { legs: 'quad', torso: 'scaled', head: 'beastHead', weapon: 'none' }
+  },
+  {
+    key: 'g_insect_t1_11', name: '늙은 전갈', tier: 1, color: '#8a5bd0', hp: 1.88, spd: 0.74, armor: 5, bounty: 1.88,
+    look: { legs: 'quad', torso: 'chitin', head: 'insectHead', weapon: 'none' }
+  },
+  {
+    key: 'g_demon_t1_12', name: '외눈 임프', tier: 1, color: '#e07a5a', hp: 2.35, spd: 0.97, armor: 7, bounty: 1.83,
+    look: { legs: 'biped', torso: 'brute', head: 'demonHead', weapon: 'none' }
+  },
+  {
+    key: 'g_elemental_t1_13', name: '광포한 뇌정령', tier: 1, color: '#b8f07a', hp: 1.63, spd: 1.19, armor: 2, bounty: 1.33, scale: 1.23,
+    look: { legs: 'float', torso: 'core', head: 'orb', weapon: 'none' }
+  },
+  {
+    key: 'g_construct_t1_14', name: '광포한 파수기', tier: 1, color: '#9fb0c4', hp: 2.67, spd: 1.21, armor: 7, bounty: 1.57, flags: ['armored'],
+    look: { legs: 'track', torso: 'core', head: 'machine', weapon: 'none' }
+  },
+  {
+    key: 'g_slime_t1_15', name: '저주받은 젤리', tier: 1, color: '#7cd0e0', hp: 2.43, spd: 1.2, armor: 7, bounty: 1.62, flags: ['split'], splitInto: 'slimelet', splitN: 2,
+    look: { legs: 'none', torso: 'blob', head: 'none', weapon: 'none' }
+  },
+  {
+    key: 'g_beast_t2_0', name: '단단한 멧돼지', tier: 2, color: '#8d6c46', hp: 5.1, spd: 1.17, armor: 11, bounty: 1.84, flags: ['shield'],
+    look: { legs: 'quad', torso: 'scaled', head: 'beastHead', weapon: 'none' }
+  },
+  {
+    key: 'g_insect_t2_1', name: '음험한 전갈', tier: 2, color: '#4aa08a', hp: 6.79, spd: 1.11, armor: 8, bounty: 3.0, flags: ['magicres', 'flying'],
+    look: { legs: 'quad', torso: 'chitin', head: 'insectHead', weapon: 'none', wings: 'insectWing' }
+  },
+  {
+    key: 'g_demon_t2_2', name: '독기 서린 나찰', tier: 2, color: '#d05a4a', hp: 7.6, spd: 1.08, armor: 0, bounty: 1.97, flags: ['fast', 'magicres'], scale: 1.35,
+    look: { legs: 'biped', torso: 'brute', head: 'demonHead', weapon: 'none' }
+  },
+  {
+    key: 'g_elemental_t2_3', name: '음험한 뇌정령', tier: 2, color: '#b8f07a', hp: 4.22, spd: 0.83, armor: 11, bounty: 1.78, scale: 1.28,
+    look: { legs: 'float', torso: 'core', head: 'orb', weapon: 'none' }
+  },
+  {
+    key: 'g_construct_t2_4', name: '단단한 철갑차', tier: 2, color: '#9fb0c4', hp: 6.35, spd: 1.31, armor: 5, bounty: 2.55, flags: ['armored'],
+    look: { legs: 'track', torso: 'core', head: 'machine', weapon: 'none' }
+  },
+  {
+    key: 'g_slime_t2_5', name: '그을린 젤리', tier: 2, color: '#e07cd0', hp: 5.64, spd: 1.31, armor: 13, bounty: 2.11, flags: ['split', 'fast', 'magicres'], splitInto: 'slimelet', splitN: 2,
+    look: { legs: 'none', torso: 'blob', head: 'none', weapon: 'none' }
+  },
+  {
+    key: 'g_void_t2_6', name: '두 머리 균열자', tier: 2, color: '#7f5fd0', hp: 6.1, spd: 1.25, armor: 11, bounty: 3.09, flags: ['ghost'], scale: 1.22,
+    look: { legs: 'wisp', torso: 'spectral', head: 'orb', weapon: 'none' }
+  },
+  {
+    key: 'g_goblinoid_t2_7', name: '창백한 오크', tier: 2, color: '#7cae4a', hp: 5.0, spd: 1.17, armor: 5, bounty: 1.65,
+    look: { legs: 'biped', torso: 'leather', head: 'beastHead', weapon: 'none' }
+  },
+  {
+    key: 'g_undead_t2_8', name: '저주받은 망령', tier: 2, color: '#9aa6b8', hp: 3.85, spd: 1.2, armor: 13, bounty: 2.64, flags: ['undead'],
+    look: { legs: 'biped', torso: 'bone', head: 'skull', weapon: 'none' }
+  },
+  {
+    key: 'g_beast_t2_9', name: '녹슨 늑대', tier: 2, color: '#c49a68', hp: 6.08, spd: 0.83, armor: 11, bounty: 2.96,
+    look: { legs: 'quad', torso: 'scaled', head: 'beastHead', weapon: 'none' }
+  },
+  {
+    key: 'g_insect_t2_10', name: '늙은 풍뎅이', tier: 2, color: '#8a5bd0', hp: 5.93, spd: 0.89, armor: 16, bounty: 2.41, scale: 1.43,
+    look: { legs: 'quad', torso: 'chitin', head: 'insectHead', weapon: 'none' }
+  },
+  {
+    key: 'g_demon_t2_11', name: '피에 젖은 흉수', tier: 2, color: '#b8443a', hp: 6.18, spd: 1.18, armor: 0, bounty: 2.29,
+    look: { legs: 'biped', torso: 'brute', head: 'demonHead', weapon: 'none' }
+  },
+  {
+    key: 'g_elemental_t2_12', name: '피에 젖은 바람정령', tier: 2, color: '#b8f07a', hp: 4.51, spd: 0.8, armor: 11, bounty: 2.58, flags: ['shield'],
+    look: { legs: 'float', torso: 'core', head: 'orb', weapon: 'none' }
+  },
+  {
+    key: 'g_construct_t2_13', name: '민첩한 강철병', tier: 2, color: '#b4c4d4', hp: 4.22, spd: 1.07, armor: 3, bounty: 3.06, flags: ['armored'],
+    look: { legs: 'track', torso: 'core', head: 'machine', weapon: 'none' }
+  },
+  {
+    key: 'g_slime_t2_14', name: '사나운 점액괴', tier: 2, color: '#7cd0e0', hp: 7.18, spd: 1.25, armor: 16, bounty: 1.68, flags: ['split'], splitInto: 'slimelet', splitN: 2,
+    look: { legs: 'none', torso: 'blob', head: 'none', weapon: 'none' }
+  },
+  {
+    key: 'g_void_t2_15', name: '저주받은 침묵자', tier: 2, color: '#c48ff0', hp: 5.61, spd: 0.87, armor: 11, bounty: 2.11, flags: ['ghost', 'fast'],
+    look: { legs: 'wisp', torso: 'spectral', head: 'orb', weapon: 'none' }
+  },
+  {
+    key: 'g_goblinoid_t2_16', name: '살진 고블린', tier: 2, color: '#8fbf5a', hp: 4.76, spd: 0.86, armor: 5, bounty: 3.16,
+    look: { legs: 'biped', torso: 'leather', head: 'beastHead', weapon: 'none' }
+  },
+  {
+    key: 'g_undead_t2_17', name: '저주받은 구울', tier: 2, color: '#b8c2d0', hp: 3.75, spd: 1.12, armor: 5, bounty: 2.46, flags: ['undead'],
+    look: { legs: 'biped', torso: 'bone', head: 'skull', weapon: 'none' }
+  },
+  {
+    key: 'g_insect_t3_0', name: '저주받은 지네', tier: 3, color: '#8a5bd0', hp: 35.09, spd: 1.32, armor: 0, bounty: 4.58,
+    look: { legs: 'quad', torso: 'chitin', head: 'insectHead', weapon: 'none' }
+  },
+  {
+    key: 'g_demon_t3_1', name: '광포한 나찰', tier: 3, color: '#b8443a', hp: 25.51, spd: 1.35, armor: 30, bounty: 4.58, flags: ['fast'],
+    look: { legs: 'biped', torso: 'brute', head: 'demonHead', weapon: 'none' }
+  },
+  {
+    key: 'g_elemental_t3_2', name: '녹슨 뇌정령', tier: 3, color: '#7fd8ff', hp: 32.14, spd: 1.34, armor: 15, bounty: 3.31, flags: ['rage'],
+    look: { legs: 'float', torso: 'core', head: 'orb', weapon: 'none' }
+  },
+  {
+    key: 'g_construct_t3_3', name: '늙은 강철병', tier: 3, color: '#b4c4d4', hp: 22.1, spd: 0.86, armor: 53, bounty: 5.56, flags: ['armored', 'rage'],
+    look: { legs: 'track', torso: 'core', head: 'machine', weapon: 'none' }
+  },
+  {
+    key: 'g_slime_t3_4', name: '녹슨 젤리', tier: 3, color: '#7cd0e0', hp: 33.7, spd: 0.93, armor: 15, bounty: 3.76, flags: ['split', 'shield', 'healer'], splitInto: 'slimelet', splitN: 2,
+    look: { legs: 'none', torso: 'blob', head: 'none', weapon: 'none' }
+  },
+  {
+    key: 'g_void_t3_5', name: '그을린 차원수', tier: 3, color: '#7f5fd0', hp: 26.43, spd: 0.98, armor: 15, bounty: 3.44, flags: ['ghost'],
+    look: { legs: 'wisp', torso: 'spectral', head: 'orb', weapon: 'none' }
+  },
+  {
+    key: 'g_goblinoid_t3_6', name: '민첩한 오크', tier: 3, color: '#8fbf5a', hp: 27.35, spd: 1.31, armor: 61, bounty: 3.69, flags: ['fast', 'shield'], scale: 1.2,
+    look: { legs: 'biped', torso: 'leather', head: 'beastHead', weapon: 'none' }
+  },
+  {
+    key: 'g_undead_t3_7', name: '굶주린 구울', tier: 3, color: '#b8c2d0', hp: 27.07, spd: 0.79, armor: 23, bounty: 5.33, flags: ['undead', 'fast', 'magicres'], scale: 1.24,
+    look: { legs: 'biped', torso: 'bone', head: 'skull', weapon: 'none' }
+  },
+  {
+    key: 'g_beast_t3_8', name: '광포한 멧돼지', tier: 3, color: '#8d6c46', hp: 25.23, spd: 0.91, armor: 45, bounty: 4.41,
+    look: { legs: 'quad', torso: 'scaled', head: 'beastHead', weapon: 'none' }
+  },
+  {
+    key: 'g_insect_t3_9', name: '단단한 독거미', tier: 3, color: '#4aa08a', hp: 34.99, spd: 1.13, armor: 61, bounty: 5.52, flags: ['rage'],
+    look: { legs: 'quad', torso: 'chitin', head: 'insectHead', weapon: 'none' }
+  },
+  {
+    key: 'g_demon_t3_10', name: '녹슨 흉수', tier: 3, color: '#d05a4a', hp: 26.98, spd: 0.98, armor: 23, bounty: 4.55, flags: ['shield'], scale: 1.3,
+    look: { legs: 'biped', torso: 'brute', head: 'demonHead', weapon: 'none' }
+  },
+  {
+    key: 'g_elemental_t3_11', name: '외눈 얼음정령', tier: 3, color: '#b8f07a', hp: 24.86, spd: 1.23, armor: 45, bounty: 5.52,
+    look: { legs: 'float', torso: 'core', head: 'orb', weapon: 'none' }
+  },
+  {
+    key: 'g_construct_t3_12', name: '단단한 파수기', tier: 3, color: '#7f8fa4', hp: 33.98, spd: 0.91, armor: 15, bounty: 5.26, flags: ['armored'],
+    look: { legs: 'track', torso: 'core', head: 'machine', weapon: 'none' }
+  },
+  {
+    key: 'g_slime_t3_13', name: '늙은 젤리', tier: 3, color: '#7cd0e0', hp: 20.08, spd: 0.95, armor: 53, bounty: 4.64, flags: ['split', 'fast'], splitInto: 'slimelet', splitN: 2,
+    look: { legs: 'none', torso: 'blob', head: 'none', weapon: 'none' }
+  },
+  {
+    key: 'g_void_t3_14', name: '독기 서린 균열자', tier: 3, color: '#7f5fd0', hp: 26.43, spd: 0.76, armor: 8, bounty: 5.05, flags: ['ghost', 'fast'], scale: 1.23,
+    look: { legs: 'wisp', torso: 'spectral', head: 'orb', weapon: 'none' }
+  },
+  {
+    key: 'g_goblinoid_t3_15', name: '사나운 코볼드', tier: 3, color: '#6a9440', hp: 26.06, spd: 0.76, armor: 53, bounty: 3.35, flags: ['fast', 'healer'],
+    look: { legs: 'biped', torso: 'leather', head: 'beastHead', weapon: 'none' }
+  },
+  {
+    key: 'g_undead_t3_16', name: '독기 서린 해골', tier: 3, color: '#9aa6b8', hp: 20.26, spd: 0.78, armor: 53, bounty: 3.63, flags: ['undead'],
+    look: { legs: 'biped', torso: 'bone', head: 'skull', weapon: 'none' }
+  },
+  {
+    key: 'g_beast_t3_17', name: '독기 서린 살쾡이', tier: 3, color: '#c49a68', hp: 28.18, spd: 1.23, armor: 38, bounty: 3.46, scale: 1.37,
+    look: { legs: 'quad', torso: 'scaled', head: 'beastHead', weapon: 'none' }
+  },
+  {
+    key: 'g_insect_t3_18', name: '독기 서린 전갈', tier: 3, color: '#5b7fd0', hp: 17.31, spd: 0.85, armor: 45, bounty: 3.39, flags: ['flying'],
+    look: { legs: 'quad', torso: 'chitin', head: 'insectHead', weapon: 'none', wings: 'insectWing' }
+  },
+  {
+    key: 'g_demon_t3_19', name: '야윈 마졸', tier: 3, color: '#d05a4a', hp: 20.9, spd: 1.02, armor: 30, bounty: 3.78,
+    look: { legs: 'biped', torso: 'brute', head: 'demonHead', weapon: 'none' }
+  },
+  {
+    key: 'g_demon_t4_0', name: '저주받은 악귀', tier: 4, color: '#e07a5a', hp: 104.75, spd: 1.09, armor: 47, bounty: 9.17,
+    look: { legs: 'biped', torso: 'brute', head: 'demonHead', weapon: 'none' }
+  },
+  {
+    key: 'g_elemental_t4_1', name: '늙은 뇌정령', tier: 4, color: '#7fd8ff', hp: 111.44, spd: 1.3, armor: 156, bounty: 8.96, flags: ['fast', 'shield'],
+    look: { legs: 'float', torso: 'core', head: 'orb', weapon: 'none' }
+  },
+  {
+    key: 'g_construct_t4_2', name: '피에 젖은 강철병', tier: 4, color: '#7f8fa4', hp: 89.35, spd: 1.19, armor: 156, bounty: 7.02, flags: ['armored'],
+    look: { legs: 'track', torso: 'core', head: 'machine', weapon: 'none' }
+  },
+  {
+    key: 'g_slime_t4_3', name: '외눈 늪덩이', tier: 4, color: '#7cd0e0', hp: 82.99, spd: 1.25, armor: 0, bounty: 7.54, flags: ['split', 'magicres'], splitInto: 'slimelet', splitN: 2, scale: 1.17,
+    look: { legs: 'none', torso: 'blob', head: 'none', weapon: 'none' }
+  },
+  {
+    key: 'g_void_t4_4', name: '굶주린 공허체', tier: 4, color: '#7f5fd0', hp: 93.7, spd: 0.87, armor: 94, bounty: 10.11, flags: ['ghost'],
+    look: { legs: 'wisp', torso: 'spectral', head: 'orb', weapon: 'none' }
+  },
+  {
+    key: 'g_goblinoid_t4_5', name: '독기 서린 놀', tier: 4, color: '#8fbf5a', hp: 132.52, spd: 1.04, armor: 125, bounty: 9.11, flags: ['regen'],
+    look: { legs: 'biped', torso: 'leather', head: 'beastHead', weapon: 'none' }
+  },
+  {
+    key: 'g_undead_t4_6', name: '야윈 시귀', tier: 4, color: '#cfd6e0', hp: 122.15, spd: 0.97, armor: 125, bounty: 9.26, flags: ['undead'],
+    look: { legs: 'biped', torso: 'bone', head: 'skull', weapon: 'none' }
+  },
+  {
+    key: 'g_beast_t4_7', name: '그을린 살쾡이', tier: 4, color: '#8d6c46', hp: 104.41, spd: 1.11, armor: 16, bounty: 9.2,
+    look: { legs: 'quad', torso: 'scaled', head: 'beastHead', weapon: 'none' }
+  },
+  {
+    key: 'g_insect_t4_8', name: '음험한 독거미', tier: 4, color: '#5b7fd0', hp: 123.82, spd: 1.06, armor: 140, bounty: 8.75, scale: 1.44,
+    look: { legs: 'quad', torso: 'chitin', head: 'insectHead', weapon: 'none' }
+  },
+  {
+    key: 'g_demon_t4_9', name: '불타는 마졸', tier: 4, color: '#b8443a', hp: 109.1, spd: 0.9, armor: 78, bounty: 8.84, flags: ['magicres'],
+    look: { legs: 'biped', torso: 'brute', head: 'demonHead', weapon: 'none' }
+  },
+  {
+    key: 'g_elemental_t4_10', name: '거대한 바위정령', tier: 4, color: '#ff8a4a', hp: 93.7, spd: 1.28, armor: 78, bounty: 6.06, flags: ['magicres'], scale: 1.37,
+    look: { legs: 'float', torso: 'core', head: 'orb', weapon: 'none' }
+  },
+  {
+    key: 'g_construct_t4_11', name: '녹슨 강철병', tier: 4, color: '#7f8fa4', hp: 138.88, spd: 0.9, armor: 125, bounty: 5.72, flags: ['armored', 'magicres'],
+    look: { legs: 'track', torso: 'core', head: 'machine', weapon: 'none' }
+  },
+  {
+    key: 'g_slime_t4_12', name: '창백한 젤리', tier: 4, color: '#e07cd0', hp: 156.95, spd: 1.32, armor: 0, bounty: 8.54, flags: ['split'], splitInto: 'slimelet', splitN: 2,
+    look: { legs: 'none', torso: 'blob', head: 'none', weapon: 'none' }
+  },
+  {
+    key: 'g_void_t4_13', name: '굶주린 차원수', tier: 4, color: '#a06ff0', hp: 118.47, spd: 0.86, armor: 156, bounty: 6.27, flags: ['ghost'],
+    look: { legs: 'wisp', torso: 'spectral', head: 'orb', weapon: 'none' }
+  },
+  {
+    key: 'g_goblinoid_t4_14', name: '외눈 놀', tier: 4, color: '#8fbf5a', hp: 114.12, spd: 1.3, armor: 140, bounty: 8.36, flags: ['regen'],
+    look: { legs: 'biped', torso: 'leather', head: 'beastHead', weapon: 'none' }
+  },
+  {
+    key: 'g_undead_t4_15', name: '광포한 시귀', tier: 4, color: '#cfd6e0', hp: 116.79, spd: 1.28, armor: 78, bounty: 6.87, flags: ['undead'],
+    look: { legs: 'biped', torso: 'bone', head: 'skull', weapon: 'none' }
+  },
+  {
+    key: 'g_beast_t4_16', name: '그을린 늑대', tier: 4, color: '#8d6c46', hp: 147.25, spd: 0.73, armor: 156, bounty: 8.6, flags: ['regen', 'rage', 'healer'],
+    look: { legs: 'quad', torso: 'scaled', head: 'beastHead', weapon: 'none' }
+  },
+  {
+    key: 'g_insect_t4_17', name: '단단한 지네', tier: 4, color: '#4aa08a', hp: 135.53, spd: 0.88, armor: 109, bounty: 8.33,
+    look: { legs: 'quad', torso: 'chitin', head: 'insectHead', weapon: 'none' }
+  },
+  {
+    key: 'g_demon_t4_18', name: '두 머리 임프', tier: 4, color: '#e07a5a', hp: 121.81, spd: 1.21, armor: 31, bounty: 7.33,
+    look: { legs: 'biped', torso: 'brute', head: 'demonHead', weapon: 'none' }
+  },
+  {
+    key: 'g_elemental_t4_19', name: '광포한 얼음정령', tier: 4, color: '#7fd8ff', hp: 89.02, spd: 1, armor: 16, bounty: 9.42,
+    look: { legs: 'float', torso: 'core', head: 'orb', weapon: 'none' }
+  },
+  {
+    key: 'g_construct_t4_20', name: '독기 서린 강철병', tier: 4, color: '#9fb0c4', hp: 104.41, spd: 0.83, armor: 47, bounty: 7.93, flags: ['armored'], scale: 1.12,
+    look: { legs: 'track', torso: 'core', head: 'machine', weapon: 'none' }
+  },
+  {
+    key: 'g_slime_t4_21', name: '녹슨 점액괴', tier: 4, color: '#7ce07c', hp: 150.26, spd: 1.29, armor: 156, bounty: 8.84, flags: ['split'], splitInto: 'slimelet', splitN: 2,
+    look: { legs: 'none', torso: 'blob', head: 'none', weapon: 'none' }
+  },
+  {
+    key: 'g_elemental_t5_0', name: '사나운 뇌정령', tier: 5, color: '#7fd8ff', hp: 575.3, spd: 0.89, armor: 729, bounty: 22.42,
+    look: { legs: 'float', torso: 'core', head: 'orb', weapon: 'none' }
+  },
+  {
+    key: 'g_construct_t5_1', name: '외눈 공성기', tier: 5, color: '#9fb0c4', hp: 752.95, spd: 0.84, armor: 790, bounty: 12.98, flags: ['armored'],
+    look: { legs: 'track', torso: 'core', head: 'machine', weapon: 'none' }
+  },
+  {
+    key: 'g_slime_t5_2', name: '불타는 슬라임', tier: 5, color: '#7cd0e0', hp: 561.64, spd: 1.13, armor: 243, bounty: 13.96, flags: ['split'], splitInto: 'slimelet', splitN: 2,
+    look: { legs: 'none', torso: 'blob', head: 'none', weapon: 'none' }
+  },
+  {
+    key: 'g_void_t5_3', name: '불타는 침묵자', tier: 5, color: '#c48ff0', hp: 500.14, spd: 1.11, armor: 790, bounty: 20.95, flags: ['ghost'], scale: 1.33,
+    look: { legs: 'wisp', torso: 'spectral', head: 'orb', weapon: 'none' }
+  },
+  {
+    key: 'g_goblinoid_t5_4', name: '불타는 코볼드', tier: 5, color: '#8fbf5a', hp: 407.22, spd: 1.17, armor: 669, bounty: 15.19,
+    look: { legs: 'biped', torso: 'leather', head: 'beastHead', weapon: 'none' }
+  },
+  {
+    key: 'g_undead_t5_5', name: '얼어붙은 해골', tier: 5, color: '#b8c2d0', hp: 457.78, spd: 0.95, armor: 365, bounty: 19.78, flags: ['undead'],
+    look: { legs: 'biped', torso: 'bone', head: 'skull', weapon: 'none' }
+  },
+  {
+    key: 'g_beast_t5_6', name: '불타는 살쾡이', tier: 5, color: '#c49a68', hp: 676.42, spd: 0.83, armor: 547, bounty: 16.84, flags: ['regen'],
+    look: { legs: 'quad', torso: 'scaled', head: 'beastHead', weapon: 'none' }
+  },
+  {
+    key: 'g_insect_t5_7', name: '얼어붙은 전갈', tier: 5, color: '#4aa08a', hp: 374.42, spd: 0.84, armor: 122, bounty: 23.7, flags: ['flying'], scale: 1.29,
+    look: { legs: 'quad', torso: 'chitin', head: 'insectHead', weapon: 'none', wings: 'insectWing' }
+  },
+  {
+    key: 'g_demon_t5_8', name: '살진 나찰', tier: 5, color: '#d05a4a', hp: 728.35, spd: 1.01, armor: 61, bounty: 17.33,
+    look: { legs: 'biped', torso: 'brute', head: 'demonHead', weapon: 'none' }
+  },
+  {
+    key: 'g_elemental_t5_9', name: '음험한 불정령', tier: 5, color: '#7fd8ff', hp: 385.36, spd: 0.83, armor: 304, bounty: 24.31, flags: ['regen'],
+    look: { legs: 'float', torso: 'core', head: 'orb', weapon: 'none' }
+  },
+  {
+    key: 'g_construct_t5_10', name: '창백한 강철병', tier: 5, color: '#9fb0c4', hp: 643.63, spd: 1.16, armor: 122, bounty: 24.38, flags: ['armored', 'shield'],
+    look: { legs: 'track', torso: 'core', head: 'machine', weapon: 'none' }
+  },
+  {
+    key: 'g_slime_t5_11', name: '살진 슬라임', tier: 5, color: '#e07cd0', hp: 423.62, spd: 0.77, armor: 243, bounty: 13.96, flags: ['split'], splitInto: 'slimelet', splitN: 2,
+    look: { legs: 'none', torso: 'blob', head: 'none', weapon: 'none' }
+  },
+  {
+    key: 'g_void_t5_12', name: '독기 서린 공허체', tier: 5, color: '#7f5fd0', hp: 399.02, spd: 1.31, armor: 182, bounty: 20.95, flags: ['ghost'],
+    look: { legs: 'wisp', torso: 'spectral', head: 'orb', weapon: 'none' }
+  },
+  {
+    key: 'g_goblinoid_t5_13', name: '창백한 코볼드', tier: 5, color: '#6a9440', hp: 502.88, spd: 0.74, armor: 729, bounty: 20.09, flags: ['fast'],
+    look: { legs: 'biped', torso: 'leather', head: 'beastHead', weapon: 'none' }
+  },
+  {
+    key: 'g_undead_t5_14', name: '민첩한 시귀', tier: 5, color: '#b8c2d0', hp: 388.09, spd: 1.25, armor: 669, bounty: 18.37, flags: ['undead', 'fast'],
+    look: { legs: 'biped', torso: 'bone', head: 'skull', weapon: 'none' }
+  },
+  {
+    key: 'g_beast_t5_15', name: '저주받은 들개', tier: 5, color: '#8d6c46', hp: 699.65, spd: 0.95, armor: 486, bounty: 20.09, flags: ['rage'],
+    look: { legs: 'quad', torso: 'scaled', head: 'beastHead', weapon: 'none' }
+  },
+  {
+    key: 'g_insect_t5_16', name: '굶주린 풍뎅이', tier: 5, color: '#8a5bd0', hp: 713.32, spd: 1.34, armor: 365, bounty: 20.09,
+    look: { legs: 'quad', torso: 'chitin', head: 'insectHead', weapon: 'none' }
+  },
+  {
+    key: 'g_demon_t5_17', name: '살진 흉수', tier: 5, color: '#b8443a', hp: 530.21, spd: 0.78, armor: 0, bounty: 16.6, flags: ['rage'],
+    look: { legs: 'biped', torso: 'brute', head: 'demonHead', weapon: 'none' }
+  },
 ];
 const ENEMY_MAP = {}; ENEMIES.forEach(e => ENEMY_MAP[e.key] = e);
 const BOSS_ORDER = ENEMIES.filter(e => e.boss).map(e => e.key);
@@ -1290,6 +3211,27 @@ const SPAWN_TABLE = [
   { from: 70, keys: ['titan', 'worldbreaker'] },
   { from: 76, keys: ['starspawn', 'devourer'] },
   { from: 84, keys: ['eternalguard', 'nullpriest'] },
+  /* ------- 생성 : 추가 몬스터 등장 구간 ------- */
+  { from: 2, keys: ['g_goblinoid_t0_0', 'g_undead_t0_1', 'g_beast_t0_2', 'g_insect_t0_3', 'g_demon_t0_4', 'g_elemental_t0_5'] },
+  { from: 3, keys: ['g_construct_t0_6', 'g_slime_t0_7', 'g_void_t0_8', 'g_goblinoid_t0_9', 'g_undead_t0_10', 'g_beast_t0_11'] },
+  { from: 4, keys: ['g_insect_t0_12', 'g_demon_t0_13'] },
+  { from: 8, keys: ['g_undead_t1_0', 'g_beast_t1_1', 'g_insect_t1_2', 'g_demon_t1_3', 'g_elemental_t1_4', 'g_construct_t1_5'] },
+  { from: 9, keys: ['g_slime_t1_6', 'g_void_t1_7', 'g_goblinoid_t1_8', 'g_undead_t1_9', 'g_beast_t1_10', 'g_insect_t1_11'] },
+  { from: 10, keys: ['g_demon_t1_12', 'g_elemental_t1_13', 'g_construct_t1_14', 'g_slime_t1_15'] },
+  { from: 16, keys: ['g_beast_t2_0', 'g_insect_t2_1', 'g_demon_t2_2', 'g_elemental_t2_3', 'g_construct_t2_4', 'g_slime_t2_5'] },
+  { from: 17, keys: ['g_void_t2_6', 'g_goblinoid_t2_7', 'g_undead_t2_8', 'g_beast_t2_9', 'g_insect_t2_10', 'g_demon_t2_11'] },
+  { from: 18, keys: ['g_elemental_t2_12', 'g_construct_t2_13', 'g_slime_t2_14', 'g_void_t2_15', 'g_goblinoid_t2_16', 'g_undead_t2_17'] },
+  { from: 26, keys: ['g_insect_t3_0', 'g_demon_t3_1', 'g_elemental_t3_2', 'g_construct_t3_3', 'g_slime_t3_4', 'g_void_t3_5'] },
+  { from: 27, keys: ['g_goblinoid_t3_6', 'g_undead_t3_7', 'g_beast_t3_8', 'g_insect_t3_9', 'g_demon_t3_10', 'g_elemental_t3_11'] },
+  { from: 28, keys: ['g_construct_t3_12', 'g_slime_t3_13', 'g_void_t3_14', 'g_goblinoid_t3_15', 'g_undead_t3_16', 'g_beast_t3_17'] },
+  { from: 29, keys: ['g_insect_t3_18', 'g_demon_t3_19'] },
+  { from: 38, keys: ['g_demon_t4_0', 'g_elemental_t4_1', 'g_construct_t4_2', 'g_slime_t4_3', 'g_void_t4_4', 'g_goblinoid_t4_5'] },
+  { from: 39, keys: ['g_undead_t4_6', 'g_beast_t4_7', 'g_insect_t4_8', 'g_demon_t4_9', 'g_elemental_t4_10', 'g_construct_t4_11'] },
+  { from: 40, keys: ['g_slime_t4_12', 'g_void_t4_13', 'g_goblinoid_t4_14', 'g_undead_t4_15', 'g_beast_t4_16', 'g_insect_t4_17'] },
+  { from: 41, keys: ['g_demon_t4_18', 'g_elemental_t4_19', 'g_construct_t4_20', 'g_slime_t4_21'] },
+  { from: 52, keys: ['g_elemental_t5_0', 'g_construct_t5_1', 'g_slime_t5_2', 'g_void_t5_3', 'g_goblinoid_t5_4', 'g_undead_t5_5'] },
+  { from: 53, keys: ['g_beast_t5_6', 'g_insect_t5_7', 'g_demon_t5_8', 'g_elemental_t5_9', 'g_construct_t5_10', 'g_slime_t5_11'] },
+  { from: 54, keys: ['g_void_t5_12', 'g_goblinoid_t5_13', 'g_undead_t5_14', 'g_beast_t5_15', 'g_insect_t5_16', 'g_demon_t5_17'] },
 ];
 
 /* =========================================================================
@@ -1356,6 +3298,63 @@ const MAPS = [
     deco: ['crystalDeco', 'ruin', 'voidRift', 'flower'], weather: 'ember', ambient: '#ff2fd0', ambientAmt: .2,
     desc: '모든 것이 시작된 곳. 최종 난이도.',
     path: [[-1, 10], [3, 10], [3, 6], [1, 6], [1, 2], [8, 2], [8, 8], [13, 8], [13, 1], [16, 1], [16, 6], [18, 6]]
+  },
+  /* ---------------- 생성 : 추가 맵 ---------------- */
+  {
+    key: 'm_11', name: '서리 협곡', diff: 1.3, bg: '#2a3f52', bg2: '#1a2836', road: '#8fb4cc', accent: '#9fd8ff', deco: ['rock', 'grass'], weather: 'snow', ambient: '#9fd8ff', ambientAmt: 0.09, desc: '급커브가 잦아 범위 공격이 빛난다.',
+    path: [[-1, 6], [4, 6], [4, 2], [9, 2], [9, 7], [13, 7], [13, 4], [16, 4], [16, 9], [18, 9]]
+  },
+  {
+    key: 'm_12', name: '잿빛 화산', diff: 1.6, bg: '#3a2320', bg2: '#241413', road: '#c4703c', accent: '#ff8a4a', deco: ['rock', 'deadtree'], weather: 'ember', ambient: '#ff8a4a', ambientAmt: 0.1, desc: '초반부터 압박이 강하다.',
+    path: [[-1, 8], [3, 8], [3, 3], [6, 3], [6, 6], [11, 6], [11, 3], [14, 3], [14, 6], [16, 6], [16, 1], [18, 1]]
+  },
+  {
+    key: 'm_13', name: '황금 평원', diff: 1.1, bg: '#4a4520', bg2: '#2e2a14', road: '#d4b45c', accent: '#ffd76a', deco: ['grass', 'tree', 'flower'], weather: null, ambient: '#ffd76a', ambientAmt: 0.14, desc: '초반부터 압박이 강하다.',
+    path: [[-1, 1], [2, 1], [2, 8], [7, 8], [7, 1], [10, 1], [10, 6], [13, 6], [13, 2], [16, 2], [16, 5], [18, 5]]
+  },
+  {
+    key: 'm_14', name: '수정 동굴', diff: 1.45, bg: '#25304a', bg2: '#161d2e', road: '#8fa8d4', accent: '#8fe0ff', deco: ['crystalDeco', 'rock'], weather: null, ambient: '#8fe0ff', ambientAmt: 0.11, desc: '적이 빠르게 몰아친다.',
+    path: [[-1, 3], [2, 3], [2, 9], [4, 9], [4, 6], [8, 6], [8, 9], [10, 9], [10, 3], [14, 3], [14, 8], [16, 8], [16, 4], [18, 4]]
+  },
+  {
+    key: 'm_15', name: '만조의 해안', diff: 1.25, bg: '#1e4048', bg2: '#12262c', road: '#7fc4bc', accent: '#6fe0d0', deco: ['rock', 'grass'], weather: 'rain', ambient: '#6fe0d0', ambientAmt: 0.15, desc: '적이 빠르게 몰아친다.',
+    path: [[-1, 5], [2, 5], [2, 1], [5, 1], [5, 9], [7, 9], [7, 2], [11, 2], [11, 5], [14, 5], [14, 1], [16, 1], [16, 7], [18, 7]]
+  },
+  {
+    key: 'm_16', name: '폐허 시가지', diff: 1.5, bg: '#3a3730', bg2: '#22201c', road: '#a89a80', accent: '#c4b48a', deco: ['rock', 'deadtree'], weather: null, ambient: '#c4b48a', ambientAmt: 0.14, desc: '길이 길어 화력전이 유리하다.',
+    path: [[-1, 6], [3, 6], [3, 1], [9, 1], [9, 9], [12, 9], [12, 6], [16, 6], [16, 2], [18, 2]]
+  },
+  {
+    key: 'm_17', name: '붉은 사막', diff: 1.35, bg: '#4a3320', bg2: '#2c1e14', road: '#d49a5c', accent: '#ffb46a', deco: ['rock'], weather: 'sand', ambient: '#ffb46a', ambientAmt: 0.09, desc: '길이 길어 화력전이 유리하다.',
+    path: [[-1, 8], [3, 8], [3, 2], [9, 2], [9, 7], [13, 7], [13, 3], [16, 3], [16, 6], [18, 6]]
+  },
+  {
+    key: 'm_18', name: '망자의 늪', diff: 1.55, bg: '#26361f', bg2: '#151f12', road: '#8a9a5c', accent: '#a8d46a', deco: ['deadtree', 'grass'], weather: 'ash', ambient: '#a8d46a', ambientAmt: 0.1, desc: '적이 빠르게 몰아친다.',
+    path: [[-1, 1], [3, 1], [3, 7], [7, 7], [7, 1], [10, 1], [10, 8], [13, 8], [13, 1], [16, 1], [16, 5], [18, 5]]
+  },
+  {
+    key: 'm_19', name: '천둥의 고원', diff: 1.7, bg: '#2e2a44', bg2: '#1b1829', road: '#9a8fd4', accent: '#b8a8ff', deco: ['rock', 'grass'], weather: 'rain', ambient: '#b8a8ff', ambientAmt: 0.14, desc: '좁은 길목이 승부처.',
+    path: [[-1, 3], [3, 3], [3, 7], [6, 7], [6, 4], [10, 4], [10, 7], [14, 7], [14, 1], [16, 1], [16, 7], [18, 7]]
+  },
+  {
+    key: 'm_20', name: '유리 사원', diff: 1.65, bg: '#2a2a3e', bg2: '#191925', road: '#b4b4d4', accent: '#d4d4ff', deco: ['crystalDeco'], weather: null, ambient: '#d4d4ff', ambientAmt: 0.16, desc: '급커브가 잦아 범위 공격이 빛난다.',
+    path: [[-1, 4], [3, 4], [3, 7], [6, 7], [6, 3], [8, 3], [8, 7], [11, 7], [11, 3], [14, 3], [14, 9], [16, 9], [16, 1], [18, 1]]
+  },
+  {
+    key: 'm_21', name: '심연의 균열', diff: 1.9, bg: '#241a38', bg2: '#140f20', road: '#8a5cd4', accent: '#b46aff', deco: ['crystalDeco', 'rock'], weather: 'ash', ambient: '#b46aff', ambientAmt: 0.09, desc: '좁은 길목이 승부처.',
+    path: [[-1, 6], [2, 6], [2, 3], [6, 3], [6, 9], [9, 9], [9, 1], [12, 1], [12, 9], [14, 9], [14, 6], [16, 6], [16, 1], [18, 1]]
+  },
+  {
+    key: 'm_22', name: '별무리 회랑', diff: 1.8, bg: '#1c2440', bg2: '#101526', road: '#7f9ad4', accent: '#8fb4ff', deco: ['crystalDeco'], weather: null, ambient: '#8fb4ff', ambientAmt: 0.11, desc: '좁은 길목이 승부처.',
+    path: [[-1, 8], [2, 8], [2, 3], [4, 3], [4, 8], [7, 8], [7, 2], [11, 2], [11, 8], [15, 8], [15, 5], [16, 5], [16, 8], [18, 8]]
+  },
+  {
+    key: 'm_23', name: '용의 둥지', diff: 2, bg: '#42221e', bg2: '#281311', road: '#d4784a', accent: '#ff9a5a', deco: ['rock', 'deadtree'], weather: 'ember', ambient: '#ff9a5a', ambientAmt: 0.13, desc: '급커브가 잦아 범위 공격이 빛난다.',
+    path: [[-1, 1], [3, 1], [3, 4], [9, 4], [9, 9], [13, 9], [13, 4], [16, 4], [16, 1], [18, 1]]
+  },
+  {
+    key: 'm_24', name: '영원의 정원', diff: 1.75, bg: '#1f3a2a', bg2: '#122318', road: '#7fc48a', accent: '#8fffa8', deco: ['tree', 'flower', 'grass'], weather: null, ambient: '#8fffa8', ambientAmt: 0.14, desc: '길이 길어 화력전이 유리하다.',
+    path: [[-1, 3], [3, 3], [3, 7], [9, 7], [9, 4], [12, 4], [12, 1], [16, 1], [16, 9], [18, 9]]
   },
 ];
 
@@ -1424,6 +3423,23 @@ const SKILLS = [
   { key: 'summonwave', name: '긴급 증원', icon: '✨', cd: 90, mana: 70, color: '#a48bff', type: 'buff', desc: '무작위 유닛 3기를 즉시 무료 소환.' },
   { key: 'earthquake', name: '대지진', icon: '⛰', cd: 42, mana: 52, color: '#d2a15e', type: 'global', desc: '모든 적 기절 2초 + 방어력 40% 파괴.' },
   { key: 'judgement', name: '최후의 심판', icon: '✦', cd: 120, mana: 100, color: '#fff2b0', type: 'global', desc: '체력 40% 이하 적 즉사. 그 외 막대한 신성 피해.' },
+  /* ---------------- 생성 : 추가 스킬 ---------------- */
+  {
+    key: 'meteorshower', name: '유성우', icon: '🌠', cd: 34, mana: 60, color: '#ff7a3c', type: 'target', radius: 3.6,
+    desc: '지정 지역에 유성 다발. 3회에 걸쳐 폭발하며 화상을 남긴다.'
+  },
+  {
+    key: 'timestop', name: '시간 정지', icon: '⏱', cd: 70, mana: 95, color: '#b4a8ff', type: 'global',
+    desc: '5초간 모든 적이 완전히 멈춘다.'
+  },
+  {
+    key: 'bloodpact', name: '피의 계약', icon: '🩸', cd: 38, mana: 50, color: '#e04a5a', type: 'buff',
+    desc: '12초간 공격력 +70%. 대신 생명 1을 지불한다.'
+  },
+  {
+    key: 'bulwark', name: '수호 장벽', icon: '🛡', cd: 44, mana: 45, color: '#7fd0ff', type: 'buff',
+    desc: '다음 누수 3회를 막아 준다.'
+  },
 ];
 
 /* =========================================================================
@@ -1535,6 +3551,46 @@ const ACHIEVEMENTS = [
   { key: 'collect60', name: '박물학자', desc: '도감 60종 발견', icon: '📚', gem: 28, check: s => s.collected >= 60 },
   { key: 'collectAll', name: '완전한 도감', desc: '모든 유닛 발견', icon: '🧾', gem: 120, check: s => s.collected >= UNITS.length },
   { key: 'runs50', name: '불굴의 도전자', desc: '50회 플레이', icon: '🔄', gem: 20, check: s => s.runs >= 50 },
+  /* ---------------- 생성 : 추가 업적 ---------------- */
+  { key: 'xw30', name: '웨이브 30 돌파', desc: '한 판에서 30웨이브 도달', icon: '🌊', gem: 8, check: s => s.maxWave >= 30 },
+  { key: 'xw40', name: '웨이브 40 돌파', desc: '한 판에서 40웨이브 도달', icon: '🌊', gem: 10, check: s => s.maxWave >= 40 },
+  { key: 'xw50', name: '웨이브 50 돌파', desc: '한 판에서 50웨이브 도달', icon: '🌊', gem: 13, check: s => s.maxWave >= 50 },
+  { key: 'xw60', name: '웨이브 60 돌파', desc: '한 판에서 60웨이브 도달', icon: '🌊', gem: 15, check: s => s.maxWave >= 60 },
+  { key: 'xw70', name: '웨이브 70 돌파', desc: '한 판에서 70웨이브 도달', icon: '🌊', gem: 18, check: s => s.maxWave >= 70 },
+  { key: 'xw80', name: '웨이브 80 돌파', desc: '한 판에서 80웨이브 도달', icon: '🌊', gem: 20, check: s => s.maxWave >= 80 },
+  { key: 'xw90', name: '웨이브 90 돌파', desc: '한 판에서 90웨이브 도달', icon: '🌊', gem: 23, check: s => s.maxWave >= 90 },
+  { key: 'xw100', name: '웨이브 100 돌파', desc: '한 판에서 100웨이브 도달', icon: '🌊', gem: 25, check: s => s.maxWave >= 100 },
+  { key: 'xw120', name: '웨이브 120 돌파', desc: '한 판에서 120웨이브 도달', icon: '🌊', gem: 30, check: s => s.maxWave >= 120 },
+  { key: 'xw150', name: '웨이브 150 돌파', desc: '한 판에서 150웨이브 도달', icon: '🌊', gem: 38, check: s => s.maxWave >= 150 },
+  { key: 'xk2000', name: '처치 2,000', desc: '누적 2,000기 처치', icon: '💀', gem: 26, check: s => s.kills >= 2000 },
+  { key: 'xk5000', name: '처치 5,000', desc: '누적 5,000기 처치', icon: '💀', gem: 30, check: s => s.kills >= 5000 },
+  { key: 'xk25000', name: '처치 25,000', desc: '누적 25,000기 처치', icon: '💀', gem: 35, check: s => s.kills >= 25000 },
+  { key: 'xk50000', name: '처치 50,000', desc: '누적 50,000기 처치', icon: '💀', gem: 38, check: s => s.kills >= 50000 },
+  { key: 'xk250000', name: '처치 250,000', desc: '누적 250,000기 처치', icon: '💀', gem: 43, check: s => s.kills >= 250000 },
+  { key: 'xmg200', name: '합성 200회', desc: '누적 200회 합성', icon: '⇪', gem: 8, check: s => s.merges >= 200 },
+  { key: 'xmg500', name: '합성 500회', desc: '누적 500회 합성', icon: '⇪', gem: 13, check: s => s.merges >= 500 },
+  { key: 'xmg1000', name: '합성 1000회', desc: '누적 1000회 합성', icon: '⇪', gem: 22, check: s => s.merges >= 1000 },
+  { key: 'xmg2500', name: '합성 2500회', desc: '누적 2500회 합성', icon: '⇪', gem: 47, check: s => s.merges >= 2500 },
+  { key: 'xmg5000', name: '합성 5000회', desc: '누적 5000회 합성', icon: '⇪', gem: 88, check: s => s.merges >= 5000 },
+  { key: 'xgd100000', name: '골드 10만', desc: '누적 골드 100,000', icon: '💰', gem: 12, check: s => s.totalGold >= 100000 },
+  { key: 'xgd500000', name: '골드 50만', desc: '누적 골드 500,000', icon: '💰', gem: 12, check: s => s.totalGold >= 500000 },
+  { key: 'xgd1000000', name: '골드 100만', desc: '누적 골드 1,000,000', icon: '💰', gem: 12, check: s => s.totalGold >= 1000000 },
+  { key: 'xgd5000000', name: '골드 500만', desc: '누적 골드 5,000,000', icon: '💰', gem: 12, check: s => s.totalGold >= 5000000 },
+  { key: 'xsm200', name: '소환 200회', desc: '누적 200회 소환', icon: '✨', gem: 10, check: s => s.summons >= 200 },
+  { key: 'xsm500', name: '소환 500회', desc: '누적 500회 소환', icon: '✨', gem: 10, check: s => s.summons >= 500 },
+  { key: 'xsm1000', name: '소환 1000회', desc: '누적 1000회 소환', icon: '✨', gem: 10, check: s => s.summons >= 1000 },
+  { key: 'xsm2000', name: '소환 2000회', desc: '누적 2000회 소환', icon: '✨', gem: 10, check: s => s.summons >= 2000 },
+  { key: 'xsm5000', name: '소환 5000회', desc: '누적 5000회 소환', icon: '✨', gem: 10, check: s => s.summons >= 5000 },
+  { key: 'xbs10', name: '보스 10기 격파', desc: '누적 보스 10기 처치', icon: '👑', gem: 7.5, check: s => s.bossKills >= 10 },
+  { key: 'xbs50', name: '보스 50기 격파', desc: '누적 보스 50기 처치', icon: '👑', gem: 17.5, check: s => s.bossKills >= 50 },
+  { key: 'xbs150', name: '보스 150기 격파', desc: '누적 보스 150기 처치', icon: '👑', gem: 42.5, check: s => s.bossKills >= 150 },
+  { key: 'xbs400', name: '보스 400기 격파', desc: '누적 보스 400기 처치', icon: '👑', gem: 105, check: s => s.bossKills >= 400 },
+  { key: 'xu25', name: '병력 25기', desc: '동시에 25기 배치', icon: '🏰', gem: 15, check: s => s.maxUnits >= 25 },
+  { key: 'xu32', name: '병력 32기', desc: '동시에 32기 배치', icon: '🏰', gem: 15, check: s => s.maxUnits >= 32 },
+  { key: 'xu38', name: '병력 38기', desc: '동시에 38기 배치', icon: '🏰', gem: 15, check: s => s.maxUnits >= 38 },
+  { key: 'xc30', name: '30연속 처치', desc: '최대 콤보 30', icon: '🔥', gem: 12, check: s => s.maxCombo >= 30 },
+  { key: 'xc60', name: '60연속 처치', desc: '최대 콤보 60', icon: '🔥', gem: 12, check: s => s.maxCombo >= 60 },
+  { key: 'xc120', name: '120연속 처치', desc: '최대 콤보 120', icon: '🔥', gem: 12, check: s => s.maxCombo >= 120 },
 ];
 
 /* =========================================================================

@@ -26,6 +26,7 @@ const UI = {
     this.buildSkillBar();
     this.bind();
     Lobby.init();
+    if (window.Admin) Admin.init();
     this.refresh();
   },
 
