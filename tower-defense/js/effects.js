@@ -287,6 +287,21 @@ const VFX = {
     return dur * 1000;
   },
 
+  /** 화면 좌표 기준 색종이 (룰렛·대박 연출용) */
+  confetti(x, y, color, n) {
+    const cols = [color, '#ffd24d', '#7cf0a8', '#6fd0ff', '#ff8ac4', '#ffffff'];
+    for (let i = 0; i < (n || 30); i++) {
+      const a = U.rand(U.TAU), sp = U.rand(120, 420);
+      FX.spawn({
+        x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - U.rand(40, 160),
+        gravity: 520, drag: .96,
+        life: U.rand(.8, 1.6), size: U.rand(4, 9),
+        color: U.pick(cols), shape: Math.random() < .5 ? 'shard' : 'circle',
+        vrot: U.rand(-12, 12),
+      });
+    }
+  },
+
   summon(x, y, rarityIdx, color, g) {
     const n = 8 + rarityIdx * 5;
     this.shockwave(x, y, 4, 40 + rarityIdx * 14, color, .45, 2 + rarityIdx * .4);

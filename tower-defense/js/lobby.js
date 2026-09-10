@@ -391,6 +391,7 @@ const Lobby = {
       btnDaily: () => this.openPanel('daily'),
       btnQuest: () => this.openPanel('quest'),
       btnRecords: () => this.openPanel('records'),
+      btnRoulette: () => Roulette.open(),
       btnSetting: () => this.openPanel('settings'),
       lbHeroNext: () => this.nextHero(),
       btnAccount: () => this.openPanel('account'),

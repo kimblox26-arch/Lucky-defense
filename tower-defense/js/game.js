@@ -204,6 +204,8 @@ const Game = {
     this.achieved = d && d.achieved || {};
     this.collection = d && d.collection || {};
     this.boosters = d && d.boosters || {};
+    this.rouletteDay = (d && d.rouletteDay) || '';
+    this.rouletteFree = (d && d.rouletteFree) || 0;
     this.metaStats = d && d.metaStats || {
       kills: 0, bossKills: 0, totalDmg: 0, leaks: 0, merges: 0, summons: 0,
       maxCombo: 0, skillUses: 0, maxUnits: 0, maxWave: 0, bestRarity: 0, totalGold: 0,
@@ -219,6 +221,7 @@ const Game = {
       gems: this.gems, perks: this.perks, unlockedMaps: this.unlockedMaps,
       achieved: this.achieved, metaStats: this.metaStats, settings: this.settings,
       collection: this.collection, boosters: this.boosters,
+      rouletteDay: this.rouletteDay, rouletteFree: this.rouletteFree,
     };
     if (window.Account && Account.current) Account.saveProfileData(data);
     else Store.save(data);
