@@ -253,6 +253,40 @@ const VFX = {
   },
 
   /** 소환 연출 (등급별) */
+  /**
+   * 소환 연출의 "뜸 들이기".
+   * 가챠의 재미는 터지는 순간보다 터지기 직전의 기대감에서 나온다.
+   * 등급이 높을수록 오래, 여러 겹으로 빨려 들어왔다가 터진다.
+   */
+  gachaCharge(x, y, ri, color, g) {
+    const dur = .18 + ri * .07;               /* 등급이 높을수록 길게 뜸 들인다 */
+    const rings = 2 + ri;
+    for (let i = 0; i < rings; i++) {
+      setTimeout(() => {
+        if (!g || g.state !== 'playing') return;
+        /* 바깥에서 안으로 빨려 들어오는 입자 */
+        const r0 = g.ts * (2.4 + ri * .5);
+        for (let k = 0; k < 6 + ri * 2; k++) {
+          const a = U.rand(U.TAU);
+          FX.spawn({
+            x: x + Math.cos(a) * r0, y: y + Math.sin(a) * r0,
+            vx: -Math.cos(a) * r0 / dur * .9, vy: -Math.sin(a) * r0 / dur * .9,
+            life: dur, size: 3 + ri * .5, color, shape: ri >= 4 ? 'star' : 'circle',
+          });
+        }
+        SFX.play('charge');
+      }, i * (dur * 1000 / rings));
+    }
+    /* 발밑이 점점 밝아진다 */
+    for (let i = 0; i < 4; i++) {
+      setTimeout(() => {
+        if (!g || g.state !== 'playing') return;
+        FX.ring(x, y, color, g.ts * (1.4 - i * .28), .18);
+      }, i * (dur * 250));
+    }
+    return dur * 1000;
+  },
+
   summon(x, y, rarityIdx, color, g) {
     const n = 8 + rarityIdx * 5;
     this.shockwave(x, y, 4, 40 + rarityIdx * 14, color, .45, 2 + rarityIdx * .4);

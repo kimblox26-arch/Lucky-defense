@@ -521,6 +521,21 @@ const Game = {
   /** 등급별 소환 이펙트 (단독 소환용) */
   playSummonFx(u, def, rar, ri) {
     const col = rar.color;
+    /* 희귀 이상은 뜸을 들였다가 터뜨린다 — 기대감이 곧 재미다 */
+    if (ri >= 2) {
+      const wait = VFX.gachaCharge(u.px, u.py, ri, col, this);
+      setTimeout(() => {
+        if (this.state !== 'playing') return;
+        this.revealSummon(u, def, rar, ri);
+      }, wait);
+      return;
+    }
+    this.revealSummon(u, def, rar, ri);
+  },
+
+  /** 뜸 들이기가 끝난 뒤 실제로 터뜨리는 부분 */
+  revealSummon(u, def, rar, ri) {
+    const col = rar.color;
     FX.popText(u.px, u.py - this.ts * .8, def.name, col, 14 + ri);
     /* 등급마다 다른 팡파레 — 소리만 듣고도 무엇이 나왔는지 알 수 있게 */
     SFX.playRarity(ri);
