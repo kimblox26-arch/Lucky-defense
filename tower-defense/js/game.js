@@ -1520,6 +1520,7 @@ const Game = {
     SFX.musicTick(dt, intensity);
 
     if (window.UI) UI.tick(dt);
+    if (window.Perf) Perf.tick(dt);
   },
 
   /* ---------------------------------------------------------- 렌더 */
@@ -1527,8 +1528,8 @@ const Game = {
     const c = this.ctx, W = this.W, H = this.H;
     /* 유닛이 아주 많을 때는 스티커 외곽선을 자동으로 생략해 프레임을 지킨다 */
     /* 유닛 스프라이트를 캐시하게 되면서 외곽선 비용이 사실상 사라져(20기 21ms → 1.2ms)
-       유닛 수와 무관하게 항상 켜 둔다 */
-    GFX.outlineBudget = true;
+       기본은 항상 켠다. 단, 최적화 단계를 최저로 내리면 꺼서 프레임을 확보한다. */
+    GFX.outlineBudget = !window.Perf || Perf.quality >= 1;
     c.save();
     c.clearRect(0, 0, W, H);
     /* 바깥 배경 */

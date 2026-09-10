@@ -253,8 +253,14 @@ const FX = {
     if (this.pool.length) return this.pool.pop();
     return new Particle();
   },
+  /** 품질 단계에 따른 파티클 총량 배수 (Perf 가 조절) */
+  budget: 1,
+  shakeScale: 1,
   spawn(o) {
     if (this.active.length >= this.max) return null;
+    /* 품질을 낮추면 일부 입자를 확률적으로 건너뛴다 — 연출 형태는 유지하면서
+       개수만 줄어들어 렉이 확 준다 */
+    if (this.budget < 1 && Math.random() > this.budget) return null;
     const p = this._get().init(o);
     this.active.push(p);
     return p;
@@ -304,7 +310,7 @@ const FX = {
       ay: 90, life: opt.life || .85, size, size2: size * .8, color, shape: 'text', text, glow: opt.glow !== false, drag: .94
     });
   },
-  shake(a) { this.shakeAmt = Math.min(30, this.shakeAmt + a); },
+  shake(a) { this.shakeAmt = Math.min(30, this.shakeAmt + a * this.shakeScale); },
   flash(color = '#fff', a = .5) { this.flashColor = color; this.flashAlpha = Math.max(this.flashAlpha, a); },
   stop(t) { this.hitStop = Math.max(this.hitStop, t); },
   pulse(a = .04) { this.zoomPulse = Math.max(this.zoomPulse, a); },

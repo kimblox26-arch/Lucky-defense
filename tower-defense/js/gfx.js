@@ -1967,6 +1967,8 @@ const GFX = {
   /** 화면에 살아있는 유닛이 많을 때는 자동으로 외곽선을 생략해 프레임을 지킨다
    *  (Game.render 에서 매 프레임 갱신) */
   outlineBudget: true,
+  weatherBudget: 1,
+  fancyBudget: true,
 
   /** 스크래치 캔버스 확보 (크기 바뀔 때만 재할당) */
   _scratch(key, w, h) {
@@ -2509,7 +2511,8 @@ const GFX = {
     this.weather.kind = kind;
     this.weather.parts.length = 0;
     if (!kind) return;
-    const n = kind === 'rain' ? 160 : kind === 'snow' ? 120 : kind === 'ember' ? 70 : kind === 'sand' ? 130 : 40;
+    const base = kind === 'rain' ? 160 : kind === 'snow' ? 120 : kind === 'ember' ? 70 : kind === 'sand' ? 130 : 40;
+    const n = Math.round(base * (this.weatherBudget === undefined ? 1 : this.weatherBudget));
     for (let i = 0; i < n; i++) {
       this.weather.parts.push({
         x: U.rand(g.W), y: U.rand(g.H),
