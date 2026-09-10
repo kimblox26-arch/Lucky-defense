@@ -1420,7 +1420,7 @@ const GFX = {
 
   /** 외곽선 + 입체 음영까지 구운 캐릭터 비트맵을 만든다 (캐시용 공통 경로) */
   _bakeChar(look, S, st) {
-    const outlineW = Math.max(1.8, S * .15);
+    const outlineW = GFX.outlineWidth(S);
     const pad = Math.ceil(outlineW * 2 + 6);
     const w = Math.ceil(S * 3.8) + pad * 2, h = Math.ceil(S * 4.6) + pad * 2;
     const ox = w / 2, oy = h * .66;
@@ -1589,6 +1589,14 @@ const GFX = {
    *  운빨겜 스타일 두꺼운 외곽선 — 실루엣을 여러 방향으로 겹쳐 찍어
    *  스티커 같은 검은 테두리를 값싸게 흉내낸다 (셰이프별 재작업 없이 적용)
    * =================================================================== */
+  /**
+   * 스티커 외곽선 두께.
+   * 크기에 그대로 비례시키면 도감/보스 배너처럼 크게 그릴 때 선이 10px 넘게
+   * 두꺼워져 캐릭터가 검은 덩어리처럼 보인다. 상한을 둬서 큰 렌더에서도
+   * 형태가 살아 있게 한다.
+   */
+  outlineWidth(S) { return U.clamp(S * .14, 1.8, 6); },
+
   _outlineCv: null, _shadeCv: null,
   /** 화면에 살아있는 유닛이 많을 때는 자동으로 외곽선을 생략해 프레임을 지킨다
    *  (Game.render 에서 매 프레임 갱신) */
@@ -1640,7 +1648,7 @@ const GFX = {
     if (!this.outlineBudget) { this.drawChar(c, x, y, S, look, st); return; }
     outlineColor = outlineColor || '#1b1218';
     /* 운빨겜 특유의 두꺼운 스티커 테두리 */
-    outlineW = outlineW !== undefined ? outlineW : Math.max(1.8, S * .15);
+    outlineW = outlineW !== undefined ? outlineW : GFX.outlineWidth(S);
     const pad = Math.ceil(outlineW * 2 + 6);
     const w = Math.ceil(S * 3.8) + pad * 2, h = Math.ceil(S * 4.6) + pad * 2;
     const ox = w / 2, oy = h * .66;
@@ -1687,7 +1695,7 @@ const GFX = {
     let cv = this.cache.get(key);
     if (cv) { this.cacheHits++; return cv; }
     this.cacheMiss++;
-    const outlineW = Math.max(1.8, S * .15);
+    const outlineW = GFX.outlineWidth(S);
     const pad = S * 2.1 + outlineW * 2 + 6;
     const w = Math.ceil(S * 3.4 + pad), h = Math.ceil(S * 4 + pad);
     cv = document.createElement('canvas');
@@ -1759,7 +1767,16 @@ const GFX = {
   buildTerrain(g) {
     const key = `${g.map.key}|${g.ts}|${g.gw}x${g.gh}|${g.ox},${g.oy}`;
     if (this.terrainKey === key && this.terrainCanvas) return this.terrainCanvas;
-    const m = g.map, ts = g.ts;
+    /* 캐릭터에만 채도 보정을 걸면 배경이 상대적으로 탁해 보이므로 지형에도 같은
+       캔디톤 보정을 적용한다. 맵별 색 정체성은 그대로 두고 선명도만 올린다. */
+    const src = g.map;
+    const m = Object.assign({}, src, {
+      bg: U.vivid(src.bg, .3, .1),
+      bg2: U.vivid(src.bg2, .28, .08),
+      road: U.vivid(src.road, .3, .1),
+      accent: U.vivid(src.accent, .34, .06),
+    });
+    const ts = g.ts;
     const W = g.gw * ts, H = g.gh * ts;
     const cv = document.createElement('canvas');
     cv.width = Math.max(1, W); cv.height = Math.max(1, H);
