@@ -32,9 +32,22 @@ const Draw = {
       accent: RARITY_IDX[def.rarity] >= 4 ? rar.color : el,
       aura: rar.aura,
       auraCount: rar.auraN,
+      /* 표정/눈동자색 — 클래스마다 성격이 드러나게 (전사는 결의, 마법사는 차분함…) */
+      face: k.face || this.CLASS_FACE[def.cls] || 'normal',
+      eyeCol: k.eyeCol || U.mixHex(el, '#1d1226', .66),
     };
     this._unitLooks[def.key] = L;
     return L;
+  },
+
+  /** 클래스 → 표정 프리셋 */
+  CLASS_FACE: {
+    guardian: 'fierce', artillery: 'fierce',
+    mage: 'calm', summoner: 'calm',
+    archer: 'normal', sniper: 'normal',
+    assassin: 'wicked', warlock: 'wicked',
+    support: 'cute', bard: 'cute',
+    engineer: 'blank',
   },
 
   _enemyLooks: {},
@@ -58,6 +71,10 @@ const Draw = {
       aura: def.boss ? 'void' : null,
       auraCount: 8,
       arms: k.legs === 'none' && (k.torso === 'blob' || k.torso === 'crystal') ? false : true,
+      /* 머리 파츠가 없는 젤리형은 몸통에 얼굴을 그려 넣는다 */
+      bodyFace: k.head === 'none' && (k.torso === 'blob' || k.torso === 'crystal'),
+      face: k.face || (def.boss ? 'wicked' : 'cute'),
+      eyeCol: U.mixHex(def.color, '#150c1e', .7),
     };
     this._enemyLooks[def.key] = L;
     return L;
@@ -130,48 +147,109 @@ const Draw = {
     }
   },
 
+  /**
+   * 등급 받침대 — 운빨겜의 상징 같은 두툼한 원판.
+   * 등급이 높을수록 테두리가 굵어지고, 빛나는 링과 떠오르는 입자가 붙는다.
+   */
+  rarityPodium(c, x, y, S, rar, ri, t) {
+    const rx = S * 1.0, ry = S * .36;
+    const pulse = .55 + Math.sin(t * 2.4) * .45;
+    const R = GFX.ramp(rar.color);
+
+    /* 바닥 발광 (희귀 이상) */
+    if (ri >= 2) {
+      c.save();
+      c.globalCompositeOperation = 'lighter';
+      c.fillStyle = GFX.radial(c, x, y, rx * 1.9,
+        U.rgba(rar.glow, .1 + ri * .028 * pulse), U.rgba(rar.glow, 0));
+      c.beginPath(); c.ellipse(x, y, rx * 1.9, ry * 2, 0, 0, U.TAU); c.fill();
+      c.restore();
+    }
+
+    /* 원판 옆면 (두께감) */
+    const th = S * .13;
+    c.fillStyle = R.deep;
+    c.beginPath(); c.ellipse(x, y + th, rx, ry, 0, 0, U.TAU); c.fill();
+    c.fillRect(x - rx, y, rx * 2, th);
+    /* 윗면 */
+    const tg = c.createLinearGradient(x - rx, y - ry, x + rx, y + ry);
+    tg.addColorStop(0, R.lit); tg.addColorStop(.5, R.base); tg.addColorStop(1, R.sh);
+    c.fillStyle = tg;
+    c.beginPath(); c.ellipse(x, y, rx, ry, 0, 0, U.TAU); c.fill();
+    /* 두꺼운 테두리 */
+    c.strokeStyle = '#1b1218'; c.lineWidth = Math.max(1.4, S * .085);
+    c.beginPath(); c.ellipse(x, y, rx, ry, 0, 0, U.TAU); c.stroke();
+    /* 안쪽 밝은 링 */
+    c.strokeStyle = U.rgba(rar.glow, .85); c.lineWidth = Math.max(.8, S * .045);
+    c.beginPath(); c.ellipse(x, y, rx * .74, ry * .72, 0, 0, U.TAU); c.stroke();
+
+    /* 전설 이상 : 회전하는 룬 링 */
+    if (ri >= 4) {
+      c.save();
+      c.globalAlpha = .5 + pulse * .5;
+      c.strokeStyle = rar.glow; c.lineWidth = Math.max(.9, S * .05);
+      c.setLineDash([S * .17, S * .19]);
+      c.lineDashOffset = -t * S * .9;
+      c.beginPath(); c.ellipse(x, y, rx * 1.24, ry * 1.2, 0, 0, U.TAU); c.stroke();
+      c.setLineDash([]);
+      c.restore();
+    }
+    /* 신화 이상 : 떠오르는 입자 */
+    if (ri >= 5) {
+      const n = 3 + ri;
+      for (let i = 0; i < n; i++) {
+        const ph = (t * .55 + i / n) % 1;
+        const a = (i / n) * U.TAU + t * .3;
+        const px = x + Math.cos(a) * rx * (.5 + ph * .55);
+        const py = y - ph * S * 1.5;
+        c.globalAlpha = (1 - ph) * .85;
+        c.fillStyle = rar.glow;
+        c.beginPath(); c.arc(px, py, S * .055 * (1 - ph * .5), 0, U.TAU); c.fill();
+      }
+      c.globalAlpha = 1;
+    }
+  },
+
   /* ===================================================================
    *  유닛
    * =================================================================== */
   drawUnit(c, u, g) {
     const ts = g.ts;
-    const S = ts * .34;
+    /* 운빨겜처럼 유닛이 칸을 꽉 채우도록 크게 그린다 */
+    const S = ts * .44;
     const def = u.def, rar = RARITY[RARITY_IDX[def.rarity]];
+    const ri = RARITY_IDX[def.rarity];
     const x = u.px, y = u.py;
     const t = g.time + u.seed;
 
-    /* 등급 받침 */
-    const glowPulse = .6 + Math.sin(t * 2.4) * .4;
-    c.save();
-    c.shadowColor = rar.glow;
-    c.shadowBlur = 4 + RARITY_IDX[def.rarity] * 2.8 * glowPulse;
-    c.fillStyle = U.rgba(rar.color, .18);
-    c.beginPath(); c.ellipse(x, y + S * 1.1, S * .95, S * .34, 0, 0, U.TAU); c.fill();
-    c.strokeStyle = U.rgba(rar.color, .8); c.lineWidth = 2;
-    c.beginPath(); c.ellipse(x, y + S * 1.1, S * .95, S * .34, 0, 0, U.TAU); c.stroke();
-    c.shadowBlur = 0;
-    c.restore();
-
-    GFX.groundShadow(c, x, y + S * 1.08, S * .5, S * .16, .3);
+    GFX.groundShadow(c, x, y + S * .98, S * .58, S * .19, .34);
+    /* 등급 받침대 — 유닛이 올라선 두툼한 원판 */
+    this.rarityPodium(c, x, y + S * .96, S, rar, ri, t);
 
     const recoil = u.recoil > 0 ? U.easeOut(u.recoil / .12) : 0;
     const aim = u.aimAngle === undefined ? 0 : u.aimAngle;
     const flip = Math.cos(aim) < 0;
 
     if (u.buffFlash > 0) { c.save(); c.shadowColor = '#ffffff'; c.shadowBlur = 18 * u.buffFlash; }
-    GFX.drawCharOutlined(c, x, y, S, this.unitLook(def), {
+    GFX.drawUnitChar(c, x, y, S, this.unitLook(def), {
       t, phase: t * 1.6, aim, recoil, flip, seed: u.seed
     });
     if (u.buffFlash > 0) c.restore();
 
-    /* 성급 */
-    const st = u.star, sy = y - S * 1.55;
+    /* 성급 — 머리가 커진 만큼 위로 띄우고, 테두리를 넣어 배경과 분리한다 */
+    const st = u.star, sy = y - S * 2.02;
     for (let i = 0; i < st; i++) {
-      const sx = x + (i - (st - 1) / 2) * (S * .4);
+      const sx = x + (i - (st - 1) / 2) * (S * .42);
+      const pop = 1 + Math.sin(t * 3 + i * .7) * .07;
+      c.save();
+      c.translate(sx, sy); c.scale(pop, pop);
+      c.strokeStyle = '#1b1218'; c.lineWidth = Math.max(1.2, S * .07);
+      c.lineJoin = 'round';
+      c.beginPath(); GFX.star(c, 0, 0, S * .2, 5, true); c.stroke();
       c.fillStyle = st >= 3 ? '#ffd24d' : '#eef4ff';
-      c.shadowColor = st >= 3 ? '#ffb300' : '#000'; c.shadowBlur = 6;
-      GFX.star(c, sx, sy, S * .17, 5);
-      c.shadowBlur = 0;
+      c.shadowColor = st >= 3 ? '#ffb300' : '#7fd0ff'; c.shadowBlur = 7;
+      c.beginPath(); GFX.star(c, 0, 0, S * .2, 5, true); c.fill();
+      c.restore();
     }
     /* 레벨 뱃지 */
     if (u.level > 1) {
@@ -232,7 +310,7 @@ const Draw = {
   ENEMY_FRAMES: 8,
   drawEnemy(c, e, g) {
     const ts = g.ts;
-    const S = ts * .32 * (e.def.scale || 1);
+    const S = ts * .42 * (e.def.scale || 1);
     const x = e.x;
     const fly = e.flying ? -ts * .24 + Math.sin((g.time + e.seed) * 3) * ts * .05 : 0;
     const y = e.y + fly;

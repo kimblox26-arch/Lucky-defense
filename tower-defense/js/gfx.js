@@ -41,13 +41,16 @@ const GFX = {
   /** 색 램프 : 하이라이트/기본/음영/외곽 5단계 */
   ramp(hex) {
     if (this._rampCache[hex]) return this._rampCache[hex];
+    /* 운빨겜 특유의 쨍한 캔디톤을 위해 채도를 한 번 끌어올린 뒤 램프를 만든다 */
+    const v = U.vivid(hex, .38, .07);
     const r = {
-      hi: U.mixHex(hex, '#ffffff', .55),
-      lit: U.mixHex(hex, '#ffffff', .26),
-      base: hex,
-      sh: U.mixHex(hex, '#0a0d16', .34),
-      deep: U.mixHex(hex, '#05070c', .58),
-      line: U.mixHex(hex, '#04060a', .72),
+      hi: U.mixHex(v, '#fffdf6', .58),
+      lit: U.mixHex(v, '#fff6e8', .28),
+      base: v,
+      /* 그림자도 완전히 탁해지지 않게 보라빛을 섞는다 (탁한 회색 방지) */
+      sh: U.mixHex(v, '#2a1e40', .32),
+      deep: U.mixHex(v, '#170f28', .56),
+      line: U.mixHex(v, '#0d0714', .74),
     };
     this._rampCache[hex] = r;
     return r;
@@ -101,23 +104,28 @@ const GFX = {
    * =================================================================== */
   legs: {
     /** 두 다리 걷기 사이클 */
+    /* 치비 비율 : 다리는 짧고 통통하게, 신발은 과장되게 크게 */
     biped(c, S, R, ph, style) {
-      const sw = Math.sin(ph) * S * .26;
-      const lift = Math.max(0, Math.sin(ph)) * S * .1;
-      const w = S * .19;
+      const sw = Math.sin(ph) * S * .22;
+      const lift = Math.max(0, Math.sin(ph)) * S * .09;
+      const w = S * .28, len = S * .34;
       for (let i = 0; i < 2; i++) {
         const dir = i ? 1 : -1;
-        const ox = dir * S * .21;
+        const ox = dir * S * .19;
         const off = dir > 0 ? sw : -sw;
-        const up = dir > 0 ? lift : Math.max(0, -Math.sin(ph)) * S * .1;
+        const up = dir > 0 ? lift : Math.max(0, -Math.sin(ph)) * S * .09;
         c.save();
-        c.translate(ox + off * .5, S * .52 - up);
+        c.translate(ox + off * .5, S * .5 - up);
         c.fillStyle = dir > 0 ? R.base : R.sh;
-        c.beginPath(); c.roundRect(-w / 2, 0, w, S * .46, w * .45); c.fill();
-        c.strokeStyle = R.line; c.lineWidth = S * .035; c.stroke();
-        /* 신발 */
+        c.beginPath(); c.roundRect(-w / 2, 0, w, len, w * .46); c.fill();
+        c.strokeStyle = R.line; c.lineWidth = S * .04; c.stroke();
+        /* 신발 — 만화적으로 큼직한 발 */
         c.fillStyle = style === 'boot' ? R.deep : R.line;
-        c.beginPath(); c.roundRect(-w * .62, S * .38, w * 1.34, S * .16, w * .3); c.fill();
+        c.beginPath(); c.roundRect(-w * .72, len - S * .04, w * 1.48, S * .21, S * .1); c.fill();
+        c.strokeStyle = R.line; c.lineWidth = S * .035; c.stroke();
+        /* 신발 광택 */
+        c.fillStyle = 'rgba(255,255,255,.22)';
+        c.beginPath(); c.ellipse(-w * .12, len + S * .03, w * .42, S * .045, 0, 0, U.TAU); c.fill();
         c.restore();
       }
     },
@@ -389,14 +397,24 @@ const GFX = {
   drawArm(c, S, R, sx, sy, ang, len, thick, hand) {
     const ex = sx + Math.cos(ang) * len, ey = sy + Math.sin(ang) * len;
     const mx = sx + Math.cos(ang - .5) * len * .55, my = sy + Math.sin(ang - .5) * len * .55;
-    c.strokeStyle = R.sh; c.lineWidth = thick * 1.35; c.lineCap = 'round';
+    c.lineCap = 'round'; c.lineJoin = 'round';
+    /* 어두운 외곽선 → 본색 → 위쪽 하이라이트 3겹으로 통통한 소시지 팔을 만든다 */
+    c.strokeStyle = R.line; c.lineWidth = thick * 1.42;
     c.beginPath(); c.moveTo(sx, sy); c.quadraticCurveTo(mx, my, ex, ey); c.stroke();
     c.strokeStyle = R.base; c.lineWidth = thick;
     c.beginPath(); c.moveTo(sx, sy); c.quadraticCurveTo(mx, my, ex, ey); c.stroke();
+    c.strokeStyle = U.rgba(R.hi, .5); c.lineWidth = thick * .34;
+    c.beginPath();
+    c.moveTo(sx, sy - thick * .22);
+    c.quadraticCurveTo(mx, my - thick * .22, ex, ey - thick * .18);
+    c.stroke();
     if (hand !== false) {
-      c.fillStyle = R.hi;
-      c.beginPath(); c.arc(ex, ey, thick * .62, 0, U.TAU); c.fill();
-      c.strokeStyle = R.line; c.lineWidth = thick * .2; c.stroke();
+      /* 동글동글한 손 (미튼) */
+      c.fillStyle = R.lit;
+      c.beginPath(); c.arc(ex, ey, thick * .74, 0, U.TAU); c.fill();
+      c.strokeStyle = R.line; c.lineWidth = thick * .26; c.stroke();
+      c.fillStyle = 'rgba(255,255,255,.3)';
+      c.beginPath(); c.arc(ex - thick * .22, ey - thick * .26, thick * .26, 0, U.TAU); c.fill();
     }
     return { x: ex, y: ey };
   },
@@ -545,18 +563,32 @@ const GFX = {
 
   hair: {
     none() { },
+    /* 치비 헤어 : 머리를 넉넉히 덮는 볼륨 + 옆머리 + 갈라진 앞머리 */
     short(c, S, col) {
       const R = GFX.ramp(col);
-      c.fillStyle = R.base;
+      const p = new Path2D();
+      /* 왼쪽 옆머리에서 시작해 정수리를 크게 덮고 오른쪽으로 */
+      p.moveTo(-S * .40, S * .10);
+      p.quadraticCurveTo(-S * .46, -S * .30, -S * .18, -S * .46);
+      p.quadraticCurveTo(0, -S * .54, S * .18, -S * .46);
+      p.quadraticCurveTo(S * .46, -S * .30, S * .40, S * .10);
+      /* 오른쪽 옆머리 안쪽 → 앞머리 갈래 */
+      p.quadraticCurveTo(S * .34, -S * .12, S * .22, -S * .20);
+      p.quadraticCurveTo(S * .12, -S * .04, S * .04, -S * .22);
+      p.quadraticCurveTo(-S * .06, -S * .02, -S * .16, -S * .21);
+      p.quadraticCurveTo(-S * .30, -S * .10, -S * .40, S * .10);
+      p.closePath();
+      c.fillStyle = GFX.vgrad(c, 0, -S * .54, S * .12, R.lit, R.base);
+      c.fill(p);
+      c.strokeStyle = R.line; c.lineWidth = S * .045; c.lineJoin = 'round';
+      c.stroke(p);
+      /* 정수리 광택 — 머리 볼륨 안쪽에 들어오는 크기라 clip 이 필요 없다 */
+      c.fillStyle = U.rgba('#ffffff', .3);
       c.beginPath();
-      c.moveTo(-S * .28, -S * .04);
-      c.quadraticCurveTo(-S * .32, -S * .38, 0, -S * .36);
-      c.quadraticCurveTo(S * .32, -S * .38, S * .28, -S * .04);
-      c.quadraticCurveTo(S * .16, -S * .2, 0, -S * .17);
-      c.quadraticCurveTo(-S * .16, -S * .2, -S * .28, -S * .04);
-      c.fill();
-      c.fillStyle = U.rgba('#ffffff', .22);
-      c.beginPath(); c.ellipse(-S * .1, -S * .26, S * .1, S * .05, -.4, 0, U.TAU); c.fill();
+      c.ellipse(-S * .07, -S * .33, S * .19, S * .05, -.22, 0, U.TAU); c.fill();
+      c.fillStyle = U.rgba('#ffffff', .16);
+      c.beginPath();
+      c.ellipse(S * .16, -S * .29, S * .09, S * .032, .3, 0, U.TAU); c.fill();
     },
     long(c, S, col, t) {
       const R = GFX.ramp(col);
@@ -578,18 +610,30 @@ const GFX = {
       c.quadraticCurveTo(-S * .5 + sw, S * .0, -S * .42 + sw, S * .34); c.stroke();
       GFX.hair.short(c, S, col);
     },
+    /* 뾰족머리 : 빗살처럼 균일한 삼각형이 아니라, 길이가 제각각인
+       굵은 갈래가 바깥으로 뻗어야 만화적으로 읽힌다 */
     spiky(c, S, col) {
       const R = GFX.ramp(col);
-      c.fillStyle = R.base;
-      c.beginPath();
-      c.moveTo(-S * .3, -S * .04);
-      for (let i = 0; i <= 5; i++) {
-        const x = -S * .3 + (S * .6) * (i / 5);
-        c.lineTo(x + S * .05, -S * .5 - (i % 2 ? S * .06 : 0));
-        c.lineTo(x + S * .11, -S * .16);
+      const tips = [
+        [-.38, .04, -.46, -.30], [-.22, -.20, -.26, -.50],
+        [-.04, -.28, -.02, -.58], [.15, -.24, .21, -.48],
+        [.32, -.08, .43, -.32],
+      ];
+      const p = new Path2D();
+      p.moveTo(-S * .40, S * .12);
+      for (const [bx, by, tx, ty] of tips) {
+        p.quadraticCurveTo(S * (bx - .02), S * (by - .04), S * tx, S * ty);
+        p.quadraticCurveTo(S * (bx + .10), S * (by - .02), S * (bx + .16), S * (by + .12));
       }
-      c.lineTo(S * .3, -S * .04); c.closePath(); c.fill();
-      c.strokeStyle = R.line; c.lineWidth = S * .025; c.stroke();
+      p.lineTo(S * .40, S * .12);
+      p.quadraticCurveTo(0, S * .02, -S * .40, S * .12);
+      p.closePath();
+      c.fillStyle = GFX.vgrad(c, 0, -S * .74, S * .14, R.lit, R.base);
+      c.fill(p);
+      c.strokeStyle = R.line; c.lineWidth = S * .045; c.lineJoin = 'round';
+      c.stroke(p);
+      c.fillStyle = U.rgba('#ffffff', .26);
+      c.beginPath(); c.ellipse(-S * .06, -S * .16, S * .16, S * .042, -.3, 0, U.TAU); c.fill();
     },
     braid(c, S, col, t) {
       const R = GFX.ramp(col);
@@ -1231,15 +1275,17 @@ const GFX = {
   },
 
   /** 별 그리기 */
-  star(c, x, y, r, points) {
-    c.beginPath();
+  /** pathOnly=true 면 경로만 만들고 채우지 않는다 (테두리+채우기를 따로 주고 싶을 때) */
+  star(c, x, y, r, points, pathOnly) {
+    if (!pathOnly) c.beginPath();
     for (let i = 0; i < points * 2; i++) {
       const rr = i % 2 ? r * .45 : r;
       const a = (i / (points * 2)) * U.TAU - Math.PI / 2;
       i ? c.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr)
         : c.moveTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr);
     }
-    c.closePath(); c.fill();
+    c.closePath();
+    if (!pathOnly) c.fill();
   },
 
   /* ===================================================================
@@ -1249,7 +1295,10 @@ const GFX = {
    *  st   = {t, phase, aim, recoil, flip, scale}
    * =================================================================== */
   /** 운빨겜 스타일 : 큰 머리(치비) 비율 배수 — 몸은 그대로, 머리/헤어/장비만 키운다 */
-  CHIBI_HEAD: 1.16,
+  /* 운빨겜식 치비 비율 : 머리가 몸통만큼 큼직해야 스티커/피규어 느낌이 산다 */
+  CHIBI_HEAD: 1.54,
+  /** 머리가 앉는 높이 (머리가 커진 만큼 위로 올려 목이 파묻히지 않게 한다) */
+  HEAD_Y: .70,
 
   drawChar(c, x, y, S, look, st) {
     const t = st.t || 0;
@@ -1279,88 +1328,348 @@ const GFX = {
     /* 다리 */
     if (look.legs && GFX.legs[look.legs]) GFX.legs[look.legs](c, S, R, ph, look.legStyle, t);
     /* 뒷팔 */
-    if (look.arms !== false) GFX.drawArm(c, S, R, -S * .3, -S * .12, Math.PI * .72 + Math.sin(ph) * .2, S * .34, S * .12);
+    if (look.arms !== false) GFX.drawArm(c, S, R, -S * .3, -S * .12, Math.PI * .72 + Math.sin(ph) * .2, S * .32, S * .175);
     /* 몸통 */
     if (look.torso && GFX.torso[look.torso]) GFX.torso[look.torso](c, S, R, t);
+    /* 머리가 없는 젤리/수정형(슬라임·포자 등)은 몸통에 직접 얼굴을 붙인다 */
+    if (look.bodyFace) {
+      c.save();
+      c.translate(0, S * .16);
+      this.cuteEyes(c, S * 1.05, t, seed, look);
+      c.restore();
+    }
     /* 머리 — 치비 비율로 살짝 확대 */
     const hS = S * this.CHIBI_HEAD;
     c.save();
-    c.translate(0, -S * .58 + Math.sin(t * 2.1 + 1) * S * .015);
-    const tilt = U.clamp(Math.sin(t * 1.3) * .06, -.11, .11);
+    /* 머리는 살짝 늦게 따라 흔들려 (관성) 더 생동감 있게 보인다 */
+    c.translate(Math.sin(t * 2.1 + seed - .5) * S * .02,
+      -S * this.HEAD_Y + Math.sin(t * 2.1 + 1) * S * .018);
+    const tilt = U.clamp(Math.sin(t * 1.3 + seed) * .08, -.13, .13);
     c.rotate(tilt);
     if (look.head && GFX.head[look.head]) GFX.head[look.head](c, hS, look.skin || '#f0c9a0', t);
     if (look.hair && GFX.hair[look.hair]) GFX.hair[look.hair](c, hS, look.hairCol || '#4a3728', t);
     if (look.gear && GFX.gear[look.gear]) GFX.gear[look.gear](c, hS, A, t);
-    /* 운빨겜 스타일 : 어떤 생김새든 크고 동글동글한 눈을 붙인다 */
-    if (look.head && look.head !== 'none' && look.cuteEyes !== false) this.cuteEyes(c, hS, t, seed);
+    /* 운빨겜 스타일 : 어떤 생김새든 크고 동글동글한 눈 + 표정을 붙인다 */
+    if (look.head && look.head !== 'none' && look.cuteEyes !== false) this.cuteEyes(c, hS, t, seed, look);
     c.restore();
-    /* 앞팔 + 무기 (조준 방향) */
+    /* 앞팔 + 무기 (조준 방향) — 캐시된 몸통 위에 실시간으로 얹을 때는 건너뛴다 */
+    if (!st.noWeapon) this._frontArm(c, S, R, A, look, st, t, ph, aim, recoil);
+    c.restore();
+  },
+
+  /** 조준 방향에 따라 움직이는 앞팔 + 무기 (몸통과 달리 캐시할 수 없는 부분) */
+  _frontArm(c, S, R, A, look, st, t, ph, aim, recoil) {
     if (look.weapon && look.weapon !== 'none') {
       const wa = st.flip ? Math.PI - aim : aim;
       const armAng = U.clamp(wa, -1.1, 1.1);
-      const hand = GFX.drawArm(c, S, R, S * .26, -S * .14, armAng * .55 + .1, S * .36 + recoil * -S * .06, S * .13);
+      const hand = GFX.drawArm(c, S, R, S * .26, -S * .14, armAng * .55 + .1, S * .34 + recoil * -S * .06, S * .185);
       c.save();
       c.translate(hand.x, hand.y);
       c.rotate(armAng * .85 - recoil * .35);
       GFX.weapon[look.weapon](c, S, A.base, t);
       c.restore();
     } else if (look.arms !== false) {
-      GFX.drawArm(c, S, R, S * .28, -S * .12, .5 + Math.sin(ph + 3) * .25, S * .34, S * .12);
+      GFX.drawArm(c, S, R, S * .28, -S * .12, .5 + Math.sin(ph + 3) * .25, S * .32, S * .175);
     }
+  },
+
+  /**
+   * 캐시된 유닛 몸통 스프라이트 + 실시간 무기 팔.
+   *
+   * 외곽선/음영을 매 프레임 다시 굽는 비용이 커서(유닛 20기에 21ms) 몸통은
+   * (외형·크기·애니메이션 프레임·좌우반전) 단위로 한 번만 구워 두고 재사용한다.
+   * 조준 각도로 계속 회전하는 앞팔·무기만 위에 직접 그린다 — 이 부분은
+   * drawArm 이 이미 어두운 굵은 선을 깔아 주므로 별도 실루엣 외곽선이 필요 없다.
+   */
+  UNIT_FRAMES: 8,
+  drawUnitChar(c, x, y, S, look, st) {
+    if (!this.outlineBudget) { this.drawChar(c, x, y, S, look, st); return; }
+    const frames = this.UNIT_FRAMES;
+    /* 애니메이션 위상을 프레임 단위로 양자화해 캐시 적중률을 확보한다 */
+    const frame = Math.floor((((st.t || 0) * 2.1 + (st.seed || 0)) / U.TAU % 1 + 1) % 1 * frames);
+    const flip = st.flip ? 1 : 0;
+    const key = (look.id || '?') + '|' + Math.round(S) + '|' + frame + '|' + flip + '|U';
+    let cv = this.cache.get(key);
+    if (cv) this.cacheHits++;
+    else {
+      this.cacheMiss++;
+      cv = this._bakeChar(look, S, {
+        t: (frame / frames) * U.TAU / 2.1, phase: (frame / frames) * U.TAU,
+        aim: 0, recoil: 0, seed: 0, flip: st.flip, noWeapon: true,
+      });
+      cv._key = key;
+      this._trimCache();
+      this.cache.set(key, cv);
+    }
+    c.drawImage(cv, x - cv._ox, y - cv._oy);
+
+    /* 무기 팔은 캐시된 몸통과 같은 바운스 위에 올라타야 어긋나 보이지 않는다 */
+    const bt = (frame / frames) * U.TAU / 2.1;
+    const recoil = st.recoil || 0;
+    const bouncePh = Math.sin(bt * 2.1);
+    c.save();
+    c.translate(x, y + bouncePh * S * .04 - recoil * S * .06);
+    c.scale(1 - bouncePh * .035 + recoil * .12, 1 + bouncePh * .045 - recoil * .1);
+    if (st.flip) c.scale(-1, 1);
+    this._frontArm(c, S, GFX.ramp(look.color || '#8fa5c4'),
+      GFX.ramp(look.accent || look.color || '#8fa5c4'),
+      look, st, st.t || 0, (frame / frames) * U.TAU,
+      st.aim === undefined ? 0 : st.aim, recoil);
     c.restore();
   },
 
+  /** 외곽선 + 입체 음영까지 구운 캐릭터 비트맵을 만든다 (캐시용 공통 경로) */
+  _bakeChar(look, S, st) {
+    const outlineW = Math.max(1.8, S * .15);
+    const pad = Math.ceil(outlineW * 2 + 6);
+    const w = Math.ceil(S * 3.8) + pad * 2, h = Math.ceil(S * 4.6) + pad * 2;
+    const ox = w / 2, oy = h * .66;
+    const av = this._scratch('_shadeCv', w, h);
+    const ac = av.getContext('2d');
+    ac.clearRect(0, 0, w, h);
+    this.drawChar(ac, ox, oy, S, look, st);
+    this._figurineShade(ac, w, h, oy, S);
+
+    const bv = this._scratch('_outlineCv', w, h);
+    const bc = bv.getContext('2d');
+    bc.clearRect(0, 0, w, h);
+    bc.drawImage(av, 0, 0);
+    bc.globalCompositeOperation = 'source-in';
+    bc.fillStyle = '#1b1218';
+    bc.fillRect(0, 0, w, h);
+    bc.globalCompositeOperation = 'source-over';
+
+    const cv = document.createElement('canvas');
+    cv.width = w; cv.height = h;
+    const c = cv.getContext('2d');
+    const dirs = 12;
+    for (let i = 0; i < dirs; i++) {
+      const a = i / dirs * U.TAU;
+      c.drawImage(bv, Math.cos(a) * outlineW, Math.sin(a) * outlineW);
+    }
+    c.drawImage(av, 0, 0);
+    cv._ox = ox; cv._oy = oy;
+    return cv;
+  },
+
+  _trimCache() {
+    if (this.cache.size <= this.MAX_CACHE) return;
+    let i = 0;
+    for (const k of this.cache.keys()) { this.cache.delete(k); if (++i > this.MAX_CACHE * .4) break; }
+  },
+
+  /** 표정 프리셋 — 유닛마다 성격이 드러나도록 눈매/입을 바꾼다 */
+  FACES: {
+    normal: { brow: 0, mouth: 'smile', lash: 0 },
+    fierce: { brow: -1, mouth: 'grit', lash: 0 },   /* 전사 : 눈썹 치켜뜬 결의 */
+    calm: { brow: .4, mouth: 'soft', lash: 0 },     /* 현자 : 부드러운 반달눈 */
+    cute: { brow: .2, mouth: 'cat', lash: 1 },      /* 마스코트 : 속눈썹 + 냥 입 */
+    wicked: { brow: -1.2, mouth: 'fang', lash: 0 }, /* 마족 : 송곳니 */
+    blank: { brow: 0, mouth: 'none', lash: 0 },     /* 언데드/기계 */
+  },
+
   /** 운빨겜 스타일 동글동글 눈 — 머리 종류와 무관하게 통일된 사랑스러운 얼굴을 준다 */
-  cuteEyes(c, S, t, seed) {
-    const blink = (Math.sin(t * 1.7 + seed) > .985) ? .12 : 1;
-    const r = S * .095, dx = S * .135, ey = -S * .03;
+  cuteEyes(c, S, t, seed, look) {
+    const F = this.FACES[(look && look.face) || 'normal'] || this.FACES.normal;
+    const blink = (Math.sin(t * 1.7 + seed) > .972) ? .1 : 1;
+    /* 운빨겜 눈 : 세로로 긴 타원 + 눈을 거의 채우는 큰 홍채 (동그란 흰자가 많으면
+       고글처럼 보인다). 간격을 넉넉히 벌려야 두 눈이 붙어 보이지 않는다. */
+    const r = S * .105, ry = r * 1.28, dx = S * .175, ey = S * .015;
+    const ink = '#20161a';
+    const lw = Math.max(.7, S * .022);
+
+    /* 눈썹 — 표정의 핵심 */
+    if (F.brow !== 0) {
+      c.strokeStyle = ink; c.lineWidth = Math.max(.9, S * .032); c.lineCap = 'round';
+      for (const d of [-1, 1]) {
+        const bx = d * dx, by = ey - r * 1.5;
+        c.beginPath();
+        c.moveTo(bx - r * .6, by + F.brow * r * .3);
+        c.quadraticCurveTo(bx, by - r * .22, bx + r * .6, by - F.brow * r * .3);
+        c.stroke();
+      }
+      c.lineCap = 'butt';
+    }
+
     for (const d of [-1, 1]) {
       const ex = d * dx;
-      c.fillStyle = '#fff';
-      c.beginPath(); c.ellipse(ex, ey, r, r * blink, 0, 0, U.TAU); c.fill();
-      c.strokeStyle = 'rgba(20,14,16,.55)'; c.lineWidth = Math.max(.6, S * .014);
+      if (blink <= .4) {
+        /* 감은 눈 : 아래로 볼록한 호 하나 (^^ 느낌) */
+        c.strokeStyle = ink; c.lineWidth = lw * 2.1; c.lineCap = 'round';
+        c.beginPath();
+        c.arc(ex, ey + ry * .35, r * .95, Math.PI * 1.15, Math.PI * 1.85);
+        c.stroke(); c.lineCap = 'butt';
+        continue;
+      }
+      /* 운빨겜 눈 : 흰 테두리를 두르지 않고 홍채 자체가 눈이 된다.
+         흰자에 링을 그리면 안경처럼 보이기 때문에, 눈동자를 꽉 채우고
+         위쪽에만 두꺼운 눈꺼풀 선을 얹는다. */
+      const irisCol = (look && look.eyeCol) || '#33253a';
+      const ig = c.createLinearGradient(0, ey - ry, 0, ey + ry);
+      ig.addColorStop(0, U.mixHex(irisCol, '#04020a', .78));
+      ig.addColorStop(.62, U.mixHex(irisCol, '#04020a', .42));
+      ig.addColorStop(1, U.mixHex(irisCol, '#ffffff', .12));
+      const eye = new Path2D();
+      eye.ellipse(ex, ey, r, ry, 0, 0, U.TAU);
+      c.fillStyle = ig; c.fill(eye);
+
+      /* 하이라이트는 clip 없이도 눈 안에 들어오도록 반경을 잡는다
+         (clip 은 캔버스에서 가장 비싼 연산이라 캐릭터마다 쓰면 프레임을 잡아먹는다) */
+      c.fillStyle = U.rgba(U.mixHex(irisCol, '#ffffff', .5), .42);
+      c.beginPath(); c.ellipse(ex, ey + ry * .58, r * .6, ry * .26, 0, 0, U.TAU); c.fill();
+      c.fillStyle = 'rgba(255,255,255,.98)';
+      c.beginPath(); c.ellipse(ex - d * r * .3, ey - ry * .34, r * .32, r * .37, -.42, 0, U.TAU); c.fill();
+      c.fillStyle = 'rgba(255,255,255,.72)';
+      c.beginPath(); c.arc(ex + d * r * .34, ey + ry * .28, r * .16, 0, U.TAU); c.fill();
+
+      /* 눈 외곽 + 두꺼운 윗눈꺼풀 */
+      c.strokeStyle = ink; c.lineWidth = lw; c.stroke(eye);
+      c.lineWidth = lw * 2.2; c.lineCap = 'round';
+      c.beginPath();
+      c.ellipse(ex, ey, r, ry, 0, Math.PI * 1.12, Math.PI * 1.88);
       c.stroke();
-      if (blink > .4) {
-        c.fillStyle = '#241a1e';
-        c.beginPath(); c.arc(ex + d * r * .18, ey + r * .18, r * .58, 0, U.TAU); c.fill();
-        c.fillStyle = 'rgba(255,255,255,.95)';
-        c.beginPath(); c.arc(ex - d * r * .22, ey - r * .28, r * .24, 0, U.TAU); c.fill();
-        c.beginPath(); c.arc(ex + d * r * .35, ey + r * .38, r * .12, 0, U.TAU); c.fill();
+      c.lineCap = 'butt';
+      /* 속눈썹 */
+      if (F.lash) {
+        c.strokeStyle = ink; c.lineWidth = lw * 1.2; c.lineCap = 'round';
+        c.beginPath();
+        c.moveTo(ex + d * r * .85, ey - r * .6);
+        c.lineTo(ex + d * r * 1.25, ey - r * .95);
+        c.stroke(); c.lineCap = 'butt';
       }
     }
+
+    /* 볼터치 — 아기 같은 홍조 */
+    c.fillStyle = 'rgba(255,120,150,.3)';
+    for (const d of [-1, 1]) {
+      c.beginPath(); c.ellipse(d * (dx + r * 1.05), ey + ry * .95, r * .52, r * .3, 0, 0, U.TAU); c.fill();
+    }
+
+    /* 입 */
+    const my = ey + ry * 1.85;
+    c.strokeStyle = ink; c.lineWidth = Math.max(.8, S * .026); c.lineCap = 'round';
+    c.fillStyle = ink;
+    switch (F.mouth) {
+      case 'smile':
+        c.beginPath(); c.arc(0, my - r * .3, r * .42, .35, Math.PI - .35); c.stroke(); break;
+      case 'soft':
+        c.beginPath(); c.arc(0, my - r * .2, r * .3, .5, Math.PI - .5); c.stroke(); break;
+      case 'grit': {
+        /* 앙다문 이 */
+        const w = r * .62, h = r * .36;
+        c.fillStyle = '#fff';
+        c.beginPath(); c.roundRect(-w, my - h * .5, w * 2, h, r * .1); c.fill();
+        c.strokeStyle = ink; c.lineWidth = lw; c.stroke();
+        c.beginPath(); c.moveTo(0, my - h * .5); c.lineTo(0, my + h * .5); c.stroke();
+        break;
+      }
+      case 'cat':
+        c.beginPath();
+        c.moveTo(-r * .42, my - r * .2);
+        c.quadraticCurveTo(-r * .21, my + r * .22, 0, my - r * .12);
+        c.quadraticCurveTo(r * .21, my + r * .22, r * .42, my - r * .2);
+        c.stroke(); break;
+      case 'fang': {
+        c.beginPath(); c.arc(0, my - r * .35, r * .45, .3, Math.PI - .3); c.stroke();
+        c.fillStyle = '#fff';
+        for (const d of [-1, 1]) {
+          c.beginPath();
+          c.moveTo(d * r * .3, my - r * .08);
+          c.lineTo(d * r * .16, my + r * .34);
+          c.lineTo(d * r * .04, my - r * .05);
+          c.closePath(); c.fill();
+        }
+        break;
+      }
+    }
+    c.lineCap = 'butt';
   },
 
   /* ===================================================================
    *  운빨겜 스타일 두꺼운 외곽선 — 실루엣을 여러 방향으로 겹쳐 찍어
    *  스티커 같은 검은 테두리를 값싸게 흉내낸다 (셰이프별 재작업 없이 적용)
    * =================================================================== */
-  _outlineCv: null,
+  _outlineCv: null, _shadeCv: null,
   /** 화면에 살아있는 유닛이 많을 때는 자동으로 외곽선을 생략해 프레임을 지킨다
    *  (Game.render 에서 매 프레임 갱신) */
   outlineBudget: true,
+
+  /** 스크래치 캔버스 확보 (크기 바뀔 때만 재할당) */
+  _scratch(key, w, h) {
+    let cv = this[key];
+    if (!cv) cv = this[key] = document.createElement('canvas');
+    if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
+    return cv;
+  },
+
+  /**
+   * 실루엣 전체에 한 번에 입체 음영을 입혀 "플라스틱 피규어" 질감을 만든다.
+   * 파츠별로 그라디언트를 다시 짜지 않고도 전 캐릭터에 일관된 광원을 줄 수 있다.
+   *  - multiply 세로 그라디언트 : 아래쪽이 어두워져 볼륨이 생긴다
+   *  - source-atop 방사광     : 좌상단에서 들어오는 광택
+   *  - source-atop 바닥 반사광 : 아래에서 올라오는 환경광 (장난감 특유의 느낌)
+   */
+  _figurineShade(cx, w, h, oy, S) {
+    const top = oy - S * 2.5, bot = oy + S * .95;
+    /* source-atop 은 이미 그려진 픽셀 위에만 얹히므로 실루엣 밖으로 새지 않는다
+       (multiply 는 투명 픽셀까지 칠해버려 캐릭터 주변에 사각형이 남는다) */
+    cx.globalCompositeOperation = 'source-atop';
+    const g = cx.createLinearGradient(0, top, 0, bot);
+    g.addColorStop(0, 'rgba(20,14,30,0)');
+    g.addColorStop(.52, 'rgba(20,14,30,0)');
+    g.addColorStop(.82, 'rgba(24,16,36,.20)');
+    g.addColorStop(1, 'rgba(24,16,36,.38)');
+    cx.fillStyle = g; cx.fillRect(0, 0, w, h);
+
+    /* 좌상단 광택 */
+    const hx = w / 2 - S * .78, hy = oy - S * 1.85;
+    const hg = cx.createRadialGradient(hx, hy, 0, hx, hy, S * 1.65);
+    hg.addColorStop(0, 'rgba(255,255,255,.42)');
+    hg.addColorStop(.55, 'rgba(255,255,255,.13)');
+    hg.addColorStop(1, 'rgba(255,255,255,0)');
+    cx.fillStyle = hg; cx.fillRect(0, 0, w, h);
+    /* 바닥 반사광 (살짝 푸른 환경광) */
+    const bg = cx.createLinearGradient(0, oy + S * .1, 0, bot);
+    bg.addColorStop(0, 'rgba(150,190,255,0)');
+    bg.addColorStop(1, 'rgba(150,190,255,.20)');
+    cx.fillStyle = bg; cx.fillRect(0, 0, w, h);
+    cx.globalCompositeOperation = 'source-over';
+  },
+
   drawCharOutlined(c, x, y, S, look, st, outlineColor, outlineW) {
     if (!this.outlineBudget) { this.drawChar(c, x, y, S, look, st); return; }
-    outlineColor = outlineColor || '#241a16';
-    outlineW = outlineW !== undefined ? outlineW : Math.max(1.4, S * .085);
-    const pad = Math.ceil(outlineW * 2 + 4);
-    const w = Math.ceil(S * 3.4) + pad * 2, h = Math.ceil(S * 3.9) + pad * 2;
-    let sc = this._outlineCv;
-    if (!sc) sc = this._outlineCv = document.createElement('canvas');
-    if (sc.width !== w || sc.height !== h) { sc.width = w; sc.height = h; }
-    const cx = sc.getContext('2d');
-    cx.clearRect(0, 0, w, h);
-    const ox = w / 2, oy = h * .64;
-    this.drawChar(cx, ox, oy, S, look, st);
-    cx.globalCompositeOperation = 'source-in';
-    cx.fillStyle = outlineColor;
-    cx.fillRect(0, 0, w, h);
-    cx.globalCompositeOperation = 'source-over';
-    const dirs = 8;
+    outlineColor = outlineColor || '#1b1218';
+    /* 운빨겜 특유의 두꺼운 스티커 테두리 */
+    outlineW = outlineW !== undefined ? outlineW : Math.max(1.8, S * .15);
+    const pad = Math.ceil(outlineW * 2 + 6);
+    const w = Math.ceil(S * 3.8) + pad * 2, h = Math.ceil(S * 4.6) + pad * 2;
+    const ox = w / 2, oy = h * .66;
+
+    /* A : 음영까지 입힌 최종 캐릭터 */
+    const av = this._scratch('_shadeCv', w, h);
+    const ac = av.getContext('2d');
+    ac.clearRect(0, 0, w, h);
+    this.drawChar(ac, ox, oy, S, look, st);
+    this._figurineShade(ac, w, h, oy, S);
+
+    /* B : A 를 단색으로 눌러 만든 실루엣 */
+    const bv = this._scratch('_outlineCv', w, h);
+    const bc = bv.getContext('2d');
+    bc.clearRect(0, 0, w, h);
+    bc.drawImage(av, 0, 0);
+    bc.globalCompositeOperation = 'source-in';
+    bc.fillStyle = outlineColor;
+    bc.fillRect(0, 0, w, h);
+    bc.globalCompositeOperation = 'source-over';
+
+    /* 실루엣을 원형으로 도장 찍어 균일한 두께의 테두리를 만든다 */
+    const dirs = 12;
+    const dx = x - ox, dy = y - oy;
     for (let i = 0; i < dirs; i++) {
       const a = i / dirs * U.TAU;
-      c.drawImage(sc, x - ox + Math.cos(a) * outlineW, y - oy + Math.sin(a) * outlineW);
+      c.drawImage(bv, dx + Math.cos(a) * outlineW, dy + Math.sin(a) * outlineW);
     }
-    this.drawChar(c, x, y, S, look, st);
+    c.drawImage(av, dx, dy);
   },
 
   /* ===================================================================
@@ -1368,7 +1677,9 @@ const GFX = {
    * =================================================================== */
   cache: new Map(),
   cacheHits: 0, cacheMiss: 0,
-  MAX_CACHE: 900,
+  /* 유닛 스프라이트가 커진 만큼(장당 약 50KB) 장수를 줄여 메모리를 묶어 둔다.
+     통상 전투는 유닛 15종 × 16장 + 적 20종 × 8장 ≈ 400장이면 충분하다 */
+  MAX_CACHE: 500,
 
   /** look 을 캐시된 캔버스로 렌더 (프레임 단위) */
   sprite(look, S, frame, frames, extra) {
@@ -1376,32 +1687,37 @@ const GFX = {
     let cv = this.cache.get(key);
     if (cv) { this.cacheHits++; return cv; }
     this.cacheMiss++;
-    const outlineW = Math.max(1.4, S * .085);
-    const pad = S * 1.5 + outlineW * 2 + 4;
-    const w = Math.ceil(S * 3 + pad), h = Math.ceil(S * 3.4 + pad);
+    const outlineW = Math.max(1.8, S * .15);
+    const pad = S * 2.1 + outlineW * 2 + 6;
+    const w = Math.ceil(S * 3.4 + pad), h = Math.ceil(S * 4 + pad);
     cv = document.createElement('canvas');
     cv.width = w; cv.height = h;
     const c = cv.getContext('2d');
     const t = (frame / frames) * (Math.PI * 2 / 2.1);
-    const ox = w / 2, oy = h * .62;
+    const ox = w / 2, oy = h * .64;
     const st = { t, phase: (frame / frames) * U.TAU, aim: 0, seed: 0 };
-    /* 외곽선을 캐시된 비트맵에 직접 구워 넣는다 — 프레임당 1회만 비용 발생, 이후엔 공짜 */
-    let sc = this._outlineCv;
-    if (!sc) sc = this._outlineCv = document.createElement('canvas');
-    if (sc.width !== w || sc.height !== h) { sc.width = w; sc.height = h; }
-    const scx = sc.getContext('2d');
-    scx.clearRect(0, 0, w, h);
-    this.drawChar(scx, ox, oy, S, look, st);
-    scx.globalCompositeOperation = 'source-in';
-    scx.fillStyle = '#241a16';
-    scx.fillRect(0, 0, w, h);
-    scx.globalCompositeOperation = 'source-over';
-    const dirs = 10;
+    /* 외곽선과 입체 음영을 캐시 비트맵에 직접 구워 넣는다
+       — 프레임당 1회만 비용 발생, 이후엔 공짜 */
+    const av = this._scratch('_shadeCv', w, h);
+    const ac = av.getContext('2d');
+    ac.clearRect(0, 0, w, h);
+    this.drawChar(ac, ox, oy, S, look, st);
+    this._figurineShade(ac, w, h, oy, S);
+
+    const bv = this._scratch('_outlineCv', w, h);
+    const bc = bv.getContext('2d');
+    bc.clearRect(0, 0, w, h);
+    bc.drawImage(av, 0, 0);
+    bc.globalCompositeOperation = 'source-in';
+    bc.fillStyle = '#1b1218';
+    bc.fillRect(0, 0, w, h);
+    bc.globalCompositeOperation = 'source-over';
+    const dirs = 12;
     for (let i = 0; i < dirs; i++) {
       const a = i / dirs * U.TAU;
-      c.drawImage(sc, Math.cos(a) * outlineW, Math.sin(a) * outlineW);
+      c.drawImage(bv, Math.cos(a) * outlineW, Math.sin(a) * outlineW);
     }
-    this.drawChar(c, ox, oy, S, look, st);
+    c.drawImage(av, 0, 0);
     cv._ox = ox; cv._oy = oy; cv._key = key;
     if (this.cache.size > this.MAX_CACHE) {
       /* 오래된 절반 제거 */
