@@ -664,6 +664,9 @@ class Unit {
       default: {
         /* 무기 종류마다 다른 발사음 — 전부 같은 소리면 화면이 시끄럽기만 하다 */
         SFX.play(Combat.fireSound(d));
+        /* 쏘는 순간을 눈에 보이게 */
+        VFX.muzzle(this.px, this.py, Math.atan2(target.y - this.py, target.x - this.px),
+          col, g, s.splash > 0 ? 1.4 : 1);
         g.projectiles.push(new Projectile(g, this, target, d.proj, col));
       }
     }

@@ -287,6 +287,34 @@ const VFX = {
     return dur * 1000;
   },
 
+  /**
+   * 총구 섬광 — 유닛이 "쏘는 순간"을 보여 준다.
+   * 발사체는 빠르게 지나가 버려서, 발사 순간에 아무 표시가 없으면
+   * 유닛이 일하고 있는지조차 안 보인다.
+   */
+  muzzle(x, y, ang, color, g, power) {
+    const ts = g ? g.ts : 40;
+    const p = power || 1;
+    /* 앞으로 뻗는 빛 원뿔 */
+    const len = ts * (.42 * p), w = ts * (.2 * p);
+    FX.spawn({
+      x: x + Math.cos(ang) * len * .4, y: y + Math.sin(ang) * len * .4,
+      vx: Math.cos(ang) * 40, vy: Math.sin(ang) * 40,
+      life: .11, size: w * 1.5, size2: 0,
+      color: '#ffffff', color2: color, shape: 'glow',
+    });
+    /* 튀는 불똥 */
+    for (let i = 0; i < 3; i++) {
+      const a = ang + U.rand(-.42, .42);
+      FX.spawn({
+        x, y, vx: Math.cos(a) * U.rand(90, 210) * p, vy: Math.sin(a) * U.rand(90, 210) * p,
+        life: U.rand(.1, .2), size: U.rand(1.6, 3) * p, color, shape: 'spark', drag: .86,
+      });
+    }
+    /* 반동 링 */
+    this.shockwave(x, y, 2, ts * .17 * p, color, .12, 1.6);
+  },
+
   /** 화면 좌표 기준 색종이 (룰렛·대박 연출용) */
   confetti(x, y, color, n) {
     const cols = [color, '#ffd24d', '#7cf0a8', '#6fd0ff', '#ff8ac4', '#ffffff'];
