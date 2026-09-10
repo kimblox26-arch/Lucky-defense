@@ -222,6 +222,10 @@ const Draw = {
     const x = u.px, y = u.py;
     const t = g.time + u.seed;
 
+    /* 드래그로 들어올린 유닛은 원래 자리에 흐린 잔상만 남긴다 */
+    const lifted = g.dragUnit === u && g.dragPos;
+    if (lifted) { c.save(); c.globalAlpha = .3; }
+
     GFX.groundShadow(c, x, y + S * .98, S * .58, S * .19, .34);
     /* 등급 받침대 — 유닛이 올라선 두툼한 원판 */
     this.rarityPodium(c, x, y + S * .96, S, rar, ri, t);
@@ -281,6 +285,8 @@ const Draw = {
       c.fillText('⇪', x - S * 1.0, y - S * .9);
       c.shadowBlur = 0;
     }
+
+    if (lifted) c.restore();
   },
 
   drawMinion(c, m, g) {

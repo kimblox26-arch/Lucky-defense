@@ -1195,7 +1195,8 @@ const Game = {
         this.selected = u;
         this.dragUnit = u;
         this.dragPos = p;
-        if (window.UI) UI.showUnitPanel(u);
+        /* 패널은 손을 뗄 때(=드래그가 아니었을 때) 연다. 누르자마자 열면
+           화면 절반을 덮어 드래그로 옮길 칸이 보이지 않는다. */
       } else {
         this.selected = null;
         if (window.UI) UI.showUnitPanel(null);
@@ -1208,14 +1209,18 @@ const Game = {
       if (this.dragUnit) { this.dragPos = p; ev.preventDefault && ev.preventDefault(); }
     };
     const onUp = (ev) => {
-      if (this.dragUnit && dragging && this.dragPos) {
+      const u = this.dragUnit;
+      if (u && dragging && this.dragPos) {
         const { gx, gy } = toGrid(this.dragPos);
         if (gx >= 0 && gy >= 0 && gx < this.gw && gy < this.gh && !this.isPath(gx, gy)) {
-          this.moveUnit(this.dragUnit, gx, gy);
+          this.moveUnit(u, gx, gy);
           SFX.play('click');
         } else {
           SFX.play('error');
         }
+      } else if (u && !dragging) {
+        /* 그냥 탭 : 이때 상세 패널을 연다 */
+        if (window.UI) UI.showUnitPanel(u);
       }
       this.dragUnit = null; this.dragPos = null; downPos = null; dragging = false;
     };
@@ -1376,21 +1381,53 @@ const Game = {
     /* 날씨 */
     GFX.drawWeather(c, this);
 
-    /* 드래그 중인 유닛 */
+    /* 드래그 중인 유닛 — 손가락을 따라 들어올려진 유닛을 그린다 */
     if (this.dragUnit && this.dragPos) {
       const u = this.dragUnit;
-      const gx = Math.floor((this.dragPos.x - this.ox) / this.ts);
-      const gy = Math.floor((this.dragPos.y - this.oy) / this.ts);
-      const valid = gx >= 0 && gy >= 0 && gx < this.gw && gy < this.gh && !this.isPath(gx, gy);
-      c.save();
-      c.globalAlpha = .85;
-      c.strokeStyle = valid ? '#7cff9c' : '#ff5a5a'; c.lineWidth = 3;
-      if (valid) c.strokeRect(this.ox + gx * this.ts, this.oy + gy * this.ts, this.ts, this.ts);
-      Draw.sprite(c, this.dragPos.x, this.dragPos.y, this.ts * .42, u.def.art, ELEM[u.def.elem].color, { t: this.time });
-      c.restore();
+      const ts = this.ts;
+      const gx = Math.floor((this.dragPos.x - this.ox) / ts);
+      const gy = Math.floor((this.dragPos.y - this.oy) / ts);
+      const inGrid = gx >= 0 && gy >= 0 && gx < this.gw && gy < this.gh;
+      const occupant = inGrid ? this.unitAt(gx, gy) : null;
+      const canMerge = occupant && occupant !== u && occupant.key === u.key && occupant.star === u.star;
+      const valid = inGrid && !this.isPath(gx, gy);
+      const col = !valid ? '#ff5a5a' : canMerge ? '#ffd24d' : '#7cff9c';
+
+      /* 놓을 칸 표시 */
+      if (inGrid) {
+        const cx = this.ox + gx * ts, cy = this.oy + gy * ts;
+        c.save();
+        c.fillStyle = U.rgba(col, .18);
+        c.fillRect(cx + 2, cy + 2, ts - 4, ts - 4);
+        c.strokeStyle = col; c.lineWidth = 3; c.setLineDash([7, 5]);
+        c.lineDashOffset = -this.time * 26;
+        c.strokeRect(cx + 2, cy + 2, ts - 4, ts - 4);
+        c.setLineDash([]);
+        if (canMerge) {
+          c.fillStyle = col; c.font = `900 ${Math.round(ts * .3)}px system-ui`;
+          c.textAlign = 'center'; c.textBaseline = 'middle';
+          c.fillText('합성', cx + ts / 2, cy + ts / 2);
+        }
+        c.restore();
+      }
+
       /* 사거리 미리보기 */
-      c.strokeStyle = U.rgba(ELEM[u.def.elem].color, .4); c.lineWidth = 2;
-      c.beginPath(); c.arc(this.dragPos.x, this.dragPos.y, u.stat.rng * this.ts, 0, U.TAU); c.stroke();
+      c.save();
+      c.fillStyle = U.rgba(ELEM[u.def.elem].color, .07);
+      c.beginPath(); c.arc(this.dragPos.x, this.dragPos.y, u.stat.rng * ts, 0, U.TAU); c.fill();
+      c.strokeStyle = U.rgba(ELEM[u.def.elem].color, .5); c.lineWidth = 2;
+      c.beginPath(); c.arc(this.dragPos.x, this.dragPos.y, u.stat.rng * ts, 0, U.TAU); c.stroke();
+      c.restore();
+
+      /* 들어올린 느낌 : 바닥 그림자는 원래 칸에, 본체는 손가락 위로 살짝 띄워 크게 */
+      const lift = ts * .34;
+      GFX.groundShadow(c, this.dragPos.x, this.dragPos.y + ts * .1, ts * .3, ts * .1, .32);
+      c.save();
+      c.globalAlpha = .95;
+      GFX.drawUnitChar(c, this.dragPos.x, this.dragPos.y - lift, ts * .5,
+        Draw.unitLook(u.def),
+        { t: this.time + u.seed, phase: this.time * 1.6, aim: 0, recoil: 0, seed: u.seed });
+      c.restore();
     }
 
     /* 스킬 조준 */
