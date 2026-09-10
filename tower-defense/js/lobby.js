@@ -362,13 +362,21 @@ const Lobby = {
     document.getElementById('lbGem').textContent = U.fmt(Game.gems);
 
     /* 요약 통계 */
-    document.getElementById('lbStats').innerHTML = `
-      <div><span>최고 웨이브</span><b>${m.maxWave || 0}</b></div>
-      <div><span>총 처치</span><b>${U.fmt(m.kills || 0)}</b></div>
-      <div><span>보스 처치</span><b>${m.bossKills || 0}</b></div>
-      <div><span>플레이</span><b>${m.runs || 0}회</b></div>
-      <div><span>도감</span><b>${Game.collectedCount()}/${UNITS.length}</b></div>
-      <div><span>업적</span><b>${Object.keys(Game.achieved).length}/${ACHIEVEMENTS.length}</b></div>`;
+    /* [아이콘, 이름, 값, 색, 진행률(있으면 막대)] */
+    const cx = Game.collectedCount(), ac = Object.keys(Game.achieved).length;
+    const cells = [
+      ['🌊', '최고 웨이브', m.maxWave || 0, '#4ea8ff', null],
+      ['🗡', '총 처치', U.fmt(m.kills || 0), '#ff7a45', null],
+      ['👑', '보스 처치', m.bossKills || 0, '#ffd24d', null],
+      ['🎮', '플레이', (m.runs || 0) + '회', '#c48fff', null],
+      ['📖', '도감', `${cx}/${UNITS.length}`, '#7fd8ff', cx / UNITS.length],
+      ['🏆', '업적', `${ac}/${ACHIEVEMENTS.length}`, '#7cff9c', ac / ACHIEVEMENTS.length],
+    ];
+    document.getElementById('lbStats').innerHTML = cells.map(c => `
+      <div style="--c:${c[3]}">
+        <span><em>${c[0]}</em>${c[1]}</span><b>${c[2]}</b>
+        ${c[4] != null ? `<u style="width:${(c[4] * 100).toFixed(1)}%"></u>` : ''}
+      </div>`).join('');
 
     /* 알림 배지 */
     const daily = Account.dailyState();
