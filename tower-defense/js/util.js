@@ -420,7 +420,101 @@ const SFX = {
       case 'heal': [660, 880].forEach((f, i) => setTimeout(() => this.tone(f, .2, 'sine', .12), i * 90)); break;
       case 'combo': this.tone(700 + Math.min(1200, (this._combo || 0) * 40), .07, 'square', .1, 220); break;
       case 'unlock': [392, 523, 784].forEach((f, i) => setTimeout(() => this.tone(f, .3, 'sine', .18), i * 120)); break;
+
+      /* ---------------- 추가 사운드 ---------------- *
+       * 기존 소리는 대부분 단발이라 타격감이 얕았다. 아래는 저음(무게) +
+       * 중음(본체) + 고음/노이즈(광택) 를 겹쳐 한 방이 두껍게 들리도록 했다. */
+
+      /* 무기별 발사음 — 유닛마다 다른 소리가 나야 화면이 시끄럽지 않고 리듬이 산다 */
+      case 'bow': if (!this.throttle('bow', 30)) return;
+        this.noise(.05, .06, 3400, 'highpass'); this.tone(880, .05, 'triangle', .05, -320); break;
+      case 'gun': if (!this.throttle('gun', 30)) return;
+        this.tone(180, .07, 'square', .14, -90); this.noise(.06, .12, 2200, 'highpass'); break;
+      case 'staff': if (!this.throttle('staff', 40)) return;
+        this.tone(520, .16, 'sine', .1, 260); this.tone(1040, .1, 'triangle', .05, 180); break;
+      case 'blade': if (!this.throttle('blade', 32)) return;
+        this.noise(.07, .09, 5200, 'highpass'); this.tone(1300, .06, 'sawtooth', .06, -700); break;
+      case 'hammer': if (!this.throttle('hammer', 60)) return;
+        this.tone(110, .16, 'sawtooth', .2, -46); this.noise(.14, .16, 800); break;
+      case 'dart': if (!this.throttle('dart', 26)) return;
+        this.tone(1500, .045, 'square', .06, -900); break;
+
+      /* 타격/처치 */
+      case 'bigcrit': this.tone(1500, .1, 'square', .2, 900);
+        this.tone(300, .16, 'sawtooth', .16, -120); this.noise(.14, .16, 5200, 'highpass'); break;
+      case 'pierce': if (!this.throttle('pierce', 40)) return;
+        this.tone(2100, .09, 'sawtooth', .09, -1500); break;
+      case 'bosshit': if (!this.throttle('bosshit', 90)) return;
+        this.tone(140, .18, 'square', .18, -60); this.noise(.16, .14, 1400); break;
+      case 'bossdie': [160, 120, 90, 60].forEach((f, i) => setTimeout(() => {
+        this.tone(f, .8, 'sawtooth', .3, -22); this.noise(.7, .24, 460);
+      }, i * 170)); break;
+
+      /* 상태이상 */
+      case 'burn': if (!this.throttle('burn', 200)) return; this.noise(.5, .06, 1100); break;
+      case 'poison': if (!this.throttle('poison', 220)) return;
+        this.tone(220, .28, 'sine', .07, -70); this.noise(.24, .05, 700); break;
+      case 'shock': if (!this.throttle('shock', 90)) return;
+        this.noise(.12, .16, 6200, 'highpass'); this.tone(2200, .08, 'square', .07, -1400); break;
+      case 'curse': if (!this.throttle('curse', 200)) return;
+        this.tone(150, .4, 'sawtooth', .1, -50); this.tone(151, .4, 'sawtooth', .08, -48); break;
+      case 'stun': this.tone(700, .14, 'square', .12, -400); this.noise(.12, .1, 1800); break;
+      case 'shieldbreak': this.noise(.24, .2, 4200, 'highpass');
+        [900, 1300, 700].forEach((f, i) => setTimeout(() => this.tone(f, .1, 'square', .1, -300), i * 45)); break;
+
+      /* 가챠 — 등급이 올라갈수록 길고 화려하게 */
+      case 'pull': this.tone(300, .1, 'triangle', .12, 180); this.noise(.08, .06, 3000, 'highpass'); break;
+      case 'drumroll': for (let i = 0; i < 14; i++) setTimeout(() => this.noise(.05, .08, 900), i * 62); break;
+      case 'rare': [523, 784].forEach((f, i) => setTimeout(() => this.tone(f, .26, 'triangle', .17), i * 90)); break;
+      case 'epic': [523, 659, 880, 1046].forEach((f, i) => setTimeout(() => {
+        this.tone(f, .34, 'sine', .2); this.tone(f * 2, .2, 'triangle', .07);
+      }, i * 90)); break;
+      case 'ultimate': [392, 523, 659, 784, 1046, 1318, 1568].forEach((f, i) => setTimeout(() => {
+        this.tone(f, .55, 'sine', .24); this.tone(f * 1.5, .34, 'triangle', .12);
+        if (i % 2 === 0) this.noise(.2, .07, 6000, 'highpass');
+      }, i * 105)); break;
+      case 'primordial': [262, 330, 392, 523, 659, 784, 1046, 1568, 2093].forEach((f, i) => setTimeout(() => {
+        this.tone(f, .7, 'sine', .26); this.tone(f * 2, .45, 'triangle', .12);
+        this.tone(f / 2, .5, 'sawtooth', .08);
+        this.noise(.24, .08, 7000, 'highpass');
+      }, i * 115)); break;
+      case 'jackpot': for (let i = 0; i < 6; i++) setTimeout(() => {
+        this.tone(1200 + i * 220, .1, 'square', .14, 300); this.noise(.08, .1, 6000, 'highpass');
+      }, i * 70); break;
+
+      /* 스킬 조합 */
+      case 'charge': this.tone(160, .5, 'sawtooth', .12, 900); break;
+      case 'combo2': [660, 990].forEach((f, i) => setTimeout(() => {
+        this.tone(f, .2, 'square', .16, 200); }, i * 60));
+        this.noise(.2, .1, 4000, 'highpass'); break;
+      case 'combo3': [523, 784, 1046, 1568].forEach((f, i) => setTimeout(() => {
+        this.tone(f, .3, 'sine', .2); this.tone(f * 1.5, .2, 'square', .1);
+      }, i * 70)); this.tone(70, .5, 'sawtooth', .24, -30); break;
+      case 'nuke': this.tone(50, .9, 'sawtooth', .32, -18); this.noise(1.0, .3, 380);
+        setTimeout(() => this.noise(.7, .18, 900), 160); break;
+
+      /* UI */
+      case 'tab': this.tone(560, .04, 'triangle', .07); break;
+      case 'open': [440, 660].forEach((f, i) => setTimeout(() => this.tone(f, .1, 'sine', .1), i * 50)); break;
+      case 'close': [660, 440].forEach((f, i) => setTimeout(() => this.tone(f, .09, 'sine', .08), i * 45)); break;
+      case 'buy': this.tone(880, .07, 'square', .1); setTimeout(() => this.tone(1320, .12, 'square', .1), 60);
+        setTimeout(() => this.tone(1760, .14, 'sine', .08), 130); break;
+      case 'levelup': [523, 659, 784, 1046].forEach((f, i) => setTimeout(() =>
+        this.tone(f, .22, 'square', .15), i * 65)); break;
+      case 'achieve': [784, 988, 1175, 1568].forEach((f, i) => setTimeout(() => {
+        this.tone(f, .3, 'sine', .18); this.tone(f * 2, .18, 'triangle', .07);
+      }, i * 85)); break;
+      case 'place': this.tone(420, .07, 'triangle', .1, -120); this.noise(.05, .05, 1400); break;
+      case 'pickup': this.tone(620, .06, 'triangle', .09, 200); break;
+      case 'countdown': this.tone(880, .1, 'square', .12); break;
+      case 'warning': [440, 0, 440].forEach((f, i) => { if (f) setTimeout(() => this.tone(f, .16, 'sawtooth', .14), i * 180); }); break;
     }
+  },
+
+  /** 등급 인덱스에 맞는 획득 팡파레 */
+  playRarity(ri) {
+    this.play(ri >= 7 ? 'primordial' : ri >= 6 ? 'ultimate' : ri >= 5 ? 'mythic'
+      : ri >= 4 ? 'legendary' : ri >= 3 ? 'epic' : ri >= 2 ? 'rare' : 'pull');
   },
 
   /* 아주 단순한 절차적 BGM (아르페지오 + 베이스) */

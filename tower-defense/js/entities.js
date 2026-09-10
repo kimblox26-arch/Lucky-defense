@@ -6,6 +6,21 @@
 
 /* ============================================================ 전투 계산 */
 const Combat = {
+  /** 무기/투사체 종류 → 발사음 (유닛마다 소리가 달라야 전투가 리듬감 있게 들린다) */
+  fireSound(def) {
+    const w = (def.look && def.look.weapon) || '';
+    if (w === 'bow' || w === 'crossbow') return 'bow';
+    if (w === 'rifle' || w === 'cannon' || w === 'launcher') return 'gun';
+    if (w === 'staff' || w === 'wand' || w === 'orb' || w === 'tome') return 'staff';
+    if (w === 'sword' || w === 'greatsword' || w === 'dagger' || w === 'scythe'
+      || w === 'axe' || w === 'claw' || w === 'chakram') return 'blade';
+    if (w === 'hammer' || w === 'halberd' || w === 'spear') return 'hammer';
+    if (w === 'dart' || w === 'sling') return 'dart';
+    const p = def.proj;
+    return p === 'arrow' || p === 'bolt' || p === 'dart' ? 'bow'
+      : p === 'bomb' ? 'cannon' : p === 'bullet' ? 'gun' : 'staff';
+  },
+
   /**
    * 최종 피해 계산 & 적용
    * opts: {elem, crit, critMul, pen, trueDmg, splash, isDot, source, tag}
@@ -61,7 +76,7 @@ const Combat = {
       if (enemy.shield <= 0) {
         enemy.shield = 0;
         VFX.shieldBreak(enemy.x, enemy.y, g);
-        SFX.play('freeze');
+        SFX.play('shieldbreak');
       }
       if (leftover <= 0) {
         enemy.hitFlash = .1;
@@ -76,7 +91,7 @@ const Combat = {
       dmg = enemy.hp;
       FX.popText(enemy.x, enemy.y - g.ts * .5, '처형!', '#ff4f7e', 17);
       VFX.execute(enemy.x, enemy.y, g);
-      SFX.play('crit');
+      SFX.play('bigcrit');
     }
 
     const applied = Math.min(enemy.hp, dmg);
@@ -138,21 +153,25 @@ const Combat = {
       }
     }
     if (s.burn) {
+      SFX.play('burn');
       e.burn = Math.max(e.burn, s.burn.dur);
       e.burnDps = Math.max(e.burnDps, s.burn.dps * (1 + g.bonus.dot) * (opts.dmgScale || 1));
       e.burnSrc = opts.source || null;
     }
     if (s.poison) {
+      SFX.play('poison');
       e.poisonStacks = Math.min(s.poison.stack || 5, e.poisonStacks + 1);
       e.poison = Math.max(e.poison, s.poison.dur);
       e.poisonDps = Math.max(e.poisonDps, s.poison.dps * (1 + g.bonus.dot) * (opts.dmgScale || 1));
       e.poisonSrc = opts.source || null;
     }
     if (s.stun && Math.random() < (s.stun + g.bonus.stun)) {
+      SFX.play('stun');
       if (!e.boss) { e.stun = Math.max(e.stun, .8); }
       else e.chill = Math.max(e.chill, 1), e.chillAmt = Math.max(e.chillAmt, .3);
     }
     if (s.curse) {
+      SFX.play('curse');
       e.curse = Math.max(e.curse, s.curse.dur);
       e.curseAmt = Math.max(e.curseAmt, s.curse.amt + g.bonus.curse);
     }
@@ -365,7 +384,7 @@ class Enemy {
     } else {
       FX.burst(this.x, this.y, col, 10, { speed: 150, size: 4.5, drag: .88 });
       FX.sparks(this.x, this.y, '#fff', 5, 200);
-      SFX.play('die');
+      SFX.play(this.boss ? 'bossdie' : 'die');
     }
     FX.popText(this.x + U.rand(-10, 10), this.y - g.ts * .55, '+' + U.fmt(gold), '#ffd24d', 13);
 
@@ -643,8 +662,8 @@ class Unit {
         break;
       }
       default: {
-        SFX.play(d.proj === 'arrow' || d.proj === 'bolt' || d.proj === 'dart' ? 'arrow'
-          : d.proj === 'bomb' ? 'cannon' : d.proj === 'bullet' ? 'shoot' : 'magic');
+        /* 무기 종류마다 다른 발사음 — 전부 같은 소리면 화면이 시끄럽기만 하다 */
+        SFX.play(Combat.fireSound(d));
         g.projectiles.push(new Projectile(g, this, target, d.proj, col));
       }
     }

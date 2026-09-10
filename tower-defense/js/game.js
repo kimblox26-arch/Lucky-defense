@@ -510,7 +510,7 @@ const Game = {
       this.playSummonFx(u, def, rar, ri);
     } else {
       /* 대량소환 중에는 가볍게 : 자리마다 스파크만 튀긴다 */
-      SFX.play(ri >= 4 ? 'legendary' : 'coin');
+      SFX.play(ri >= 4 ? 'jackpot' : ri >= 2 ? 'rare' : 'pull');
       FX.popText(u.px, u.py - this.ts * .8, def.name, col, 13 + ri);
     }
     this.checkAchievements();
@@ -522,12 +522,13 @@ const Game = {
   playSummonFx(u, def, rar, ri) {
     const col = rar.color;
     FX.popText(u.px, u.py - this.ts * .8, def.name, col, 14 + ri);
-    if (ri >= 6) { SFX.play('mythic'); FX.flash(col, .6); FX.shake(14); FX.stop(.14); if (window.UI) UI.rarityBanner(def, rar); }
-    else if (ri >= 5) { SFX.play('mythic'); FX.flash(col, .45); FX.shake(10); if (window.UI) UI.rarityBanner(def, rar); }
-    else if (ri >= 4) { SFX.play('legendary'); FX.flash(col, .3); FX.shake(6); if (window.UI) UI.rarityBanner(def, rar); }
-    else if (ri >= 3) { SFX.play('upgrade'); FX.flash(col, .18); FX.shake(3); if (window.UI) UI.rarityBanner(def, rar); }
-    else if (ri >= 2) { SFX.play('summon'); if (window.UI) UI.rarityBanner(def, rar); }
-    else SFX.play('summon');
+    /* 등급마다 다른 팡파레 — 소리만 듣고도 무엇이 나왔는지 알 수 있게 */
+    SFX.playRarity(ri);
+    if (ri >= 6) { SFX.play('jackpot'); FX.flash(col, .6); FX.shake(14); FX.stop(.14); if (window.UI) UI.rarityBanner(def, rar); }
+    else if (ri >= 5) { SFX.play('jackpot'); FX.flash(col, .45); FX.shake(10); if (window.UI) UI.rarityBanner(def, rar); }
+    else if (ri >= 4) { FX.flash(col, .3); FX.shake(6); if (window.UI) UI.rarityBanner(def, rar); }
+    else if (ri >= 3) { FX.flash(col, .18); FX.shake(3); if (window.UI) UI.rarityBanner(def, rar); }
+    else if (ri >= 2) { if (window.UI) UI.rarityBanner(def, rar); }
   },
 
   /** 운빨존많겜식 N연차 소환 — 결과를 모았다가 한 번에 화려하게 공개한다 */
@@ -893,6 +894,69 @@ const Game = {
     const s = SKILLS.find(x => x.key === key);
     return this.skillCd[key] <= 0 && this.mana >= s.mana;
   },
+
+  /* ---------------------------------------------------------- 스킬 연계 */
+  /**
+   * 원소 궁합표 — 앞선 스킬이 깔아 둔 판을 받아 터뜨리면 보너스가 붙는다.
+   * (예: 얼려 놓고 부수기, 기름 대신 화상 깔고 폭발시키기)
+   */
+  SKILL_ELEM: {
+    meteor: 'fire', meteorshower: 'fire', poisonfog: 'poison', blizzard: 'ice',
+    thunderstorm: 'thunder', earthquake: 'earth', judgement: 'holy',
+    blackhole: 'void', railgun: 'phys', annihilate: 'void',
+    timewarp: 'time', timestop: 'time', sanctuary: 'holy',
+    overdrive: 'fire', bloodpact: 'blood', goldrush: 'gold',
+    summonwave: 'nature', bulwark: 'holy',
+  },
+  /** 이어 쓰면 특별한 이름이 붙는 조합 (연출·배수 강화) */
+  SKILL_COMBOS: [
+    { a: 'ice', b: 'earth', name: '빙결 붕괴', mul: 2.2, col: '#8fe0ff' },
+    { a: 'ice', b: 'phys', name: '산산조각', mul: 2.0, col: '#bfe9ff' },
+    { a: 'fire', b: 'thunder', name: '폭염 폭풍', mul: 2.1, col: '#ffb24d' },
+    { a: 'poison', b: 'fire', name: '유독 연소', mul: 2.3, col: '#b8f07a' },
+    { a: 'time', b: 'void', name: '시공 붕괴', mul: 2.6, col: '#c48fff' },
+    { a: 'holy', b: 'void', name: '명암 교차', mul: 2.4, col: '#fff2b0' },
+    { a: 'thunder', b: 'void', name: '뇌전 특이점', mul: 2.2, col: '#d0a8ff' },
+  ],
+  /** 연계 유효 시간 (초) */
+  CHAIN_WINDOW: 4.5,
+
+  /**
+   * 스킬 사용 기록을 쌓아 연계 배수를 계산한다.
+   * 반환 {mul, n, name} — mul 은 이번 스킬의 피해 배수.
+   */
+  pushSkillChain(key) {
+    const now = this.time;
+    if (!this.skillChain) this.skillChain = [];
+    /* 시간이 지난 기록은 버린다 */
+    this.skillChain = this.skillChain.filter(e => now - e.t <= this.CHAIN_WINDOW);
+    const prev = this.skillChain[this.skillChain.length - 1];
+    this.skillChain.push({ key, t: now, elem: this.SKILL_ELEM[key] || 'phys' });
+
+    const n = this.skillChain.length;
+    if (n < 2) return { mul: 1, n: 1, name: null };
+
+    /* 기본 연계 : 2연 1.35배, 3연 1.7배, 4연 이상 2.1배 */
+    let mul = n === 2 ? 1.35 : n === 3 ? 1.7 : 2.1;
+    let name = n + '연계';
+    let col = '#ffd24d';
+
+    /* 원소 궁합이 맞으면 특별 조합으로 승격 */
+    const curElem = this.SKILL_ELEM[key] || 'phys';
+    const prevElem = prev ? prev.elem : null;
+    const found = this.SKILL_COMBOS.find(c =>
+      (c.a === prevElem && c.b === curElem) || (c.a === curElem && c.b === prevElem));
+    if (found) { mul = Math.max(mul, found.mul); name = found.name; col = found.col; }
+
+    /* 연출 : 이름을 크게 띄우고 화면을 흔든다 */
+    FX.popText(this.W / 2, this.H * .3, name + '!  x' + mul.toFixed(2), col, 26 + n * 2,
+      { life: 1.5, vy: -30 });
+    FX.flash(col, .18 + n * .05);
+    FX.shake(6 + n * 3);
+    SFX.play(found ? 'combo3' : n >= 3 ? 'combo3' : 'combo2');
+    if (window.UI) UI.toast('연계 ' + name + '  x' + mul.toFixed(2), col);
+    return { mul, n, name };
+  },
   useSkill(key, wx, wy) {
     const s = SKILLS.find(x => x.key === key);
     if (!this.canUseSkill(key)) {
@@ -905,7 +969,9 @@ const Game = {
     this.stats.skillUses++;
     SFX.play('skill');
 
-    const dmgBase = 260 * Math.pow(1.19, this.wave) * (1 + this.research.atk * .06);
+    /* 스킬 연계 — 짧은 시간 안에 이어 쓰면 위력이 붙는다 */
+    const combo = this.pushSkillChain(key);
+    const dmgBase = 260 * Math.pow(1.19, this.wave) * (1 + this.research.atk * .06) * combo.mul;
 
     switch (key) {
       case 'meteor': {
@@ -1278,6 +1344,7 @@ const Game = {
         this.selected = u;
         this.dragUnit = u;
         this.dragPos = p;
+        SFX.play('pickup');
         /* 패널은 손을 뗄 때(=드래그가 아니었을 때) 연다. 누르자마자 열면
            화면 절반을 덮어 드래그로 옮길 칸이 보이지 않는다. */
       } else {
@@ -1297,7 +1364,7 @@ const Game = {
         const { gx, gy } = toGrid(this.dragPos);
         if (gx >= 0 && gy >= 0 && gx < this.gw && gy < this.gh && !this.isPath(gx, gy)) {
           this.moveUnit(u, gx, gy);
-          SFX.play('click');
+          SFX.play('place');
         } else {
           SFX.play('error');
         }
