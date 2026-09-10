@@ -973,7 +973,7 @@ button{ font:inherit; color:inherit; cursor:pointer; border:none; background:non
  * ========================================================================= */
 
 /* --------------------------------------------------- 콤보 미터 (도파민) */
-.combo{ position:fixed; right:8px; top:150px; z-index:6; pointer-events:none;
+.combo{ position:fixed; right:8px; top:172px; z-index:6; pointer-events:none;
   display:flex; flex-direction:column; align-items:flex-end; gap:0;
   padding:6px 11px 8px; border-radius:15px;
   background:linear-gradient(160deg,rgba(30,22,52,.93),rgba(12,10,24,.93));
@@ -1032,3 +1032,89 @@ button{ font:inherit; color:inherit; cursor:pointer; border:none; background:non
 .vign.danger{ opacity:.34; animation:vignDanger 1.5s ease-in-out infinite; }
 @keyframes vignDanger{ 0%,100%{ opacity:.18;} 50%{ opacity:.42;} }
 .vign.danger.hit{ animation:vignHit .5s ease-out, vignDanger 1.5s ease-in-out infinite .5s; }
+
+/* =========================================================================
+ *  축복 드래프트 — 웨이브를 넘길 때 3장 중 1장
+ * ========================================================================= */
+.bl-wrap{ position:fixed; inset:0; z-index:60; display:flex; align-items:center; justify-content:center;
+  padding:calc(env(safe-area-inset-top) + 12px) 12px calc(env(safe-area-inset-bottom) + 12px);
+  background:radial-gradient(ellipse at 50% 40%,rgba(40,26,80,.86),rgba(4,5,12,.95) 70%);
+  backdrop-filter:blur(7px); animation:blFade .3s ease; }
+@keyframes blFade{ from{ opacity:0; } to{ opacity:1; } }
+.bl-box{ width:100%; max-width:460px; display:flex; flex-direction:column; gap:12px; }
+
+.bl-head{ text-align:center; }
+.bl-w{ display:inline-block; font-size:10.5px; font-weight:900; letter-spacing:3px; color:#ffd24d;
+  border:1.5px solid rgba(255,210,77,.45); border-radius:999px; padding:3px 13px;
+  background:rgba(255,210,77,.09); }
+.bl-head h2{ margin:8px 0 2px; font-size:23px; font-weight:900; letter-spacing:-.5px;
+  background:linear-gradient(180deg,#fff,#c9b6ff); -webkit-background-clip:text; background-clip:text;
+  -webkit-text-fill-color:transparent; text-shadow:0 0 28px rgba(164,130,255,.5); }
+.bl-head p{ margin:0; font-size:11.5px; color:#94a3c4; }
+
+.bl-cards{ display:flex; flex-direction:column; gap:9px; }
+.bl-card{ position:relative; overflow:hidden; text-align:left;
+  display:grid; grid-template-columns:52px 1fr; grid-template-rows:auto auto; gap:1px 12px;
+  align-items:center; padding:13px 14px; border-radius:18px; color:var(--fg);
+  background:linear-gradient(135deg,rgba(28,32,52,.97),rgba(14,16,28,.97));
+  border:2px solid var(--c); box-shadow:0 0 22px -8px var(--g),0 8px 22px rgba(0,0,0,.6);
+  animation:blCardIn .42s cubic-bezier(.2,1.4,.4,1) backwards;
+  transition:transform .1s, filter .1s; }
+@keyframes blCardIn{ from{ opacity:0; transform:translateY(24px) scale(.94);} to{ opacity:1; transform:none;} }
+.bl-card::before{ content:''; position:absolute; inset:0; pointer-events:none;
+  background:radial-gradient(ellipse at 12% 50%,var(--g),transparent 62%); opacity:.4; }
+.bl-card:active{ transform:scale(.975); filter:brightness(1.25); }
+.bl-card.picked{ animation:blPicked .34s ease forwards; }
+@keyframes blPicked{ to{ transform:scale(1.06); filter:brightness(2); opacity:0; } }
+.bl-ico{ grid-row:1/3; font-size:34px; line-height:1; text-align:center;
+  filter:drop-shadow(0 0 10px var(--g)); }
+.bl-tier{ position:absolute; top:8px; right:12px; font-size:9px; font-weight:900; letter-spacing:1.5px;
+  color:var(--c); opacity:.9; }
+.bl-n{ font-size:16px; font-weight:900; color:var(--c); letter-spacing:-.3px; }
+.bl-d{ font-size:11.5px; line-height:1.45; color:#b9c6e0; padding-right:34px; }
+.bl-stk{ position:absolute; bottom:8px; right:12px; font-size:9.5px; font-style:normal;
+  font-weight:800; color:#7d8aa8; }
+.bl-card.risk{ background:linear-gradient(135deg,rgba(52,22,28,.97),rgba(22,10,14,.97)); }
+.bl-card.risk .bl-d{ color:#e0b6b6; }
+
+.bl-foot{ display:flex; gap:8px; }
+.bl-reroll,.bl-skip{ flex:1 1 0; padding:11px; border-radius:14px; font-size:12.5px; font-weight:800;
+  color:#cdd6f0; background:rgba(30,36,56,.9); border:1.5px solid rgba(150,170,220,.28);
+  transition:transform .08s; }
+.bl-reroll{ color:#ffd7a0; border-color:rgba(255,190,80,.4); }
+.bl-reroll:active,.bl-skip:active{ transform:translateY(2px); }
+.bl-reroll.dis{ filter:grayscale(.5) brightness(.85); }
+.bl-skip{ flex:0 0 40%; color:#8896b4; }
+
+/* --------------------------------------------------- 획득한 축복 띠 */
+.bl-strip{ position:fixed; left:0; right:0; top:138px; z-index:4;
+  display:flex; gap:3px; padding:0 6px; overflow-x:auto; scrollbar-width:none;
+  -webkit-mask-image:linear-gradient(90deg,#000 0,#000 90%,transparent 100%);
+  mask-image:linear-gradient(90deg,#000 0,#000 90%,transparent 100%); }
+.bl-strip::-webkit-scrollbar{ display:none; }
+.bl-chip{ position:relative; flex:0 0 auto; width:25px; height:25px; border-radius:8px;
+  display:flex; align-items:center; justify-content:center; font-size:13px;
+  background:rgba(16,20,34,.9); border:1.5px solid var(--c);
+  box-shadow:0 0 8px -3px var(--c); }
+.bl-chip b{ position:absolute; right:-2px; bottom:-3px; font-size:8.5px; font-weight:900;
+  color:#0b0e18; background:var(--c); border-radius:5px; padding:0 2.5px; line-height:1.3; }
+
+/* --------------------------------------------------- 결과 화면 축복 회고 */
+.res-bless:empty{ display:none; }
+.res-bless{ margin-top:10px; }
+.res-bless h4{ margin:0 0 6px; font-size:11px; letter-spacing:2px; color:#8fa8cc; font-weight:800; }
+.rb-list{ display:flex; flex-wrap:wrap; gap:5px; justify-content:center; }
+.bl-chip.lg{ width:auto; height:auto; padding:4px 9px 4px 7px; gap:5px; border-radius:999px;
+  font-size:12px; }
+.bl-chip.lg em{ font-style:normal; font-size:11px; font-weight:800; color:var(--c); }
+.bl-chip.lg b{ position:static; margin-left:1px; }
+
+/* --------------------------------------------------- 도구 패널 축복 목록 */
+.bl-rows{ display:flex; flex-direction:column; gap:4px; }
+.bl-row{ display:grid; grid-template-columns:26px minmax(84px,auto) 1fr; gap:8px; align-items:center;
+  padding:6px 9px; border-radius:11px; background:rgba(20,25,40,.75);
+  border-left:3px solid var(--c); }
+.blr-i{ font-size:16px; text-align:center; }
+.blr-n{ font-size:12px; font-weight:900; color:var(--c); }
+.blr-n em{ font-style:normal; color:#fff; opacity:.8; }
+.blr-d{ font-size:10.5px; color:#9fb0cc; line-height:1.35; }

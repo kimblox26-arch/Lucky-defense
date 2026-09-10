@@ -168,6 +168,8 @@ const Game = {
     this.selected = null; this.dragUnit = null; this.targetingSkill = null;
     this.enemySpeedMul = 1;
     this.slots = 20;
+    this.glassCannon = false;
+    this.resetBless();
 
     this.research = {};
     RESEARCH.forEach(r => this.research[r.key] = 0);
@@ -236,6 +238,14 @@ const Game = {
     return s;
   },
 
+  /** 축복이 순수하게 얹어 준 화력 배수 (동적 난이도 보정에서 제외할 몫) */
+  blessPower() {
+    const b = this.bless;
+    if (!b) return 1;
+    return (1 + b.dmg) * (1 + b.spd) * (1 + b.multishot * .55)
+      * (1 + b.crit * (b.critdmg || 1)) * (1 + b.chain * .22);
+  },
+
   enemyScale(def, hpMul) {
     const w = this.wave + this.loop * 100;
     const diff = this.map.diff;
@@ -248,7 +258,11 @@ const Game = {
     /* 하한을 .35 로 두면 화력이 약할 때 적 체력이 40% 수준까지 떨어져,
        일반 등급 유닛만으로도 적이 우수수 녹았다. 하한을 올려 "약한 군대라도
        기본 난이도는 감당해야" 하도록 바꾼다. */
-    const powerRatio = U.clamp(this.armyDPS() / dpsRef, .85, 60);
+    /* 축복으로 얻은 화력은 이 보정에서 빼 준다.
+       빼지 않으면 "공격력 +45%" 를 골라도 적 체력이 같이 1.45^1.18 배로 불어나
+       고르기 전보다 오히려 약해진다 — 보상이 보상으로 느껴지지 않는다.
+       이 보정의 목적은 어디까지나 가챠 대박·대량 합성 스노우볼을 막는 것이다. */
+    const powerRatio = U.clamp(this.armyDPS() / this.blessPower() / dpsRef, .85, 60);
     /* 지수를 1보다 크게 잡아, 기대치보다 화력이 넘칠수록 체력이 그 이상으로 불어나게 한다
        (그냥 맞춰주기만 하면 물량으로 찍어누르는 스노우볼을 못 막는다). */
     hp *= Math.pow(powerRatio, 1.18);
@@ -311,6 +325,16 @@ const Game = {
       }
     }
     U.shuffle(list);
+
+    /* 보물 적 — 웨이브 4부터 가끔 한 마리. 웨이브 중반쯤 끼워 넣는다.
+       쫓아가서 잡아야 하는 짧은 긴장을, 실패해도 손해는 없게. */
+    /* 보스 웨이브에는 넣지 않는다 — 보스전은 그 자체로 집중해야 하는 순간인데
+       빠른 보물 적이 끼면 화력이 엉뚱한 데로 새어 나간다. */
+    if (w >= 4 && w % bossEvery !== 0 && U.chance(.42)) {
+      const at = Math.floor(list.length * U.rand(.25, .7));
+      const tier0 = pool.filter(k => ENEMY_MAP[k].tier <= 1);
+      list.splice(at, 0, { key: U.pick(tier0.length ? tier0 : pool), delay: .5, treasure: true });
+    }
     return list;
   },
 
@@ -363,13 +387,16 @@ const Game = {
       this.spawnTimer -= dt;
       if (this.spawnTimer <= 0) {
         const s = this.spawnQueue.shift();
-        const e = this.spawnEnemy(s.key, { hpMul: s.elite ? 3.2 : 1 });
-        if (e && s.elite) {
-          e.maxHp *= 1; e.bounty *= 2.4;
-          e.elite = true;
-          FX.ring(e.x, e.y, '#ffd24d', this.ts, .5);
+        /* 강화 종류는 Enemy 생성자에서 한 번에 처리한다 (여기서 또 곱하면 이중 적용) */
+        const e = this.spawnEnemy(s.key, { elite: !!s.elite, treasure: !!s.treasure });
+        if (e && s.elite) FX.ring(e.x, e.y, '#ffd24d', this.ts, .5);
+        if (e && s.treasure) {
+          FX.ring(e.x, e.y, '#ffd24d', this.ts * 1.6, .7);
+          FX.popText(e.x, e.y - this.ts * .7, '💰 보물 적!', '#ffd24d', 17, { life: 1.5, vy: -30 });
+          SFX.play('rare');
+          if (window.UI) UI.toast('💰 보물 적 등장 — 도망치기 전에 잡아라!', '#ffd24d');
         }
-        this.spawnTimer = s.delay * (1 / 1);
+        this.spawnTimer = s.delay;
       }
     } else if (this.enemies.length === 0) {
       this.endWave();
@@ -382,10 +409,20 @@ const Game = {
     /* 보상 */
     let reward = Math.floor(42 + w * 14 + Math.pow(w, 1.42) * 1.7);
     reward = Math.floor(reward * (1 + (this.perks.gold || 0) * .1));
-    const interest = Math.floor(this.gold * this.research.interest * .01);
+    const interest = Math.floor(this.gold * (this.research.interest * .01 + this.bless.interest));
     this.addGold(reward + interest);
     this.mana = Math.min(this.maxMana, this.mana + 25);
     this.breakTime = 5.0;
+
+    /* 축복이 주는 웨이브 정산 보너스 */
+    if (this.bless.liferegen > 0 && this.life < this.maxLife) {
+      this.life = Math.min(this.maxLife, this.life + this.bless.liferegen);
+      FX.popText(this.W / 2, this.H * .38 + 60, `♥ +${this.bless.liferegen}`, '#ff6b8a', 17, { life: 1.4, vy: -22 });
+    }
+    if (this.bless.gemwave > 0) {
+      this.gems += this.bless.gemwave;
+      FX.popText(this.W / 2, this.H * .38 + 82, `💎 +${this.bless.gemwave}`, '#7fd8ff', 17, { life: 1.4, vy: -22 });
+    }
 
     FX.popText(this.W / 2, this.H * .38, `웨이브 ${w} 클리어!`, '#7cff9c', 30, { life: 1.6, vy: -30 });
     FX.popText(this.W / 2, this.H * .38 + 34, `+${U.fmt(reward)}G` + (interest ? ` (이자 +${U.fmt(interest)})` : ''), '#ffd24d', 18, { life: 1.6, vy: -24 });
@@ -397,6 +434,16 @@ const Game = {
     this.prepareNextWave();
     if (window.UI) UI.onWaveEnd(w);
     this.saveMeta();
+
+    /* 축복 드래프트 — 몇 웨이브마다 3장 중 1장을 고르게 한다 */
+    if (window.Bless && this.state === 'playing' && Bless.due(w)) {
+      const wasPaused = this.paused;
+      setTimeout(() => {
+        if (this.state !== 'playing') return;
+        if (!Bless.show(this)) return;
+        Bless.wasPaused = wasPaused;   /* 원래 멈춰 있었다면 닫은 뒤에도 멈춰 둔다 */
+      }, 700);
+    }
   },
 
   /* ---------------------------------------------------------- 경제 */
@@ -409,7 +456,8 @@ const Game = {
     this.gold -= v; return true;
   },
   get goldMul() {
-    return (1 + this.research.gold * .07) * (1 + (this.perks.gold || 0) * .1) * this.modNum('goldMul', 1);
+    return (1 + this.research.gold * .07) * (1 + (this.perks.gold || 0) * .1)
+      * (1 + this.bless.gold) * this.modNum('goldMul', 1);
   },
   get manaMul() { return (1 + this.research.mana * .09) * this.modNum('manaMul', 1); },
 
@@ -435,7 +483,8 @@ const Game = {
   /* ---------------------------------------------------------- 소환 */
   summonCost() {
     const base = 30 + this.summonCount * 7.4;
-    return Math.max(12, Math.floor(base * (1 - this.research.summoncost * .02)));
+    const off = Math.min(.7, this.research.summoncost * .02 + this.bless.cost);
+    return Math.max(12, Math.floor(base * (1 - off)));
   },
 
   /**
@@ -471,7 +520,8 @@ const Game = {
     for (let i = 0; i < n; i++) {
       if (free > 0) { free--; continue; }
       const base = 30 + count * 6;
-      total += Math.max(12, Math.floor(base * (1 - this.research.summoncost * .02)));
+      const off = Math.min(.7, this.research.summoncost * .02 + this.bless.cost);
+      total += Math.max(12, Math.floor(base * (1 - off)));
       count++;
     }
     return total;
@@ -491,7 +541,8 @@ const Game = {
   RARE_CAP: [1, 1, 1, 1, .12, .04, .012, .003],   /* 등급별 최대 등장 확률 */
 
   rollRarity() {
-    const luck = this.research.luck * .05 + (this.perks.luck || 0) * .08 + (this.luckBoost || 0);
+    const luck = this.research.luck * .05 + (this.perks.luck || 0) * .08
+      + (this.luckBoost || 0) + this.bless.luck;
     /* 상위 등급일수록 행운 효과를 줄인다 (i 가 클수록 감쇠) */
     const list = RARITY.map((r, i) => ({
       r, w: r.w * (1 + luck * i * .45 / (1 + i * .55)),
@@ -517,11 +568,18 @@ const Game = {
       return null;
     }
     let cost = this.summonCost();
-    if (this.freeSummons > 0) { this.freeSummons--; cost = 0; }
+    if (opts.free) cost = 0;
+    else if (this.freeSummons > 0) { this.freeSummons--; cost = 0; }
     else if (!this.spendGold(cost)) return null;
     this.summonCount++; this.stats.summons++;
 
-    const rar = this.rollRarity();
+    /* minRarity : 축복 등으로 최소 등급이 보장된 소환 */
+    let rar = this.rollRarity();
+    if (opts.minRarity != null) {
+      let guard = 0;
+      while (RARITY_IDX[rar.key] < opts.minRarity && guard++ < 60) rar = this.rollRarity();
+      if (RARITY_IDX[rar.key] < opts.minRarity) rar = RARITY[opts.minRarity];
+    }
     const pool = this.runPool ? this.runPool[rar.key] : UNITS_BY_RARITY[rar.key];
     const def = U.pick(pool);
     const free = this.freeTiles();
@@ -596,10 +654,28 @@ const Game = {
     return results;
   },
 
-  slotMax() { return 20 + this.research.slot; },
+  slotMax() { return 20 + this.research.slot + this.bless.slot; },
 
   /* ---------------------------------------------------------- 맵 모디파이어 */
-  get mods() { return (this.map && this.map.mods) || []; },
+  get mods() {
+    const mm = (this.map && this.map.mods) || [];
+    return this.runMods && this.runMods.length ? mm.concat(this.runMods) : mm;
+  },
+
+  /* ---------------------------------------------------------- 축복 (판 한정) */
+  /** 축복이 얹는 아군 스탯 가산치. entities.js refresh 에서 읽는다. */
+  resetBless() {
+    this.runMods = [];
+    this.bless = {
+      taken: {}, order: [],
+      dmg: 0, spd: 0, rng: 0, crit: 0, critdmg: 0, pen: 0, splash: 0,
+      chain: 0, multishot: 0, execute: 0,
+      gold: 0, interest: 0, loot: 0, cost: 0, gemwave: 0,
+      life: 0, liferegen: 0, revive: 0,
+      luck: 0, slot: 0, skillcd: 0, skilldmg: 0, echo: 0,
+    };
+    if (window.Bless) Bless.reset();
+  },
   /** 곱연산 모디파이어 */
   modNum(key, base) {
     let v = base;
@@ -900,7 +976,9 @@ const Game = {
       if (t.curse) this.bonus.curse += t.curse;
       if (t.dot) this.bonus.dot += t.dot;
     }
-    this.maxLife = 20 + this.research.hp * 2 + (this.perks.life || 0) * 5;
+    this.maxLife = Math.max(1, 20 + this.research.hp * 2 + (this.perks.life || 0) * 5 + this.bless.life);
+    if (this.glassCannon) this.maxLife = Math.min(this.maxLife, 5);
+    this.life = Math.min(this.life, this.maxLife);
 
     for (const u of this.units) u.refresh();
     this.updateMergeFlags();
@@ -1045,13 +1123,20 @@ const Game = {
       return false;
     }
     this.mana -= s.mana;
-    this.skillCd[key] = s.cd * (1 - Math.min(.6, this.research.skillcd * .03));
+    this.skillCd[key] = s.cd * (1 - Math.min(.85, this.research.skillcd * .03 + this.bless.skillcd));
+    /* 메아리 시전 — 확률적으로 쿨다운을 통째로 날린다 */
+    if (this.bless.echo > 0 && Math.random() < this.bless.echo) {
+      this.skillCd[key] = 0;
+      FX.popText(this.W / 2, this.H * .3, '🔁 메아리 시전!', '#c48fff', 20, { life: 1, vy: -26 });
+      SFX.play('rare');
+    }
     this.stats.skillUses++;
     SFX.play('skill');
 
     /* 스킬 연계 — 짧은 시간 안에 이어 쓰면 위력이 붙는다 */
     const combo = this.pushSkillChain(key);
-    const dmgBase = 260 * Math.pow(1.19, this.wave) * (1 + this.research.atk * .06) * combo.mul;
+    const dmgBase = 260 * Math.pow(1.19, this.wave) * (1 + this.research.atk * .06)
+      * (1 + this.bless.skilldmg) * combo.mul;
 
     switch (key) {
       case 'meteor': {
@@ -1360,6 +1445,18 @@ const Game = {
   /* ---------------------------------------------------------- 종료 */
   gameOver() {
     if (this.state !== 'playing') return;
+    /* 불사조의 깃 — 판을 한 번 되살린다 */
+    if (this.bless && this.bless.revive > 0) {
+      this.bless.revive--;
+      this.life = Math.min(this.maxLife, 10);
+      for (const e of this.enemies) e.hp = 0;
+      FX.flash('#ffd24d', .9); FX.shake(30);
+      FX.popText(this.W / 2, this.H * .4, '🔥 불사조의 부활!', '#ffd24d', 34, { life: 2, vy: -30 });
+      if (window.VFX) VFX.confetti(this.W / 2, this.H * .4, '#ffd24d', 100);
+      SFX.play('jackpot');
+      if (window.UI) { UI.toast('불사조의 깃이 그대를 되살렸다', '#ffd24d'); UI.refresh(); }
+      return;
+    }
     this.state = 'gameover';
     this.mergeMetaStats();
     SFX.play('lose');

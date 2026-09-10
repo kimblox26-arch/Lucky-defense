@@ -207,6 +207,25 @@ class Enemy {
     this.maxShield = (def.shield || 0) * this.maxHp * .3 * g.modNum('shieldMul', 1);
     this.shield = this.maxShield;
 
+    /* 정예 — buildWave 가 표시해 두는 강화 개체 */
+    this.elite = !!opts.elite;
+    if (this.elite) {
+      this.maxHp *= 3; this.hp = this.maxHp;
+      this.armor *= 1.4; this.bounty *= 3.2;
+      this.baseSpeed *= .88;
+    }
+
+    /* 보물 적 — 빠르게 도망친다. 잡으면 큰 보상, 놓쳐도 목숨은 안 깎인다.
+       "쫓아가서 잡아야 하는 순간" 을 웨이브마다 하나씩 만들어 준다. */
+    this.treasure = !!opts.treasure;
+    if (this.treasure) {
+      this.maxHp *= .30; this.hp = this.maxHp;
+      this.armor *= .3;
+      this.bounty *= 16;
+      this.baseSpeed *= 2.0;
+      this.maxShield = 0; this.shield = 0;
+    }
+
     this.dist = opts.dist !== undefined ? opts.dist : 0;
     this.x = 0; this.y = 0; this.dirX = 1; this.dirY = 0;
     this.dead = false; this.leaked = false;
@@ -363,6 +382,13 @@ class Enemy {
     if (g.buffs.goldrush > 0) gold *= 3;
     gold = Math.max(1, Math.round(gold));
     g.addGold(gold);
+    /* 전리품 축복 — 가끔 한 번씩 크게 떨어진다 */
+    if (g.bless && g.bless.loot > 0 && Math.random() < g.bless.loot) {
+      const extra = Math.max(20, Math.round(gold * 7));
+      g.addGold(extra);
+      FX.popText(this.px, this.py - 14, '💰 +' + U.fmt(extra), '#ffd24d', 15, { life: 1, vy: -34 });
+      SFX.play('coin');
+    }
     g.stats.kills++;
     if (this.boss) g.stats.bossKills++;
     g.addCombo();
@@ -388,6 +414,18 @@ class Enemy {
     }
     FX.popText(this.x + U.rand(-10, 10), this.y - g.ts * .55, '+' + U.fmt(gold), '#ffd24d', 13);
 
+    /* 보물 적 — 잡으면 한 번 크게 터진다 */
+    if (this.treasure && !this.leaked) {
+      const gem = U.chance(.35) ? 1 + Math.floor(g.wave / 25) : 0;
+      if (gem) { g.gems += gem; g.saveMeta(); }
+      FX.popText(this.x, this.y - g.ts * 1.0, '💰 보물 획득!', '#ffd24d', 22, { life: 1.5, vy: -42 });
+      if (gem) FX.popText(this.x, this.y - g.ts * 1.5, '💎 +' + gem, '#7fd8ff', 17, { life: 1.5, vy: -34 });
+      if (window.VFX) VFX.confetti(this.x, this.y, '#ffd24d', 46);
+      FX.flash('#ffd24d', .22); FX.shake(9);
+      SFX.play('jackpot');
+      if (window.UI) UI.toast('💰 보물 적 처치! +' + U.fmt(gold) + 'G' + (gem ? ` · 💎${gem}` : ''), '#ffd24d');
+    }
+
     /* 맵 모디파이어 : 부활의 저주 */
     const revive = g.modVal('reviveChance', 0);
     if (revive && !this.leaked && !this.boss && Math.random() < revive) {
@@ -409,6 +447,12 @@ class Enemy {
     if (this.dead) return;
     this.dead = true; this.leaked = true;
     const g = this.g;
+    /* 보물 적은 도망칠 뿐이다 — 아쉬움만 남기고 목숨은 건드리지 않는다 */
+    if (this.treasure) {
+      FX.popText(g.endX, g.endY - 30, '보물이 도망쳤다…', '#8a7f5c', 17, { life: 1.4, vy: -26 });
+      SFX.play('error');
+      return;
+    }
     const dmg = this.boss ? 10 : (this.def.tier >= 3 ? 3 : this.def.tier >= 1 ? 2 : 1);
     if (g.buffs.sanctuary > 0) {
       FX.popText(g.endX, g.endY - 30, '방어됨!', '#fff2b0', 18);
@@ -477,36 +521,37 @@ class Unit {
     const lvMul = 1 + (this.level - 1) * .18;
     const syn = g.synergyFor(d);
 
+    const bl = g.bless || {};
     let dmg = d.dmg * rar.mul * starMul * lvMul;
     dmg *= (1 + g.research.atk * .06);
-    dmg *= (1 + syn.dmg + g.bonus.dmg);
+    dmg *= (1 + syn.dmg + g.bonus.dmg + (bl.dmg || 0));
     dmg *= (1 + this.auraVal('dmg'));
     if (g.buffs.overdrive > 0) dmg *= 1.6;
     if (g.buffs.bloodpact > 0) dmg *= 1.7;
 
-    let spd = d.spd * (1 + g.research.spd * .04) * (1 + (syn.spd || 0)) * (1 + this.auraVal('spd'));
+    let spd = d.spd * (1 + g.research.spd * .04) * (1 + (syn.spd || 0) + (bl.spd || 0)) * (1 + this.auraVal('spd'));
     if (g.buffs.overdrive > 0) spd *= 2.2;
 
-    let rng = d.rng * (1 + g.research.rng * .04) * (1 + (syn.rng || 0)) * (1 + this.auraVal('rng'))
+    let rng = d.rng * (1 + g.research.rng * .04) * (1 + (syn.rng || 0) + (bl.rng || 0)) * (1 + this.auraVal('rng'))
       * g.modNum('rngMul', 1);
 
-    let crit = (d.crit || 0) + g.research.crit * .02 + (syn.crit || 0) + g.bonus.crit;
-    let critMul = (d.critMul || 2) + g.research.critdmg * .12 + (syn.critdmg || 0);
-    let pen = (d.pen || 0) + g.research.pen * .03 + (syn.pen || 0);
-    let splash = (d.splash || 0) * (1 + g.research.splash * .05 + (syn.splash || 0)) * g.modNum('splashMul', 1);
+    let crit = (d.crit || 0) + g.research.crit * .02 + (syn.crit || 0) + g.bonus.crit + (bl.crit || 0);
+    let critMul = (d.critMul || 2) + g.research.critdmg * .12 + (syn.critdmg || 0) + (bl.critdmg || 0);
+    let pen = (d.pen || 0) + g.research.pen * .03 + (syn.pen || 0) + (bl.pen || 0);
+    let splash = (d.splash || 0) * (1 + g.research.splash * .05 + (syn.splash || 0) + (bl.splash || 0)) * g.modNum('splashMul', 1);
 
     /* 다중 사격 : 연구/시너지로 확률적 추가 발사 */
-    const msBonus = g.research.multishot * .3 + (syn.multishot || 0);
+    const msBonus = g.research.multishot * .3 + (syn.multishot || 0) + (bl.multishot || 0);
     let multishot = (d.multishot || 1) + Math.floor(msBonus);
     this.msChance = msBonus % 1;
 
     this.stat = {
       dmg, spd: Math.min(14, spd), rng, crit: U.clamp(crit, 0, .95), critMul, pen: U.clamp(pen, 0, 1),
       splash,
-      chain: (d.chain || 0) + (syn.chain || 0) + Math.floor(g.research.chain * .5),
+      chain: (d.chain || 0) + (syn.chain || 0) + Math.floor(g.research.chain * .5) + (bl.chain || 0),
       pierce: d.pierce || 0,
       multishot,
-      execute: (d.execute || 0) + g.research.exec * .01,
+      execute: (d.execute || 0) + g.research.exec * .01 + (bl.execute || 0),
       summonMul: 1 + g.research.summon * .08 + (syn.summon || 0),
     };
     this.goldAura = this.auraVal('gold') + (syn.gold || 0) + g.bonus.gold;

@@ -395,6 +395,34 @@ const Draw = {
       c.beginPath(); c.arc(x, y + S * .6, S * (1.5 + p * .12), 0, U.TAU); c.stroke();
       c.restore();
     }
+    /* 보물 적 — 금빛 후광 + 도망 방향 화살표로 "지금 잡아야 한다" 를 알린다 */
+    if (e.treasure) {
+      const p = .5 + Math.sin(g.time * 9 + e.seed) * .5;
+      c.save();
+      c.fillStyle = GFX.radial(c, x, y, S * 2.1, `rgba(255,210,77,${.24 + p * .18})`, 'rgba(255,210,77,0)');
+      c.beginPath(); c.arc(x, y, S * 2.1, 0, U.TAU); c.fill();
+      c.strokeStyle = `rgba(255,232,150,${.55 + p * .4})`; c.lineWidth = 2.5;
+      c.setLineDash([5, 4]); c.lineDashOffset = -g.time * 34;
+      c.beginPath(); c.arc(x, y, S * 1.35, 0, U.TAU); c.stroke();
+      c.setLineDash([]);
+      c.font = `900 ${Math.round(S * .8)}px system-ui,sans-serif`;
+      c.textAlign = 'center'; c.fillStyle = '#ffd24d';
+      c.shadowColor = '#ffd24d'; c.shadowBlur = 12;
+      c.fillText('💰', x, y - S * 1.55 - p * 3);
+      c.restore();
+    }
+    /* 정예 — 붉은 가시 왕관 */
+    if (e.elite && !e.boss) {
+      c.save();
+      c.strokeStyle = 'rgba(255,90,70,.75)'; c.lineWidth = 2;
+      c.beginPath();
+      for (let i = 0; i < 5; i++) {
+        const a = -Math.PI / 2 + (i - 2) * .38;
+        c.moveTo(x + Math.cos(a) * S * .8, y + Math.sin(a) * S * .8);
+        c.lineTo(x + Math.cos(a) * S * 1.15, y + Math.sin(a) * S * 1.15);
+      }
+      c.stroke(); c.restore();
+    }
     /* 비행 그림자 */
     if (e.flying) GFX.groundShadow(c, x, e.y + S * .7, S * .5, S * .16, .26);
 

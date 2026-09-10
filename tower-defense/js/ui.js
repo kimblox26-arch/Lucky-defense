@@ -476,6 +476,7 @@ const UI = {
         <button class="toolbtn" id="tSellC"><span>🧹</span><b>일반 1성 정리</b><i>잠기지 않은 일반 1성 판매</i></button>
         <button class="toolbtn" id="tSellR"><span>🗑</span><b>희귀 미만 정리</b><i>희귀 미만 1성 일괄 판매</i></button>
       </div>
+      ${this.htmlBlessList()}
       <div class="synsec">유닛 기여도 순위</div>
       ${rank.length ? rank.map((r, i) => {
       const col = RARITY[RARITY_IDX[r.rarity]].color;
@@ -489,6 +490,27 @@ const UI = {
         </div>`;
     }).join('') : '<div class="p-note">아직 기록이 없다.</div>'}`;
   },
+  /** 도구 패널에 이번 판의 축복을 자세히 펼쳐 준다 */
+  htmlBlessList() {
+    if (!window.Bless) return '';
+    const list = Bless.summary(Game);
+    const next = Bless.EVERY - (Game.wave % Bless.EVERY);
+    if (!list.length) {
+      return `<div class="synsec">이 판의 축복</div>
+        <div class="p-note">아직 없다. ${Bless.EVERY}웨이브마다 3장 중 1장을 고른다 —
+          다음 축복까지 <b style="color:#ffd24d">${next}웨이브</b>.</div>`;
+    }
+    return `<div class="synsec">이 판의 축복 · ${list.length}종 (다음까지 ${next}웨이브)</div>
+      <div class="bl-rows">` + list.map(({ b, n }) => {
+      const t = BLESS_TIER[b.t];
+      return `<div class="bl-row" style="--c:${t.col}">
+        <span class="blr-i">${b.i}</span>
+        <span class="blr-n">${b.n}${n > 1 ? ` <em>×${n}</em>` : ''}</span>
+        <span class="blr-d">${b.d}</span>
+      </div>`;
+    }).join('') + '</div>';
+  },
+
   bindTools() {
     const b = $('modalBody');
     const on = (id, fn) => { const e = b.querySelector('#' + id); if (e) e.onclick = () => { fn(); this.renderModal(); }; };
@@ -673,7 +695,25 @@ const UI = {
   },
 
   /* ------------------------------------------------------ 이벤트 */
-  onRunStart() { this.lastGold = -1; this.lastLife = -1; this.refresh(); },
+  onRunStart() {
+    this.lastGold = -1; this.lastLife = -1;
+    $('vign').classList.remove('danger', 'hit');
+    this.refreshBlessStrip();
+    this.refresh();
+  },
+
+  /* 이번 판에 모은 축복을 HUD 아래 작은 띠로 보여 준다 */
+  refreshBlessStrip() {
+    const el = $('blessStrip');
+    if (!el || !window.Bless) return;
+    const list = Bless.summary(Game);
+    if (!list.length) { el.classList.add('hidden'); el.innerHTML = ''; return; }
+    el.classList.remove('hidden');
+    el.innerHTML = list.map(({ b, n }) => {
+      const t = BLESS_TIER[b.t];
+      return `<span class="bl-chip" style="--c:${t.col}" title="${b.n} — ${b.d}">${b.i}${n > 1 ? `<b>${n}</b>` : ''}</span>`;
+    }).join('');
+  },
   onWaveStart(w) {
     this.toast(`웨이브 ${w} 시작!`, w % 10 === 0 ? '#ff4f7e' : '#9fd2ff');
     this.renderWavePreview();
@@ -724,6 +764,17 @@ const UI = {
       <div><span>최고 콤보</span><b>${s.maxCombo}</b></div>
       <div><span>최종 유닛</span><b>${Game.units.length}기</b></div>
       <div><span>보유 젬</span><b>💎 ${Game.gems}</b></div>`;
+    /* 이번 판에 골랐던 축복을 회고 — 어떤 빌드였는지가 곧 그 판의 이야기다 */
+    const rb = $('resBless');
+    if (rb) {
+      const list = window.Bless ? Bless.summary(Game) : [];
+      rb.innerHTML = list.length
+        ? `<h4>이 판의 축복 ${list.length}종</h4><div class="rb-list">` + list.map(({ b, n }) => {
+            const t = BLESS_TIER[b.t];
+            return `<span class="bl-chip lg" style="--c:${t.col}">${b.i}<em>${b.n}</em>${n > 1 ? `<b>${n}</b>` : ''}</span>`;
+          }).join('') + '</div>'
+        : '';
+    }
     if (win) this.toast('다음 맵이 해금되었다!', '#ffd24d');
     if (res && res.levels) { FX.flash('#ffd24d', .4); SFX.play('legendary'); }
   },
