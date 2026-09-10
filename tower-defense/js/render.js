@@ -134,7 +134,10 @@ const Draw = {
    * =================================================================== */
   drawMap(c, g) {
     const terr = GFX.buildTerrain(g);
-    c.drawImage(terr, g.ox, g.oy);
+    GFX.pxCrisp(c);
+    /* 축소해 구운 지형을 원래 크기로 정확히 되돌린다.
+       width*px 로 계산하면 반올림 오차만큼 가장자리에 빈 띠가 생긴다. */
+    c.drawImage(terr, g.ox, g.oy, g.gw * g.ts, g.gh * g.ts);
 
     /* 경로 위 흐르는 방향 점선 (동적) */
     const ts = g.ts;
@@ -388,9 +391,13 @@ const Draw = {
     /* 진행 방향에 맞춰 좌우 반전 */
     if (e.dirX < -0.1) {
       c.translate(x, y); c.scale(-1, 1);
-      c.drawImage(cv, -cv._ox, -cv._oy);
+      GFX.pxCrisp(c);
+      c.drawImage(cv, GFX.pxSnap(-cv._ox), GFX.pxSnap(-cv._oy),
+        cv.width * (cv._px || 1), cv.height * (cv._px || 1));
     } else {
-      c.drawImage(cv, x - cv._ox, y - cv._oy);
+      GFX.pxCrisp(c);
+      c.drawImage(cv, GFX.pxSnap(x - cv._ox), GFX.pxSnap(y - cv._oy),
+        cv.width * (cv._px || 1), cv.height * (cv._px || 1));
     }
     c.restore();
 

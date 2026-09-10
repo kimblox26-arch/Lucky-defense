@@ -42,7 +42,7 @@ const GFX = {
   ramp(hex) {
     if (this._rampCache[hex]) return this._rampCache[hex];
     /* 운빨겜 특유의 쨍한 캔디톤을 위해 채도를 한 번 끌어올린 뒤 램프를 만든다 */
-    const v = U.vivid(hex, .38, .07);
+    const v = U.vivid(hex, GFX.PIXEL.on ? .5 : .38, GFX.PIXEL.on ? .13 : .07);
     const r = {
       hi: U.mixHex(v, '#fffdf6', .58),
       lit: U.mixHex(v, '#fff6e8', .28),
@@ -1647,44 +1647,53 @@ const GFX = {
    * drawArm 이 이미 어두운 굵은 선을 깔아 주므로 별도 실루엣 외곽선이 필요 없다.
    */
   UNIT_FRAMES: 8,
+  /** 조준 각도를 몇 단계로 나눠 구울지 (많을수록 부드럽지만 캐시가 늘어난다) */
+  AIM_BUCKETS: 5,
+
+  /**
+   * 유닛 스프라이트 — 무기 팔까지 통째로 구워 캐시한다.
+   *
+   * 픽셀 모드에서는 1/PX 크기로 굽기 때문에 장당 용량이 1/PX² 로 줄어,
+   * 조준 각도까지 캐시에 넣을 여유가 생긴다. 팔만 실시간으로 그리면
+   * 그 부분만 매끈해져 도트와 톤이 어긋난다.
+   */
   drawUnitChar(c, x, y, S, look, st) {
     if (!this.outlineBudget) { this.drawChar(c, x, y, S, look, st); return; }
     const frames = this.UNIT_FRAMES;
-    /* 애니메이션 위상을 프레임 단위로 양자화해 캐시 적중률을 확보한다 */
     const frame = Math.floor((((st.t || 0) * 2.1 + (st.seed || 0)) / U.TAU % 1 + 1) % 1 * frames);
     const flip = st.flip ? 1 : 0;
-    const key = (look.id || '?') + '|' + Math.round(S) + '|' + frame + '|' + flip + '|U';
+
+    /* 조준 각도를 단계로 뭉갠다 (-1.1 ~ 1.1 rad) */
+    const nb = this.AIM_BUCKETS;
+    const aimRaw = U.clamp(st.aim === undefined ? 0 : st.aim, -1.1, 1.1);
+    const ab = Math.round((aimRaw + 1.1) / 2.2 * (nb - 1));
+    const aimQ = -1.1 + (ab / (nb - 1)) * 2.2;
+    /* 반동은 있음/없음 두 단계로만 (매 프레임 값이 달라 캐시가 터진다) */
+    const rc = (st.recoil || 0) > .25 ? 1 : 0;
+
+    const key = (look.id || '?') + '|' + Math.round(S) + '|' + frame + '|' + flip + '|' + ab + '|' + rc + '|U';
     let cv = this.cache.get(key);
     if (cv) this.cacheHits++;
     else {
       this.cacheMiss++;
       cv = this._bakeChar(look, S, {
         t: (frame / frames) * U.TAU / 2.1, phase: (frame / frames) * U.TAU,
-        aim: 0, recoil: 0, seed: 0, flip: st.flip, noWeapon: true,
+        aim: aimQ, recoil: rc ? .6 : 0, seed: 0, flip: st.flip,
       });
       cv._key = key;
       this._trimCache();
       this.cache.set(key, cv);
     }
-    c.drawImage(cv, x - cv._ox, y - cv._oy);
-
-    /* 무기 팔은 캐시된 몸통과 같은 바운스 위에 올라타야 어긋나 보이지 않는다 */
-    const bt = (frame / frames) * U.TAU / 2.1;
-    const recoil = st.recoil || 0;
-    const bouncePh = Math.sin(bt * 2.1);
-    c.save();
-    c.translate(x, y + bouncePh * S * .04 - recoil * S * .06);
-    c.scale(1 - bouncePh * .035 + recoil * .12, 1 + bouncePh * .045 - recoil * .1);
-    if (st.flip) c.scale(-1, 1);
-    this._frontArm(c, S, GFX.ramp(look.color || '#8fa5c4'),
-      GFX.ramp(look.accent || look.color || '#8fa5c4'),
-      look, st, st.t || 0, (frame / frames) * U.TAU,
-      st.aim === undefined ? 0 : st.aim, recoil);
-    c.restore();
+    GFX.pxCrisp(c);
+    c.drawImage(cv, GFX.pxSnap(x - cv._ox), GFX.pxSnap(y - cv._oy),
+      cv.width * (cv._px || 1), cv.height * (cv._px || 1));
   },
 
   /** 외곽선 + 입체 음영까지 구운 캐릭터 비트맵을 만든다 (캐시용 공통 경로) */
-  _bakeChar(look, S, st) {
+  _bakeChar(look, S0, st) {
+    /* 픽셀 모드 : 1/PX 크기로 구운 뒤 그릴 때 PX 배 확대한다 */
+    const px = GFX.pxScale();
+    const S = S0 / px;
     const outlineW = GFX.outlineWidth(S);
     const pad = Math.ceil(outlineW * 2 + 6);
     /* 탈것을 태우면 위(탑승자)로도 아래(탈것)로도 커진다 */
@@ -1716,8 +1725,10 @@ const GFX = {
       c.drawImage(bv, Math.cos(a) * outlineW, Math.sin(a) * outlineW);
     }
     c.drawImage(av, 0, 0);
-    cv._ox = ox; cv._oy = oy;
-    return cv;
+    /* 확대해서 쓸 값이므로 원점도 확대 배율을 곱해 둔다 */
+    cv._ox = ox * px; cv._oy = oy * px;
+    cv._px = px;
+    return GFX.posterize(cv);
   },
 
   _trimCache() {
@@ -1865,6 +1876,50 @@ const GFX = {
    */
   outlineWidth(S) { return U.clamp(S * .14, 1.8, 6); },
 
+  /* ===================================================================
+   *  픽셀 아트 모드
+   *
+   *  캔버스 벡터 그림을 픽셀 게임처럼 보이게 하는 가장 확실한 방법은
+   *  "작게 그린 뒤 뭉개지 않고 확대"하는 것이다. 스프라이트를 1/PX 크기로
+   *  구운 다음 imageSmoothingEnabled=false 로 PX 배 확대하면 도트가 그대로
+   *  드러난다. 색도 단계를 줄여(posterize) 레트로 팔레트 느낌을 준다.
+   * =================================================================== */
+  PIXEL: { on: true, scale: 3, levels: 8 },
+
+  /** 이 값으로 나눠 구운 뒤 같은 값으로 확대한다 */
+  pxScale() { return this.PIXEL.on ? this.PIXEL.scale : 1; },
+
+  /** 대상 컨텍스트를 도트가 살아나는 상태로 만든다 */
+  pxCrisp(c) {
+    c.imageSmoothingEnabled = false;
+    c.mozImageSmoothingEnabled = false;
+    c.webkitImageSmoothingEnabled = false;
+  },
+
+  /** 색 단계를 줄여 레트로 팔레트처럼 만든다 (구운 비트맵에 1회만 적용) */
+  posterize(cv) {
+    const L = this.PIXEL.levels;
+    if (!this.PIXEL.on || L <= 0) return cv;
+    const c = cv.getContext('2d');
+    let img;
+    try { img = c.getImageData(0, 0, cv.width, cv.height); }
+    catch (e) { return cv; }          /* 보안 제약이 걸리면 그냥 넘어간다 */
+    const d = img.data;
+    const step = 255 / (L - 1);
+    for (let i = 0; i < d.length; i += 4) {
+      if (d[i + 3] < 8) { d[i + 3] = 0; continue; }
+      d[i] = Math.round(d[i] / step) * step;
+      d[i + 1] = Math.round(d[i + 1] / step) * step;
+      d[i + 2] = Math.round(d[i + 2] / step) * step;
+      d[i + 3] = d[i + 3] > 140 ? 255 : 0;   /* 반투명 가장자리를 없애 도트를 또렷하게 */
+    }
+    c.putImageData(img, 0, 0);
+    return cv;
+  },
+
+  /** 픽셀 격자에 맞춰 좌표를 스냅 — 어긋나면 도트가 떨려 보인다 */
+  pxSnap(v) { const s = this.pxScale(); return Math.round(v / s) * s; },
+
   _outlineCv: null, _shadeCv: null,
   /** 화면에 살아있는 유닛이 많을 때는 자동으로 외곽선을 생략해 프레임을 지킨다
    *  (Game.render 에서 매 프레임 갱신) */
@@ -1890,11 +1945,13 @@ const GFX = {
     /* source-atop 은 이미 그려진 픽셀 위에만 얹히므로 실루엣 밖으로 새지 않는다
        (multiply 는 투명 픽셀까지 칠해버려 캐릭터 주변에 사각형이 남는다) */
     cx.globalCompositeOperation = 'source-atop';
+    /* 픽셀 모드에서는 그라디언트가 계단으로 뭉개져 캐릭터가 탁해진다 → 약하게 */
+    const k = GFX.PIXEL.on ? .45 : 1;
     const g = cx.createLinearGradient(0, top, 0, bot);
     g.addColorStop(0, 'rgba(20,14,30,0)');
     g.addColorStop(.52, 'rgba(20,14,30,0)');
-    g.addColorStop(.82, 'rgba(24,16,36,.20)');
-    g.addColorStop(1, 'rgba(24,16,36,.38)');
+    g.addColorStop(.82, `rgba(24,16,36,${.20 * k})`);
+    g.addColorStop(1, `rgba(24,16,36,${.38 * k})`);
     cx.fillStyle = g; cx.fillRect(0, 0, w, h);
 
     /* 좌상단 광택 */
@@ -1958,11 +2015,13 @@ const GFX = {
   MAX_CACHE: 500,
 
   /** look 을 캐시된 캔버스로 렌더 (프레임 단위) */
-  sprite(look, S, frame, frames, extra) {
-    const key = (look.id || '?') + '|' + Math.round(S) + '|' + frame + (extra || '');
+  sprite(look, S0, frame, frames, extra) {
+    const key = (look.id || '?') + '|' + Math.round(S0) + '|' + frame + (extra || '');
     let cv = this.cache.get(key);
     if (cv) { this.cacheHits++; return cv; }
     this.cacheMiss++;
+    const px = GFX.pxScale();
+    const S = S0 / px;
     const outlineW = GFX.outlineWidth(S);
     const pad = S * 2.1 + outlineW * 2 + 6;
     const w = Math.ceil(S * 3.4 + pad), h = Math.ceil(S * 4 + pad);
@@ -1994,7 +2053,8 @@ const GFX = {
       c.drawImage(bv, Math.cos(a) * outlineW, Math.sin(a) * outlineW);
     }
     c.drawImage(av, 0, 0);
-    cv._ox = ox; cv._oy = oy; cv._key = key;
+    GFX.posterize(cv);
+    cv._ox = ox * px; cv._oy = oy * px; cv._px = px; cv._key = key;
     if (this.cache.size > this.MAX_CACHE) {
       /* 오래된 절반 제거 */
       let i = 0;
@@ -2019,7 +2079,7 @@ const GFX = {
     c.globalAlpha = bucket;
     c.fillStyle = color;
     c.fillRect(0, 0, cv.width, cv.height);
-    out._ox = cv._ox; out._oy = cv._oy; out._key = key;
+    out._ox = cv._ox; out._oy = cv._oy; out._px = cv._px; out._key = key;
     this.cache.set(key, out);
     return out;
   },
@@ -2044,10 +2104,13 @@ const GFX = {
       road: U.vivid(src.road, .3, .1),
       accent: U.vivid(src.accent, .34, .06),
     });
-    const ts = g.ts;
+    /* 픽셀 모드 : 지형도 1/PX 로 구워 두고 그릴 때 확대한다 */
+    const px = GFX.pxScale();
+    const ts = g.ts / px;
     const W = g.gw * ts, H = g.gh * ts;
     const cv = document.createElement('canvas');
-    cv.width = Math.max(1, W); cv.height = Math.max(1, H);
+    cv.width = Math.max(1, Math.ceil(W)); cv.height = Math.max(1, Math.ceil(H));
+    cv._px = px;
     const c = cv.getContext('2d');
     const seed = m.key.length * 977 + m.diff * 131;
 
@@ -2117,7 +2180,7 @@ const GFX = {
     }
 
     /* --- 경로 --- */
-    const pts = g.pathPts.map(p => ({ x: p.x - g.ox, y: p.y - g.oy }));
+    const pts = g.pathPts.map(p => ({ x: (p.x - g.ox) / px, y: (p.y - g.oy) / px }));
     const road = GFX.ramp(m.road);
     c.lineCap = 'round'; c.lineJoin = 'round';
     /* 길은 화단보다 한 단 꺼진 것처럼 보여야 입체감이 산다.
@@ -2205,7 +2268,7 @@ const GFX = {
     const vg = c.createRadialGradient(W / 2, H / 2, Math.min(W, H) * .34,
       W / 2, H / 2, Math.max(W, H) * .74);
     vg.addColorStop(0, 'rgba(0,0,0,0)');
-    vg.addColorStop(1, 'rgba(6,10,20,.34)');
+    vg.addColorStop(1, GFX.PIXEL.on ? 'rgba(6,10,20,.12)' : 'rgba(6,10,20,.34)');
     c.fillStyle = vg; c.fillRect(0, 0, W, H);
 
     c.strokeStyle = U.rgba(U.mixHex(m.accent, '#0a1508', .55), .85);
@@ -2216,6 +2279,7 @@ const GFX = {
     c.strokeRect(c.lineWidth / 2, c.lineWidth / 2, W - c.lineWidth, H - c.lineWidth);
 
     cv._road = pts;
+    GFX.posterize(cv);
     this.terrainCanvas = cv; this.terrainKey = key;
     return cv;
   },

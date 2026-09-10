@@ -155,6 +155,23 @@ const Admin = {
         () => { G.speed = (G.speed || 1) >= 4 ? 1 : (G.speed || 1) * 2; }),
     ));
 
+    el.appendChild(this._label('그래픽'));
+    el.appendChild(this._row(
+      this._btn('픽셀모드 전환', () => {
+        GFX.PIXEL.on = !GFX.PIXEL.on;
+        GFX.clearCache();
+        UI && UI.toast && UI.toast('픽셀 모드 ' + (GFX.PIXEL.on ? 'ON' : 'OFF'), '#8fe0ff');
+      }),
+      this._btn('도트 크기 ' + GFX.PIXEL.scale, () => {
+        GFX.PIXEL.scale = GFX.PIXEL.scale >= 4 ? 2 : GFX.PIXEL.scale + 1;
+        GFX.clearCache();
+      }),
+      this._btn('색 단계 ' + GFX.PIXEL.levels, () => {
+        GFX.PIXEL.levels = GFX.PIXEL.levels >= 12 ? 4 : GFX.PIXEL.levels + 2;
+        GFX.clearCache();
+      }),
+    ));
+
     el.appendChild(this._label('도감 / 저장'));
     el.appendChild(this._row(
       this._btn('도감 전부 수집', () => {

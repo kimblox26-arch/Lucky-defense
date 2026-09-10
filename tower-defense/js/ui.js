@@ -191,7 +191,7 @@ const UI = {
     /* 이미 열려 있는 패널의 수치만 갱신한다.
        selected 만 보고 열어버리면 스킬 사용·소환처럼 refresh 를 부르는 모든 행동이
        유닛 패널을 제멋대로 띄운다 (스킬 버튼을 눌렀는데 유닛창이 뜨던 원인). */
-    if (Game.selected && !$('unitPanel').classList.contains('hidden')) this.showUnitPanel(Game.selected);
+    if (this.panelOpen && Game.selected) this.showUnitPanel(Game.selected, true);
     if (!$('modalWrap').classList.contains('hidden')) this.renderModal();
   },
 
@@ -209,10 +209,23 @@ const UI = {
   },
 
   /* ------------------------------------------------------ 유닛 패널 */
-  showUnitPanel(u) {
+  /**
+   * 유닛 상세 패널.
+   * @param u        표시할 유닛 (null 이면 닫는다)
+   * @param refresh  true 면 "이미 열려 있는 패널의 수치 갱신"이라는 뜻.
+   *                 열려 있지 않으면 아무것도 하지 않는다.
+   *
+   * 패널이 열려 있는지를 Game.selected 로 판단하면, 선택만 남아 있어도
+   * refresh 를 부르는 모든 행동(스킬·소환·웨이브 시작…)이 패널을 멋대로
+   * 띄운다. 그래서 열림 여부를 panelOpen 플래그로 따로 관리한다.
+   */
+  panelOpen: false,
+  showUnitPanel(u, refresh) {
     const p = $('unitPanel');
-    if (!u) { p.classList.add('hidden'); return; }
+    if (!u) { p.classList.add('hidden'); this.panelOpen = false; Game.selected = null; return; }
+    if (refresh && !this.panelOpen) return;
     p.classList.remove('hidden');
+    this.panelOpen = true;
     const d = u.def, rar = RARITY[RARITY_IDX[d.rarity]];
     $('upName').textContent = d.name;
     const rr = $('upRarity'); rr.textContent = rar.name; rr.style.color = rar.color;
