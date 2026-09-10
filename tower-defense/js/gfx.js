@@ -2161,6 +2161,44 @@ const GFX = {
     c.strokeStyle = U.rgba(road.hi, .2); c.lineWidth = ts * .05;
     this.strokePath(c, pts);
 
+    /* --- 원경 지형 : 화면 밖에서 이어지는 듯한 큰 덩어리 --- *
+     * 평평한 타일 판만 있으면 "격자"로만 보인다. 큰 지형 덩어리(언덕/암반/수면)를
+     * 깔아 두면 한 장의 그림처럼 읽힌다. */
+    const terrainBlobs = 7;
+    for (let i = 0; i < terrainBlobs; i++) {
+      const bx = this.hash(i, 71, seed) * W;
+      const by = this.hash(i, 73, seed) * H;
+      const br = ts * (2.2 + this.hash(i, 77, seed) * 3.4);
+      /* 길 위에는 얹지 않는다 */
+      const gx = Math.floor(bx / ts), gy = Math.floor(by / ts);
+      if (g.isPath(gx, gy)) continue;
+      const warm = this.hash(i, 79, seed) > .5;
+      const col = warm ? U.mixHex(m.accent, '#ffffff', .3) : U.mixHex(m.bg2, '#000000', .25);
+      c.save();
+      c.globalAlpha = .16 + this.hash(i, 83, seed) * .14;
+      c.fillStyle = GFX.radial(c, bx, by, br, col, U.rgba(col, 0));
+      c.beginPath(); c.ellipse(bx, by, br, br * .72, this.hash(i, 89, seed) * 3, 0, U.TAU);
+      c.fill();
+      c.restore();
+    }
+
+    /* --- 상단에서 비스듬히 들어오는 빛줄기 --- */
+    c.save();
+    c.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < 3; i++) {
+      const lx = W * (.18 + i * .3);
+      const lg = c.createLinearGradient(lx, 0, lx + W * .22, H);
+      lg.addColorStop(0, U.rgba(m.accent, .09));
+      lg.addColorStop(.6, U.rgba(m.accent, .03));
+      lg.addColorStop(1, 'rgba(0,0,0,0)');
+      c.fillStyle = lg;
+      c.beginPath();
+      c.moveTo(lx - ts * 1.2, 0); c.lineTo(lx + ts * 1.6, 0);
+      c.lineTo(lx + W * .3 + ts * 1.6, H); c.lineTo(lx + W * .3 - ts * 1.2, H);
+      c.closePath(); c.fill();
+    }
+    c.restore();
+
     /* --- 마무리 : 비네트 + 판 테두리 --- *
      * 가장자리를 살짝 눌러 시선을 가운데로 모으고, 테두리를 둘러 전장이
      * 하나의 "판" 처럼 보이게 한다. */
