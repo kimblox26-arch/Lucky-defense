@@ -41,6 +41,11 @@ const UI = {
       this.refresh();
     };
     $('btnResearch').onclick = () => this.openModal('research');
+    /* 메뉴 안에 묻지 않고 바로 열리는 버튼들 */
+    $('btnSkills').onclick = () => this.openModal('skills');
+    $('btnCodexIn').onclick = () => this.openModal('codex');
+    $('btnToolsIn').onclick = () => this.openModal('tools');
+    $('btnRouletteIn').onclick = () => { SFX.init(); SFX.resume(); Roulette.open(); };
     $('btnSpeed').onclick = () => Game.cycleSpeed();
     $('btnPause').onclick = () => { Game.paused = !Game.paused; this.refresh(); SFX.play('click'); };
     $('btnMenu').onclick = () => this.openModal('menu');
@@ -172,6 +177,18 @@ const UI = {
     $('mergeCount').textContent = pairs + '쌍';
     $('btnMerge').classList.toggle('glow', pairs > 0);
     $('btnMerge').classList.toggle('dis', pairs === 0);
+    this.refreshDots();
+  },
+
+  /* 퀵 버튼 위의 빨간 알림 점 — 지금 눌러야 이득인 버튼을 알려준다 */
+  refreshDots() {
+    const dr = $('dotResearch');
+    if (dr) {
+      const can = RESEARCH.some(r => Game.research[r.key] < r.max && Game.gold >= Game.researchCost(r.key));
+      dr.classList.toggle('hidden', !can);
+    }
+    const dq = $('dotRoulette');
+    if (dq) dq.classList.toggle('hidden', !(window.Roulette && !Roulette.freeUsed()));
   },
 
   refresh() {
@@ -184,10 +201,9 @@ const UI = {
     $('btnWave').classList.toggle('auto', Game.autoWave && Game.waveActive);
     $('waveSub').textContent = Game.waveActive ? (Game.autoWave ? '자동ON' : '자동OFF') : '시작';
     $('speedIco').textContent = Game.speed === 1 ? '▶' : Game.speed === 2 ? '▶▶' : '▶▶▶';
-    $('btnSpeed').querySelector('.bsub').textContent = 'x' + Game.speed;
-    $('btnPause').querySelector('.bico').textContent = Game.paused ? '▶' : '⏸';
-    $('btnPause').querySelector('.bsub').textContent = Game.paused ? '재개' : '정지';
-    $('researchSub').textContent = '유닛 ' + Game.units.length + '/' + Game.slotMax();
+    $('btnSpeed').querySelector('.tn').textContent = 'x' + Game.speed;
+    $('btnPause').querySelector('.ti').textContent = Game.paused ? '▶' : '⏸';
+    $('btnPause').querySelector('.tn').textContent = Game.paused ? '재개' : '정지';
 
     this.refreshSynergy();
     /* 이미 열려 있는 패널의 수치만 갱신한다.

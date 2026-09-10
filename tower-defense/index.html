@@ -38,24 +38,34 @@
 
 <!-- ======================================================= 하단 조작 -->
 <div id="bottom" class="bottom hidden">
-  <button class="bbtn primary" id="btnSummon">
-    <span class="bico">✨</span><span class="blab">소환</span><span class="bsub" id="summonCost">30G</span>
-  </button>
-  <button class="bbtn primary ten" id="btnSummon10">
-    <span class="bico">🎰</span><span class="blab">10연소환</span><span class="bsub" id="summon10Cost">300G</span>
-  </button>
-  <button class="bbtn" id="btnMerge">
-    <span class="bico">⇪</span><span class="blab">자동합성</span><span class="bsub" id="mergeCount">0쌍</span>
-  </button>
-  <button class="bbtn wavebtn" id="btnWave">
-    <span class="bico">⚔</span><span class="blab">웨이브</span><span class="bsub" id="waveSub">시작</span>
-  </button>
-  <button class="bbtn" id="btnResearch">
-    <span class="bico">⚗</span><span class="blab">연구</span><span class="bsub" id="researchSub">강화</span>
-  </button>
-  <button class="bbtn small" id="btnSpeed"><span class="bico" id="speedIco">▶</span><span class="bsub">x1</span></button>
-  <button class="bbtn small" id="btnPause"><span class="bico">⏸</span><span class="bsub">정지</span></button>
-  <button class="bbtn small" id="btnMenu"><span class="bico">☰</span><span class="bsub">메뉴</span></button>
+  <!-- 도구 줄 : 메뉴 안에 묻어 두지 않고 바로 누를 수 있게 밖으로 뺐다 -->
+  <div class="btools">
+    <button class="qbtn" id="btnSkills"  data-tip="스킬 장착"><span class="ti">✨</span><span class="tn">스킬</span></button>
+    <button class="qbtn" id="btnResearch"><span class="ti">⚗</span><span class="tn">연구</span><i class="tdot hidden" id="dotResearch"></i></button>
+    <button class="qbtn" id="btnCodexIn" data-tip="도감"><span class="ti">📖</span><span class="tn">도감</span></button>
+    <button class="qbtn" id="btnRouletteIn"><span class="ti">🎡</span><span class="tn">룰렛</span><i class="tdot hidden" id="dotRoulette"></i></button>
+    <button class="qbtn" id="btnToolsIn"><span class="ti">🛠</span><span class="tn">도구</span></button>
+    <span class="tsep"></span>
+    <button class="qbtn sm" id="btnSpeed"><span class="ti" id="speedIco">▶</span><span class="tn">x1</span></button>
+    <button class="qbtn sm" id="btnPause"><span class="ti">⏸</span><span class="tn">정지</span></button>
+    <button class="qbtn sm" id="btnMenu"><span class="ti">☰</span><span class="tn">메뉴</span></button>
+  </div>
+
+  <!-- 주 조작 줄 : 가장 자주 누르는 4개 -->
+  <div class="bmain">
+    <button class="bbtn primary" id="btnSummon">
+      <span class="bico">✨</span><span class="blab">소환</span><span class="bsub" id="summonCost">30G</span>
+    </button>
+    <button class="bbtn primary ten" id="btnSummon10">
+      <span class="bico">🎰</span><span class="blab">10연소환</span><span class="bsub" id="summon10Cost">300G</span>
+    </button>
+    <button class="bbtn" id="btnMerge">
+      <span class="bico">⇪</span><span class="blab">자동합성</span><span class="bsub" id="mergeCount">0쌍</span>
+    </button>
+    <button class="bbtn wavebtn" id="btnWave">
+      <span class="bico">⚔</span><span class="blab">웨이브</span><span class="bsub" id="waveSub">시작</span>
+    </button>
+  </div>
 </div>
 
 <!-- ======================================================= 유닛 상세 -->

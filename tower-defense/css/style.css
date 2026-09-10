@@ -84,8 +84,39 @@ button{ font:inherit; color:inherit; cursor:pointer; border:none; background:non
 
 /* ------------------------------------------------------------- 하단 */
 .bottom{ position:fixed; left:0; right:0; bottom:0; z-index:5;
-  padding:6px 6px calc(env(safe-area-inset-bottom) + 6px);
-  display:flex; gap:5px; justify-content:center; align-items:stretch; flex-wrap:wrap; }
+  padding:5px 6px calc(env(safe-area-inset-bottom) + 6px);
+  display:flex; flex-direction:column; gap:5px;
+  background:linear-gradient(180deg,rgba(10,12,22,0) 0%,rgba(10,12,22,.72) 32%,rgba(8,9,18,.95) 100%);
+  backdrop-filter:blur(3px); }
+.bmain{ display:flex; gap:5px; justify-content:center; align-items:stretch; }
+
+/* --- 퀵 도구 줄 : 스킬/연구/도감/룰렛/도구를 메뉴 밖으로 뺀 것 --- */
+.btools{ display:flex; gap:4px; justify-content:center; align-items:center; flex-wrap:nowrap; }
+.qbtn{ position:relative; flex:1 1 0; min-width:0; max-width:76px;
+  padding:5px 2px 4px; border-radius:13px; color:var(--fg);
+  background:linear-gradient(180deg,rgba(46,54,80,.95),rgba(20,24,40,.95));
+  border:1.5px solid rgba(150,170,220,.28);
+  display:flex; flex-direction:column; align-items:center; gap:1px;
+  box-shadow:0 3px 9px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.09);
+  transition:transform .07s, filter .1s; }
+.qbtn::after{ content:''; position:absolute; inset:1px 1px 55% 1px; border-radius:12px 12px 40% 40%;
+  background:linear-gradient(180deg,rgba(255,255,255,.16),rgba(255,255,255,0)); pointer-events:none; }
+.qbtn:active{ transform:translateY(2px); filter:brightness(1.3); }
+.qbtn .ti{ font-size:16px; line-height:1.05; filter:drop-shadow(0 1px 2px rgba(0,0,0,.6)); }
+.qbtn .tn{ font-size:9.5px; letter-spacing:-.3px; color:#cdd6f0; white-space:nowrap; }
+.qbtn.sm{ flex:0 0 auto; width:44px; max-width:44px;
+  background:linear-gradient(180deg,rgba(32,38,58,.95),rgba(14,17,28,.95)); }
+.qbtn.sm .ti{ font-size:14px; } .qbtn.sm .tn{ font-size:9px; color:var(--dim); }
+.qbtn#btnSkills{ border-color:rgba(170,130,255,.55); box-shadow:0 0 12px -5px #a482ff,0 3px 9px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.09); }
+.qbtn#btnRouletteIn{ border-color:rgba(255,190,80,.5); }
+.qbtn#btnRouletteIn .ti{ display:inline-block; animation:qSpin 5s linear infinite; }
+@keyframes qSpin{ to{ transform:rotate(360deg); } }
+.tsep{ flex:0 0 auto; width:1px; align-self:stretch; margin:2px 2px;
+  background:linear-gradient(180deg,rgba(150,170,220,0),rgba(150,170,220,.35),rgba(150,170,220,0)); }
+.tdot{ position:absolute; top:-3px; right:-2px; width:9px; height:9px; border-radius:50%;
+  background:#ff4d6d; border:1.5px solid #14172a; box-shadow:0 0 7px #ff4d6d;
+  animation:tdotPulse 1.2s ease-in-out infinite; }
+@keyframes tdotPulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.35); } }
 .bbtn{ flex:1 1 0; min-width:62px; max-width:110px; padding:6px 4px; border-radius:var(--r);
   background:linear-gradient(180deg,rgba(34,42,62,.96),rgba(16,20,32,.96));
   border:2px solid var(--line); display:flex; flex-direction:column; align-items:center; gap:1px;
@@ -105,7 +136,7 @@ button{ font:inherit; color:inherit; cursor:pointer; border:none; background:non
 @keyframes btnGlow{ 0%,100%{ box-shadow:0 0 6px -2px var(--gold),0 4px 12px rgba(0,0,0,.5);} 50%{ box-shadow:0 0 22px 0 var(--gold),0 4px 12px rgba(0,0,0,.5);} }
 
 /* ------------------------------------------------------------- 웨이브 미리보기 */
-.wave-preview{ position:fixed; left:50%; transform:translateX(-50%); bottom:calc(env(safe-area-inset-bottom) + 70px);
+.wave-preview{ position:fixed; left:50%; transform:translateX(-50%); bottom:calc(env(safe-area-inset-bottom) + 108px);
   z-index:4; display:flex; gap:4px; align-items:flex-end; pointer-events:none; max-width:96vw; flex-wrap:wrap;
   justify-content:center; }
 .wp-title{ font-size:10px; color:var(--dim); align-self:center; margin-right:2px; }
@@ -308,18 +339,22 @@ button{ font:inherit; color:inherit; cursor:pointer; border:none; background:non
   .syn-panel::-webkit-scrollbar{ display:none; }
   .syn{ flex:0 0 auto; }
   /* 스킬: 하단 가로 바 */
-  .skillbar{ left:0; right:0; top:auto; bottom:calc(env(safe-area-inset-bottom) + 74px);
+  .skillbar{ left:0; right:0; top:auto; bottom:calc(env(safe-area-inset-bottom) + 112px);
     display:flex; flex-direction:row; justify-content:flex-start; flex-wrap:nowrap; gap:4px;
     padding:0 6px 2px; max-height:none; overflow-x:auto; overflow-y:hidden; scrollbar-width:none; }
   .skillbar::-webkit-scrollbar{ display:none; }
   .skill{ flex:0 0 auto; width:40px; height:40px; font-size:17px; border-radius:11px; }
-  .bottom{ flex-wrap:nowrap; gap:3px; }
+  .bottom{ gap:4px; }
+  .bmain{ flex-wrap:nowrap; gap:3px; }
+  .qbtn{ padding:4px 1px 3px; border-radius:11px; }
+  .qbtn .ti{ font-size:15px; } .qbtn .tn{ font-size:9px; }
+  .qbtn.sm{ width:38px; max-width:38px; }
   .bbtn{ min-width:0; padding:4px 2px; }
   .bbtn .bico{ font-size:17px; } .bbtn .blab{ font-size:9.5px; } .bbtn .bsub{ font-size:9px; }
   .bbtn.small{ min-width:40px; max-width:46px; }
-  .wave-preview{ bottom:calc(env(safe-area-inset-bottom) + 122px); }
-  .unit-panel{ bottom:calc(env(safe-area-inset-bottom) + 122px); }
-  .toasts{ bottom:calc(env(safe-area-inset-bottom) + 180px); }
+  .wave-preview{ bottom:calc(env(safe-area-inset-bottom) + 160px); }
+  .unit-panel{ bottom:calc(env(safe-area-inset-bottom) + 160px); }
+  .toasts{ bottom:calc(env(safe-area-inset-bottom) + 218px); }
 }
 @media (max-width:420px){
   .bbtn .blab{ font-size:10.5px; }
@@ -611,7 +646,7 @@ button{ font:inherit; color:inherit; cursor:pointer; border:none; background:non
 
 /* ------------------------------------------------------- 튜토리얼 */
 .tut{ position:fixed; inset:0; z-index:58; pointer-events:none; }
-.tut-box{ position:absolute; left:50%; transform:translateX(-50%); bottom:calc(env(safe-area-inset-bottom) + 190px);
+.tut-box{ position:absolute; left:50%; transform:translateX(-50%); bottom:calc(env(safe-area-inset-bottom) + 228px);
   width:min(400px,92vw); padding:15px 16px; border-radius:18px; pointer-events:auto;
   background:linear-gradient(180deg,rgba(30,38,62,.97),rgba(14,18,30,.97));
   border:2px solid #a48bff; box-shadow:0 0 34px -8px #a48bff, 0 12px 34px rgba(0,0,0,.6);
