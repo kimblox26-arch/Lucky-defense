@@ -184,6 +184,34 @@ const Draw = {
   },
 
   /**
+   * 적 발밑 표식 — 붉은 가시 링.
+   * 아군의 등급 원판과 형태·색이 확실히 달라야 전장이 한눈에 읽힌다.
+   */
+  hostileMark(c, x, y, S, t, boss) {
+    const rx = S * (boss ? 1.15 : .8), ry = rx * .38;
+    const pulse = .6 + Math.sin(t * 3.4) * .4;
+    c.save();
+    /* 바닥 붉은 기운 */
+    c.fillStyle = GFX.radial(c, x, y, rx * 1.5,
+      `rgba(255,60,70,${(boss ? .3 : .17) * (.7 + pulse * .3)})`, 'rgba(255,60,70,0)');
+    c.beginPath(); c.ellipse(x, y, rx * 1.5, ry * 1.6, 0, 0, U.TAU); c.fill();
+    /* 가시 링 */
+    c.strokeStyle = `rgba(255,90,96,${.55 + pulse * .3})`;
+    c.lineWidth = Math.max(1.2, S * .07);
+    c.beginPath(); c.ellipse(x, y, rx, ry, 0, 0, U.TAU); c.stroke();
+    const spikes = boss ? 10 : 6;
+    for (let i = 0; i < spikes; i++) {
+      const a = i / spikes * U.TAU - t * .6;
+      const ex = x + Math.cos(a) * rx, ey = y + Math.sin(a) * ry;
+      c.beginPath();
+      c.moveTo(ex, ey);
+      c.lineTo(x + Math.cos(a) * rx * 1.28, y + Math.sin(a) * ry * 1.28);
+      c.stroke();
+    }
+    c.restore();
+  },
+
+  /**
    * 등급 받침대 — 운빨겜의 상징 같은 두툼한 원판.
    * 등급이 높을수록 테두리가 굵어지고, 빛나는 링과 떠오르는 입자가 붙는다.
    */
@@ -370,6 +398,10 @@ const Draw = {
     /* 비행 그림자 */
     if (e.flying) GFX.groundShadow(c, x, e.y + S * .7, S * .5, S * .16, .26);
 
+    /* 적 표식 — 타워디펜스에서 아군/적을 즉시 구분하는 건 기본기다.
+       아군은 등급색 원판 위에 서 있고, 적은 붉은 가시 링을 깔아 한눈에 갈린다. */
+    this.hostileMark(c, x, e.y + S * .74, S, g.time + e.seed, e.boss);
+
     /* 프레임 선택 (걷기 위상) */
     const spd = e.def.spd || 1;
     const frame = Math.floor(((g.time * spd * 2.4 + e.seed) % 1) * this.ENEMY_FRAMES) % this.ENEMY_FRAMES;
@@ -450,6 +482,8 @@ const Draw = {
 
     /* 체력바 */
     const hpPct = U.clamp(e.hp / e.maxHp, 0, 1);
+    /* 적이 뭉치면 체력바 + 데미지 숫자가 서로 겹쳐 오히려 안 읽힌다.
+       피해를 입은 적과 보스만 표시하고, 아군/적 구분은 발밑 표식이 맡는다. */
     if (hpPct < 1 || e.boss) {
       const bw = e.boss ? S * 3.0 : S * 1.9, bh = e.boss ? 7 : 4.5;
       const bx = x - bw / 2, by = y - S * (e.boss ? 1.9 : 1.62);

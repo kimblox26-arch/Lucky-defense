@@ -204,6 +204,7 @@ const Game = {
     this.achieved = d && d.achieved || {};
     this.collection = d && d.collection || {};
     this.boosters = d && d.boosters || {};
+    this.loadout = (d && d.loadout && d.loadout.length) ? d.loadout.slice() : this.DEFAULT_LOADOUT.slice();
     this.rouletteDay = (d && d.rouletteDay) || '';
     this.rouletteFree = (d && d.rouletteFree) || 0;
     this.metaStats = d && d.metaStats || {
@@ -221,7 +222,7 @@ const Game = {
       gems: this.gems, perks: this.perks, unlockedMaps: this.unlockedMaps,
       achieved: this.achieved, metaStats: this.metaStats, settings: this.settings,
       collection: this.collection, boosters: this.boosters,
-      rouletteDay: this.rouletteDay, rouletteFree: this.rouletteFree,
+      rouletteDay: this.rouletteDay, rouletteFree: this.rouletteFree, loadout: this.loadout,
     };
     if (window.Account && Account.current) Account.saveProfileData(data);
     else Store.save(data);
@@ -937,6 +938,38 @@ const Game = {
   },
 
   /* ---------------------------------------------------------- 스킬 */
+  /* ---------------------------------------------------------- 스킬 장착 */
+  /**
+   * 스킬 18종을 한 줄에 다 늘어놓으면 화면 밖으로 넘쳐 쓸 수가 없다.
+   * 전투에 가져갈 6개를 미리 고르게 해서 UI 를 정리하고, "무엇을 챙길지"라는
+   * 전략과 연계(콤보) 설계를 함께 만든다.
+   */
+  LOADOUT_SIZE: 6,
+  DEFAULT_LOADOUT: ['meteor', 'blizzard', 'thunderstorm', 'goldrush', 'overdrive', 'sanctuary'],
+
+  /** 현재 장착한 스킬 정의 배열 */
+  activeSkills() {
+    const keys = (this.loadout && this.loadout.length) ? this.loadout : this.DEFAULT_LOADOUT;
+    const out = [];
+    for (const k of keys) {
+      const s = SKILLS.find(x => x.key === k);
+      if (s) out.push(s);
+    }
+    return out;
+  },
+  isEquipped(key) { return this.activeSkills().some(s => s.key === key); },
+
+  /** 장착/해제 토글 — 가득 찼으면 실패 */
+  toggleSkill(key) {
+    if (!this.loadout) this.loadout = this.DEFAULT_LOADOUT.slice();
+    const i = this.loadout.indexOf(key);
+    if (i >= 0) { this.loadout.splice(i, 1); this.saveMeta(); return true; }
+    if (this.loadout.length >= this.LOADOUT_SIZE) return false;
+    this.loadout.push(key);
+    this.saveMeta();
+    return true;
+  },
+
   canUseSkill(key) {
     const s = SKILLS.find(x => x.key === key);
     return this.skillCd[key] <= 0 && this.mana >= s.mana;
@@ -1440,7 +1473,7 @@ const Game = {
         case 'a': this.autoArrange(); break;
         case 'l': if (this.selected) this.toggleLock(this.selected); break;
         case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': {
-          const s = SKILLS[parseInt(e.key) - 1];
+          const s = this.activeSkills()[parseInt(e.key) - 1];
           if (s) { if (s.type === 'target') { this.targetingSkill = s.key; if (window.UI) UI.setSkillTargeting(s.key); } else this.useSkill(s.key); }
           break;
         }

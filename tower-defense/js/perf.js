@@ -46,7 +46,10 @@ const Perf = {
       '<span class="pf-sep"></span>' +
       '<span class="pf-i" id="pfTime">00:00</span>' +
       '<button class="pf-btn" id="pfOpt" title="최적화 · 품질 단계">⚡</button>';
-    document.body.appendChild(el);
+    /* 화면 위에 띄우면 하단 버튼을 덮는다. 상단 HUD 줄 안에 넣어
+       레이아웃을 따라가게 하면 어떤 화면 크기에서도 겹치지 않는다. */
+    const row = document.querySelector('.hud-row2');
+    (row || document.body).appendChild(el);
     this.el = el;
     this.fpsEl = document.getElementById('pfFps');
     this.pingEl = document.getElementById('pfPing');

@@ -847,9 +847,10 @@ button{ font:inherit; color:inherit; cursor:pointer; border:none; background:non
  *  성능 패널 — FPS · 핑 · 타이머 · 최적화
  * ===================================================================== */
 #perfHud {
-  position: fixed; left: 6px; bottom: 6px; z-index: 60;
-  display: flex; align-items: center; gap: 5px;
-  padding: 4px 6px 4px 8px;
+  /* 상단 HUD 두 번째 줄 안에 들어간다 (fixed 로 띄우면 하단 버튼을 덮는다) */
+  flex: 0 0 auto;
+  display: flex; align-items: center; gap: 4px;
+  padding: 3px 5px 3px 7px;
   background: rgba(10, 14, 22, .72);
   border: 1px solid rgba(255, 255, 255, .10);
   border-radius: 999px;
@@ -858,13 +859,13 @@ button{ font:inherit; color:inherit; cursor:pointer; border:none; background:non
   backdrop-filter: blur(6px);
   pointer-events: auto;
 }
-#perfHud .pf-i { min-width: 40px; text-align: center; }
+#perfHud .pf-i { min-width: 34px; text-align: center; font-size: 9.5px; }
 #perfHud .pf-i.good { color: #7cf0a8; }
 #perfHud .pf-i.mid  { color: #ffcf3f; }
 #perfHud .pf-i.bad  { color: #ff6b6b; }
 #perfHud .pf-sep { width: 1px; height: 10px; background: rgba(255, 255, 255, .14); }
 #perfHud .pf-btn {
-  margin-left: 2px; width: 22px; height: 22px; border-radius: 50%;
+  margin-left: 1px; width: 20px; height: 20px; border-radius: 50%;
   border: 1px solid rgba(255, 255, 255, .16);
   background: rgba(40, 50, 74, .9); color: #eaf0ff;
   font-size: 12px; line-height: 1; cursor: pointer; padding: 0;
@@ -906,3 +907,28 @@ button{ font:inherit; color:inherit; cursor:pointer; border:none; background:non
 }
 .rl-result b { font-size: 17px; }
 .rl-note { margin-top: 7px; font: 700 11px system-ui; color: #8fa8cc; }
+
+/* =====================================================================
+ *  스킬 장착 화면
+ * ===================================================================== */
+.sk-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 7px; }
+.sk-card {
+  position: relative; text-align: left; padding: 9px 10px 10px;
+  border-radius: 14px; cursor: pointer;
+  background: rgba(16, 22, 34, .9);
+  border: 2px solid rgba(255, 255, 255, .08);
+  color: #cfe0ff; display: flex; flex-direction: column; gap: 2px;
+  transition: transform .12s cubic-bezier(.34,1.56,.64,1), border-color .12s;
+}
+.sk-card:active { transform: scale(.95); }
+.sk-card.on { border-color: var(--c); background: rgba(30, 40, 60, .95); box-shadow: 0 0 0 1px var(--c) inset, 0 4px 16px rgba(0,0,0,.4); }
+.sk-card .sk-slot {
+  position: absolute; top: -7px; right: -7px; width: 22px; height: 22px;
+  border-radius: 50%; background: var(--c); color: #10131c;
+  font: 900 12px/22px system-ui; text-align: center; font-style: normal;
+  box-shadow: 0 2px 8px rgba(0,0,0,.5);
+}
+.sk-card .sk-ico { font-size: 22px; line-height: 1; }
+.sk-card .sk-n { font-weight: 900; font-size: 13px; color: var(--c); }
+.sk-card .sk-m { font-size: 10px; color: #8fa8cc; font-weight: 700; }
+.sk-card .sk-d { font-size: 10.5px; line-height: 1.4; color: #a8bcd8; }

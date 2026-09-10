@@ -80,7 +80,8 @@ const UI = {
   /* ------------------------------------------------------ 스킬바 */
   buildSkillBar() {
     const bar = $('skillBar'); bar.innerHTML = '';
-    SKILLS.forEach((s, i) => {
+    /* 장착한 스킬만 보여 준다 (전체 18종을 늘어놓으면 화면을 넘친다) */
+    Game.activeSkills().forEach((s, i) => {
       const b = document.createElement('button');
       b.className = 'skill'; b.dataset.key = s.key;
       b.style.color = s.color;
@@ -285,6 +286,7 @@ const UI = {
       { k: 'research', n: '⚗ 연구' },
       { k: 'codex', n: '📖 도감' },
       { k: 'ach', n: '🏆 업적' },
+      { k: 'skills', n: '✨ 스킬' },
       { k: 'tools', n: '🛠 도구' },
       { k: 'menu', n: '☰ 메뉴' },
     ];
@@ -299,9 +301,41 @@ const UI = {
       case 'research': $('modalTitle').textContent = '연구소'; body.innerHTML = this.htmlResearch(); this.bindResearch(); break;
       case 'codex': $('modalTitle').textContent = '도감'; this.renderCodex(body); break;
       case 'ach': $('modalTitle').textContent = '업적'; body.innerHTML = this.htmlAch(); break;
+      case 'skills': $('modalTitle').textContent = '스킬 장착'; body.innerHTML = this.htmlSkills(); this.bindSkills(); break;
       case 'tools': $('modalTitle').textContent = '전투 도구'; body.innerHTML = this.htmlTools(); this.bindTools(); break;
       case 'menu': $('modalTitle').textContent = '메뉴'; body.innerHTML = this.htmlMenu(); this.bindMenu(); break;
     }
+  },
+
+  /* ------------------------------------------------------ 스킬 장착 */
+  htmlSkills() {
+    const eq = Game.activeSkills().map(s => s.key);
+    const n = eq.length, max = Game.LOADOUT_SIZE;
+    const card = (s) => {
+      const on = eq.includes(s.key);
+      const idx = eq.indexOf(s.key);
+      return `<button class="sk-card ${on ? 'on' : ''}" data-sk="${s.key}" style="--c:${s.color}">
+        ${on ? `<i class="sk-slot">${idx + 1}</i>` : ''}
+        <span class="sk-ico">${s.icon}</span>
+        <span class="sk-n">${s.name}</span>
+        <span class="sk-m">마나 ${s.mana} · 쿨 ${s.cd}s</span>
+        <span class="sk-d">${s.desc}</span>
+      </button>`;
+    };
+    return `<div class="p-note">전투에 가져갈 스킬을 <b>${max}개</b>까지 고른다.
+      지금 ${n}/${max} 장착. 연계는 4.5초 안에 이어 쓸 때 배수가 붙으니, 원소 궁합을 노려 짜 보라.</div>
+      <div class="sk-grid">${SKILLS.map(card).join('')}</div>`;
+  },
+  bindSkills() {
+    $('modalBody').querySelectorAll('[data-sk]').forEach(b => {
+      b.onclick = () => {
+        const ok = Game.toggleSkill(b.dataset.sk);
+        if (!ok) { SFX.play('error'); this.toast(`최대 ${Game.LOADOUT_SIZE}개까지 장착할 수 있다`, '#ff6b6b'); return; }
+        SFX.play('tab');
+        this.buildSkillBar();
+        this.renderModal();
+      };
+    });
   },
 
   htmlResearch() {
