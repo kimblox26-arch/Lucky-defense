@@ -1799,10 +1799,39 @@ const GFX = {
       }
     }
 
-    /* --- 타일 격자(아주 은은하게) --- */
-    c.strokeStyle = 'rgba(255,255,255,.045)'; c.lineWidth = 1;
-    for (let i = 0; i <= g.gw; i++) { c.beginPath(); c.moveTo(i * ts, 0); c.lineTo(i * ts, H); c.stroke(); }
-    for (let j = 0; j <= g.gh; j++) { c.beginPath(); c.moveTo(0, j * ts); c.lineTo(W, j * ts); c.stroke(); }
+    /* --- 배치 칸을 입체 타일(잔디 화단)로 --- *
+     * 디펜스 게임의 맵이 "판"처럼 읽히는 건 지을 수 있는 칸이 도드라지기 때문이다.
+     * 칸마다 살짝 밝은 윗면 + 아래쪽 그림자 턱을 줘서 도톰한 화단처럼 보이게 한다. */
+    const plot = GFX.ramp(m.accent);
+    for (let gy = 0; gy < g.gh; gy++) {
+      for (let gx = 0; gx < g.gw; gx++) {
+        if (g.isPath(gx, gy)) continue;
+        const x0 = gx * ts, y0 = gy * ts;
+        const pad = ts * .045, r = ts * .17;
+        const v = this.hash(gx, gy, seed + 41);          /* 칸마다 미세한 색 편차 */
+        const tint = (gx + gy) % 2 ? .045 : .015;
+
+        /* 아래쪽 턱(두께) */
+        c.fillStyle = U.rgba('#0a1508', .28);
+        c.beginPath();
+        c.roundRect(x0 + pad, y0 + pad + ts * .05, ts - pad * 2, ts - pad * 2, r);
+        c.fill();
+        /* 윗면 */
+        const tg = c.createLinearGradient(x0, y0, x0, y0 + ts);
+        tg.addColorStop(0, U.rgba(plot.lit, .13 + tint + v * .05));
+        tg.addColorStop(1, U.rgba(plot.sh, .10 + v * .04));
+        c.fillStyle = tg;
+        c.beginPath();
+        c.roundRect(x0 + pad, y0 + pad, ts - pad * 2, ts - pad * 2, r);
+        c.fill();
+        /* 윗면 하이라이트 테두리 */
+        c.strokeStyle = U.rgba('#ffffff', .10);
+        c.lineWidth = Math.max(1, ts * .022);
+        c.beginPath();
+        c.roundRect(x0 + pad, y0 + pad, ts - pad * 2, ts - pad * 2, r);
+        c.stroke();
+      }
+    }
 
     /* --- 지형 장식물 --- */
     const deco = m.deco || ['rock', 'grass'];
@@ -1822,14 +1851,20 @@ const GFX = {
     /* --- 경로 --- */
     const pts = g.pathPts.map(p => ({ x: p.x - g.ox, y: p.y - g.oy }));
     const road = GFX.ramp(m.road);
-    /* 바깥 테두리(흙 둔덕) */
     c.lineCap = 'round'; c.lineJoin = 'round';
-    c.strokeStyle = road.deep; c.lineWidth = ts * 1.02;
+    /* 길은 화단보다 한 단 꺼진 것처럼 보여야 입체감이 산다.
+       바깥부터 : 잔디에 드리운 그림자 → 흙 둔덕 → 안쪽 그늘 → 본 노면 */
+    c.strokeStyle = U.rgba('#0a1508', .34); c.lineWidth = ts * 1.10;
     this.strokePath(c, pts);
-    c.strokeStyle = road.sh; c.lineWidth = ts * .92;
+    c.strokeStyle = road.deep; c.lineWidth = ts * 1.00;
+    this.strokePath(c, pts);
+    c.strokeStyle = road.sh; c.lineWidth = ts * .90;
     this.strokePath(c, pts);
     /* 본 도로 */
-    c.strokeStyle = road.base; c.lineWidth = ts * .8;
+    c.strokeStyle = road.base; c.lineWidth = ts * .78;
+    this.strokePath(c, pts);
+    /* 노면 가운데를 살짝 밝게 — 다져진 길 느낌 */
+    c.strokeStyle = U.rgba(road.lit, .32); c.lineWidth = ts * .46;
     this.strokePath(c, pts);
     /* 도로 텍스처 : 경로를 따라 자갈을 흩뿌린다 */
     let total = 0;
@@ -1858,6 +1893,22 @@ const GFX = {
     c.strokeStyle = U.rgba(road.hi, .2); c.lineWidth = ts * .05;
     this.strokePath(c, pts);
 
+    /* --- 마무리 : 비네트 + 판 테두리 --- *
+     * 가장자리를 살짝 눌러 시선을 가운데로 모으고, 테두리를 둘러 전장이
+     * 하나의 "판" 처럼 보이게 한다. */
+    const vg = c.createRadialGradient(W / 2, H / 2, Math.min(W, H) * .34,
+      W / 2, H / 2, Math.max(W, H) * .74);
+    vg.addColorStop(0, 'rgba(0,0,0,0)');
+    vg.addColorStop(1, 'rgba(6,10,20,.34)');
+    c.fillStyle = vg; c.fillRect(0, 0, W, H);
+
+    c.strokeStyle = U.rgba(U.mixHex(m.accent, '#0a1508', .55), .85);
+    c.lineWidth = Math.max(2, ts * .1);
+    c.strokeRect(c.lineWidth / 2, c.lineWidth / 2, W - c.lineWidth, H - c.lineWidth);
+    c.strokeStyle = U.rgba('#ffffff', .1);
+    c.lineWidth = Math.max(1, ts * .03);
+    c.strokeRect(c.lineWidth / 2, c.lineWidth / 2, W - c.lineWidth, H - c.lineWidth);
+
     cv._road = pts;
     this.terrainCanvas = cv; this.terrainKey = key;
     return cv;
@@ -1873,39 +1924,60 @@ const GFX = {
   deco(c, kind, x, y, s, m, seed) {
     switch (kind) {
       case 'grass': {
-        c.strokeStyle = U.rgba(m.accent, .5); c.lineWidth = s * .09; c.lineCap = 'round';
-        for (let i = -2; i <= 2; i++) {
-          c.beginPath(); c.moveTo(x + i * s * .14, y + s * .3);
-          c.quadraticCurveTo(x + i * s * .18, y - s * .1, x + i * s * .3, y - s * .4);
-          c.stroke();
+        /* 풀포기도 어두운 밑선을 깔아 캐릭터와 같은 스티커 톤을 맞춘다 */
+        c.lineCap = 'round';
+        for (const pass of [0, 1]) {
+          c.strokeStyle = pass ? U.rgba(m.accent, .95) : U.rgba('#12240e', .7);
+          c.lineWidth = pass ? s * .1 : s * .2;
+          for (let i = -2; i <= 2; i++) {
+            c.beginPath(); c.moveTo(x + i * s * .14, y + s * .3);
+            c.quadraticCurveTo(x + i * s * .18, y - s * .1, x + i * s * .3, y - s * .4);
+            c.stroke();
+          }
         }
         break;
       }
       case 'rock': {
-        const R = GFX.ramp('#6f7684');
-        c.fillStyle = GFX.vgrad(c, x, y - s * .5, y + s * .4, R.lit, R.deep);
+        const R = GFX.ramp('#7d8595');
+        GFX.groundShadow(c, x, y + s * .36, s * .46, s * .14, .3);
+        const p = new Path2D();
+        p.moveTo(x - s * .48, y + s * .32);
+        p.quadraticCurveTo(x - s * .56, y - s * .12, x - s * .26, y - s * .34);
+        p.quadraticCurveTo(x + s * .02, y - s * .52, x + s * .3, y - s * .3);
+        p.quadraticCurveTo(x + s * .56, y - s * .1, x + s * .42, y + s * .32);
+        p.closePath();
+        c.fillStyle = GFX.vgrad(c, x, y - s * .5, y + s * .34, R.lit, R.sh);
+        c.fill(p);
+        c.strokeStyle = '#1b1218'; c.lineWidth = Math.max(1, s * .11);
+        c.lineJoin = 'round'; c.stroke(p);
+        c.fillStyle = 'rgba(255,255,255,.3)';
         c.beginPath();
-        c.moveTo(x - s * .5, y + s * .34); c.lineTo(x - s * .3, y - s * .3);
-        c.lineTo(x + s * .12, y - s * .44); c.lineTo(x + s * .5, y - s * .05);
-        c.lineTo(x + s * .38, y + s * .34); c.closePath(); c.fill();
-        c.strokeStyle = R.line; c.lineWidth = s * .07; c.stroke();
-        c.fillStyle = 'rgba(255,255,255,.14)';
-        c.beginPath(); c.moveTo(x - s * .28, y - s * .28); c.lineTo(x + s * .1, y - s * .4);
-        c.lineTo(x - s * .05, y - s * .05); c.fill();
+        c.ellipse(x - s * .14, y - s * .22, s * .18, s * .08, -.5, 0, U.TAU); c.fill();
         break;
       }
       case 'tree': {
-        c.fillStyle = '#4a3520';
-        c.fillRect(x - s * .1, y - s * .1, s * .2, s * .55);
         const G = GFX.ramp(m.accent);
-        for (let i = 0; i < 3; i++) {
-          c.fillStyle = i === 0 ? G.sh : i === 1 ? G.base : G.lit;
-          c.beginPath();
-          c.moveTo(x, y - s * (.85 + i * .18));
-          c.lineTo(x + s * (.5 - i * .1), y - s * (.1 + i * .22));
-          c.lineTo(x - s * (.5 - i * .1), y - s * (.1 + i * .22));
-          c.closePath(); c.fill();
-        }
+        GFX.groundShadow(c, x, y + s * .46, s * .42, s * .13, .32);
+        /* 줄기 */
+        const T = GFX.ramp('#8a5f34');
+        c.fillStyle = T.base;
+        c.beginPath(); c.roundRect(x - s * .13, y - s * .06, s * .26, s * .56, s * .08); c.fill();
+        c.strokeStyle = '#1b1218'; c.lineWidth = Math.max(1, s * .1);
+        c.lineJoin = 'round'; c.stroke();
+        /* 잎 : 둥근 덩어리 3단을 하나의 실루엣으로 묶어 두꺼운 테두리를 두른다 */
+        const crown = new Path2D();
+        crown.ellipse(x, y - s * .34, s * .54, s * .42, 0, 0, U.TAU);
+        crown.ellipse(x - s * .3, y - s * .12, s * .34, s * .28, 0, 0, U.TAU);
+        crown.ellipse(x + s * .3, y - s * .12, s * .34, s * .28, 0, 0, U.TAU);
+        crown.ellipse(x, y - s * .74, s * .36, s * .3, 0, 0, U.TAU);
+        c.fillStyle = GFX.vgrad(c, x, y - s * 1.0, y + s * .1, G.lit, G.sh);
+        c.fill(crown);
+        c.strokeStyle = '#1b1218'; c.lineWidth = Math.max(1, s * .11);
+        c.stroke(crown);
+        /* 잎 하이라이트 */
+        c.fillStyle = U.rgba('#ffffff', .26);
+        c.beginPath();
+        c.ellipse(x - s * .16, y - s * .56, s * .22, s * .1, -.35, 0, U.TAU); c.fill();
         break;
       }
       case 'deadtree': {
