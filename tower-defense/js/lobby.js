@@ -191,16 +191,147 @@ const Lobby = {
     Game.paused = true;
     Game.state = 'playing';
     this.renderLobby();
+    this.startLobbyFx();
+    this.nextHero();
   },
 
   hideLobby() {
     this.el.lobby.classList.add('hidden');
+    this.stopLobbyFx();
     this.closePanel();
     document.getElementById('hud').classList.remove('hidden');
     document.getElementById('bottom').classList.remove('hidden');
     document.getElementById('skillBar').classList.remove('hidden');
     document.getElementById('synPanel').classList.remove('hidden');
     document.getElementById('wavePreview').classList.remove('hidden');
+  },
+
+  /* ===================================================================
+   *  메인화면 연출 — 배경 입자 + 상단 유닛 쇼케이스
+   * =================================================================== */
+  heroIdx: 0, _fxParts: null, _lobbyRaf: 0,
+
+  /** 쇼케이스에 세울 유닛을 고른다 : 도감에 모은 게 있으면 그중 최고 등급부터 */
+  heroPool() {
+    const owned = Object.keys(Game.collection || {});
+    const pool = owned.length
+      ? owned.map(k => UNIT_MAP[k]).filter(Boolean)
+      : UNITS.filter(u => RARITY_IDX[u.rarity] >= 4);
+    pool.sort((a, b) => RARITY_IDX[b.rarity] - RARITY_IDX[a.rarity]);
+    return pool.slice(0, 24);
+  },
+
+  startLobbyFx() {
+    const fx = document.getElementById('lbFx');
+    const hero = document.getElementById('lbHeroCv');
+    if (!fx || !hero) return;
+    cancelAnimationFrame(this._lobbyRaf);
+
+    const fit = (cv) => {
+      const r = cv.getBoundingClientRect();
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      cv.width = Math.max(1, Math.round(r.width * dpr));
+      cv.height = Math.max(1, Math.round(r.height * dpr));
+      const c = cv.getContext('2d');
+      c.setTransform(dpr, 0, 0, dpr, 0, 0);
+      return { c, w: r.width, h: r.height };
+    };
+
+    /* 배경 입자 — 천천히 떠오르는 빛 알갱이 */
+    let bg = fit(fx), hv = fit(hero);
+    if (!this._fxParts) {
+      this._fxParts = [];
+      for (let i = 0; i < 46; i++) {
+        this._fxParts.push({
+          x: Math.random(), y: Math.random(),
+          r: U.rand(.8, 2.6), sp: U.rand(.004, .018),
+          a: U.rand(.15, .5), hue: U.pick([210, 265, 300, 45]),
+        });
+      }
+    }
+    const pool = this.heroPool();
+    const t0 = performance.now();
+
+    const frame = () => {
+      const now = performance.now();
+      const t = (now - t0) / 1000;
+
+      /* --- 배경 --- */
+      bg.c.clearRect(0, 0, bg.w, bg.h);
+      for (const p of this._fxParts) {
+        p.y -= p.sp * .01;
+        if (p.y < -.05) { p.y = 1.05; p.x = Math.random(); }
+        const x = p.x * bg.w, y = p.y * bg.h;
+        bg.c.fillStyle = `hsla(${p.hue},90%,72%,${p.a})`;
+        bg.c.beginPath(); bg.c.arc(x, y, p.r, 0, Math.PI * 2); bg.c.fill();
+      }
+
+      /* --- 쇼케이스 --- */
+      hv.c.clearRect(0, 0, hv.w, hv.h);
+      const def = pool[this.heroIdx % Math.max(1, pool.length)];
+      if (def) {
+        const rar = RARITY[RARITY_IDX[def.rarity]];
+        /* 등급색 무대 조명 */
+        const cx = hv.w * .68;
+        const g = hv.c.createRadialGradient(cx, hv.h * .95, 4, cx, hv.h * .95, hv.h * 1.05);
+        g.addColorStop(0, U.rgba(rar.glow, .45));
+        g.addColorStop(.55, U.rgba(rar.color, .12));
+        g.addColorStop(1, 'rgba(0,0,0,0)');
+        hv.c.fillStyle = g; hv.c.fillRect(0, 0, hv.w, hv.h);
+        /* 뒤로 도는 광선 */
+        hv.c.save();
+        hv.c.globalCompositeOperation = 'lighter';
+        hv.c.translate(cx, hv.h * .78);
+        for (let i = 0; i < 10; i++) {
+          const a = t * .25 + i / 10 * Math.PI * 2;
+          hv.c.fillStyle = U.rgba(rar.glow, .05);
+          hv.c.beginPath();
+          hv.c.moveTo(0, 0);
+          hv.c.arc(0, 0, hv.h * .95, a, a + .16);
+          hv.c.closePath(); hv.c.fill();
+        }
+        hv.c.restore();
+        /* 유닛 */
+        const S = hv.h * .25;
+        GFX.drawCharOutlined(hv.c, cx, hv.h * .82, S,
+          Draw.unitLook(def), { t, phase: t * 1.6, aim: 0, seed: this.heroIdx });
+        /* 반짝이 */
+        for (let i = 0; i < 7; i++) {
+          const ph = (t * .5 + i / 7) % 1;
+          const a = i / 7 * Math.PI * 2 + t * .4;
+          const rr = hv.h * (.2 + ph * .3);
+          hv.c.globalAlpha = (1 - ph) * .8;
+          hv.c.fillStyle = rar.glow;
+          GFX.star(hv.c, cx + Math.cos(a) * rr * 1.2,
+            hv.h * .74 + Math.sin(a) * rr * .5, 2.6 * (1 - ph * .5), 4);
+        }
+        hv.c.globalAlpha = 1;
+      }
+      this._lobbyRaf = requestAnimationFrame(frame);
+    };
+    frame();
+
+    /* 화면 크기가 바뀌면 다시 맞춘다 */
+    if (!this._lobbyResize) {
+      this._lobbyResize = () => { bg = fit(fx); hv = fit(hero); };
+      window.addEventListener('resize', this._lobbyResize);
+    }
+  },
+
+  stopLobbyFx() { cancelAnimationFrame(this._lobbyRaf); this._lobbyRaf = 0; },
+
+  /** 쇼케이스 유닛 교체 */
+  nextHero() {
+    const pool = this.heroPool();
+    if (!pool.length) return;
+    this.heroIdx = (this.heroIdx + 1) % pool.length;
+    const def = pool[this.heroIdx];
+    const rar = RARITY[RARITY_IDX[def.rarity]];
+    const n = document.getElementById('lbHeroName');
+    const s = document.getElementById('lbHeroSub');
+    if (n) { n.textContent = def.name; n.style.background = 'none'; n.style.color = rar.color; }
+    if (s) s.textContent = rar.name + ' · ' + (CLASSES[def.cls] ? CLASSES[def.cls].name : def.cls);
+    SFX.play('tab');
   },
 
   renderLobby() {
@@ -261,6 +392,7 @@ const Lobby = {
       btnQuest: () => this.openPanel('quest'),
       btnRecords: () => this.openPanel('records'),
       btnSetting: () => this.openPanel('settings'),
+      lbHeroNext: () => this.nextHero(),
       btnAccount: () => this.openPanel('account'),
     };
     for (const id in menu) {

@@ -141,6 +141,17 @@
 <!-- ======================================================= 메인 로비 -->
 <div id="lobby" class="lobby hidden">
   <div class="bg-orbs"><i></i><i></i><i></i></div>
+  <canvas id="lbFx" class="lb-fx"></canvas>
+
+  <!-- 상단 쇼케이스 : 이번에 뽑은/보유한 유닛을 크게 보여 준다 -->
+  <div class="lb-hero" id="lbHero">
+    <canvas id="lbHeroCv" class="lb-hero-cv"></canvas>
+    <div class="lb-hero-txt">
+      <div class="lb-hero-name" id="lbHeroName">무한의 탑</div>
+      <div class="lb-hero-sub" id="lbHeroSub">디펜스</div>
+    </div>
+    <button class="lb-hero-next" id="lbHeroNext" title="다른 유닛 보기">🔄</button>
+  </div>
 
   <div class="lb-top">
     <div class="lb-card">
