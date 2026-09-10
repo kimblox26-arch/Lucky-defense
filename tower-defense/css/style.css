@@ -967,3 +967,68 @@ button{ font:inherit; color:inherit; cursor:pointer; border:none; background:non
 .sk-card .sk-n { font-weight: 900; font-size: 13px; color: var(--c); }
 .sk-card .sk-m { font-size: 10px; color: #8fa8cc; font-weight: 700; }
 .sk-card .sk-d { font-size: 10.5px; line-height: 1.4; color: #a8bcd8; }
+
+/* =========================================================================
+ *  v4 — 화면 장식 / 콤보 미터 / 디테일
+ * ========================================================================= */
+
+/* --------------------------------------------------- 콤보 미터 (도파민) */
+.combo{ position:fixed; right:8px; top:150px; z-index:6; pointer-events:none;
+  display:flex; flex-direction:column; align-items:flex-end; gap:0;
+  padding:6px 11px 8px; border-radius:15px;
+  background:linear-gradient(160deg,rgba(30,22,52,.93),rgba(12,10,24,.93));
+  border:2px solid var(--cbc,#ffd24d);
+  box-shadow:0 0 var(--cbg,16px) -3px var(--cbc,#ffd24d), 0 6px 16px rgba(0,0,0,.6);
+  --cbc:#ffd24d; --cbg:16px; --cbt:1; }
+.combo b{ font-size:var(--cbs,26px); line-height:.95; font-weight:900; color:var(--cbc);
+  text-shadow:0 0 12px var(--cbc), 0 2px 0 rgba(0,0,0,.55); font-style:italic; letter-spacing:-1px; }
+.combo span{ font-size:9.5px; letter-spacing:3px; color:#cfd8ee; font-weight:800; margin-top:-1px; }
+.combo i{ font-size:11px; font-style:normal; font-weight:900; color:#ffe9a8;
+  background:rgba(255,210,77,.14); border-radius:7px; padding:0 5px; margin-top:3px; }
+/* 남은 시간 게이지 */
+.combo::after{ content:''; position:absolute; left:8px; right:8px; bottom:3px; height:2px;
+  border-radius:2px; background:var(--cbc); opacity:.75;
+  transform:scaleX(var(--cbt)); transform-origin:right center; }
+.combo.t1{ --cbc:#7fd8ff; --cbg:20px; --cbs:29px; }
+.combo.t2{ --cbc:#a482ff; --cbg:24px; --cbs:33px; }
+.combo.t3{ --cbc:#ff7ad0; --cbg:30px; --cbs:37px; animation:cbShake .5s ease-in-out infinite; }
+.combo.t4{ --cbc:#ff5c4d; --cbg:38px; --cbs:42px; animation:cbShake .3s ease-in-out infinite; }
+.combo.bump{ animation:cbBump .34s cubic-bezier(.2,1.7,.4,1); }
+@keyframes cbBump{ 0%{ transform:scale(.6) rotate(-7deg); } 60%{ transform:scale(1.18) rotate(3deg);} 100%{ transform:scale(1) rotate(0);} }
+@keyframes cbShake{ 0%,100%{ transform:translateX(0) rotate(-1.5deg);} 50%{ transform:translateX(-2px) rotate(1.5deg);} }
+
+/* --------------------------------------------------- 하단 바 네온 레일 */
+.bottom::before{ content:''; position:absolute; left:0; right:0; top:0; height:2px;
+  background:linear-gradient(90deg,transparent,#8f6bff 18%,#7fd8ff 42%,#ffd24d 62%,#ff7ad0 82%,transparent);
+  background-size:220% 100%; animation:railFlow 7s linear infinite; opacity:.7; }
+@keyframes railFlow{ to{ background-position:220% 0; } }
+
+/* --------------------------------------------------- 시너지 띠: 끝 페이드 */
+@media (max-width:520px){
+  .syn-panel{ -webkit-mask-image:linear-gradient(90deg,#000 0,#000 88%,transparent 100%);
+    mask-image:linear-gradient(90deg,#000 0,#000 88%,transparent 100%); }
+}
+.syn.on{ animation:synPop .4s cubic-bezier(.2,1.6,.4,1); }
+@keyframes synPop{ 0%{ transform:scale(.82);} 60%{ transform:scale(1.08);} 100%{ transform:scale(1);} }
+
+/* --------------------------------------------------- 소환 길게 누르기 링 */
+.bbtn.holding{ filter:brightness(1.35); }
+.bbtn.holding::before{ content:''; position:absolute; inset:-3px; border-radius:22px;
+  border:2px solid var(--gold); opacity:.9; animation:holdRing .45s linear infinite; }
+@keyframes holdRing{ 0%{ transform:scale(1); opacity:.9;} 100%{ transform:scale(1.13); opacity:0;} }
+.bbtn{ position:relative; }
+
+/* --------------------------------------------------- 토스트: 반복 묶음 */
+.toast.again{ animation:toastAgain .3s cubic-bezier(.2,1.7,.4,1); }
+@keyframes toastAgain{ 0%{ transform:scale(1);} 45%{ transform:scale(1.12);} 100%{ transform:scale(1);} }
+.toasts{ pointer-events:none; }
+
+/* --------------------------------------------------- 화면 가장자리 연출 */
+.vign{ position:fixed; inset:0; z-index:28; pointer-events:none; opacity:0; --vi:.6;
+  background:radial-gradient(ellipse at center,
+    rgba(255,40,60,0) 42%, rgba(255,40,60,.35) 74%, rgba(200,10,30,.72) 100%); }
+.vign.hit{ animation:vignHit .5s ease-out; }
+@keyframes vignHit{ 0%{ opacity:var(--vi);} 100%{ opacity:0;} }
+.vign.danger{ opacity:.34; animation:vignDanger 1.5s ease-in-out infinite; }
+@keyframes vignDanger{ 0%,100%{ opacity:.18;} 50%{ opacity:.42;} }
+.vign.danger.hit{ animation:vignHit .5s ease-out, vignDanger 1.5s ease-in-out infinite .5s; }

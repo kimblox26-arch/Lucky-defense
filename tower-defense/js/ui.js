@@ -31,6 +31,37 @@ const UI = {
     this.refresh();
   },
 
+  /* 소환 버튼을 누르고 있으면 계속 뽑힌다 — 매번 탭할 필요가 없다.
+     길게 눌러 자동 소환이 돌아간 경우엔 손을 뗄 때의 click 을 삼킨다. */
+  bindHoldSummon() {
+    const btn = $('btnSummon');
+    let timer = null, rep = null, fired = false;
+    const stop = () => {
+      clearTimeout(timer); clearInterval(rep); timer = rep = null;
+      btn.classList.remove('holding');
+    };
+    const start = () => {
+      if (timer || rep) return;
+      fired = false;
+      timer = setTimeout(() => {
+        timer = null; fired = true;
+        btn.classList.add('holding');
+        SFX.init(); SFX.resume();
+        let n = 0;
+        rep = setInterval(() => {
+          if (Game.over || Game.units.length >= Game.slotMax() ||
+              (Game.gold < Game.summonCost() && !Game.freeSummons)) { stop(); return; }
+          Game.summon();
+          /* 오래 누를수록 살짝 빨라진다 */
+          if (++n === 6 && rep) { clearInterval(rep); rep = setInterval(() => Game.summon(), 90); }
+        }, 150);
+      }, 420);
+    };
+    btn.addEventListener('pointerdown', start);
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach(ev => btn.addEventListener(ev, stop));
+    btn.addEventListener('click', e => { if (fired) { fired = false; e.stopImmediatePropagation(); e.preventDefault(); } }, true);
+  },
+
   bind() {
     $('btnSummon').onclick = () => { SFX.init(); SFX.resume(); Game.summon(); };
     $('btnSummon10').onclick = () => { SFX.init(); SFX.resume(); Game.summonMulti(10); };
@@ -49,6 +80,7 @@ const UI = {
     $('btnSpeed').onclick = () => Game.cycleSpeed();
     $('btnPause').onclick = () => { Game.paused = !Game.paused; this.refresh(); SFX.play('click'); };
     $('btnMenu').onclick = () => this.openModal('menu');
+    this.bindHoldSummon();
 
     $('unitClose').onclick = () => this.showUnitPanel(null);
     $('modalClose').onclick = () => this.closeModal();
@@ -139,7 +171,17 @@ const UI = {
       cb.classList.remove('hidden');
       $('vCombo').textContent = Game.combo;
       $('vComboMul').textContent = 'x' + Game.comboGoldMul().toFixed(2);
-    } else cb.classList.add('hidden');
+      /* 콤보가 오를수록 등급이 올라간다 — 색·크기·흔들림이 같이 커진다 */
+      const tier = Game.combo >= 200 ? 4 : Game.combo >= 100 ? 3 : Game.combo >= 50 ? 2 : Game.combo >= 20 ? 1 : 0;
+      if (cb.dataset.tier !== String(tier)) {
+        cb.dataset.tier = tier;
+        cb.classList.remove('t0', 't1', 't2', 't3', 't4');
+        cb.classList.add('t' + tier);
+        cb.classList.remove('bump'); void cb.offsetWidth; cb.classList.add('bump');
+      }
+      /* 남은 콤보 시간 게이지 */
+      cb.style.setProperty('--cbt', U.clamp(Game.comboTimer / 2.6, 0, 1));
+    } else { cb.classList.add('hidden'); cb.dataset.tier = ''; }
 
     const gold = Math.floor(Game.gold);
     if (gold !== this.lastGold) {
@@ -152,8 +194,12 @@ const UI = {
       this.refreshButtons();
     }
     if (Game.life !== this.lastLife) {
+      const dropped = this.lastLife >= 0 && Game.life < this.lastLife;
       $('vLife').textContent = Math.max(0, Game.life) + '/' + Game.maxLife;
-      $('statLife').classList.toggle('low', Game.life / Game.maxLife < .35);
+      const pct = Game.life / Game.maxLife;
+      $('statLife').classList.toggle('low', pct < .35);
+      if (dropped) this.hitVignette(pct);
+      $('vign').classList.toggle('danger', pct > 0 && pct <= .25);
       this.lastLife = Game.life;
     }
     $('vWave').textContent = Game.wave;
@@ -482,12 +528,33 @@ const UI = {
   },
 
   /* ------------------------------------------------------ 알림 */
+  /* 적을 놓쳤을 때 화면 가장자리가 붉게 번쩍 — 남은 목숨이 적을수록 진하다 */
+  hitVignette(pct) {
+    const v = $('vign');
+    if (!v) return;
+    v.style.setProperty('--vi', (0.5 + (1 - U.clamp(pct, 0, 1)) * 0.5).toFixed(2));
+    v.classList.remove('hit'); void v.offsetWidth; v.classList.add('hit');
+  },
+
   toast(msg, color) {
+    const box = $('toasts');
+    /* 같은 내용이 연달아 오면 새 줄을 쌓지 말고 ×N 으로 묶는다 */
+    const last = box.lastElementChild;
+    if (last && last.dataset.msg === msg) {
+      const n = (+last.dataset.n || 1) + 1;
+      last.dataset.n = n;
+      last.textContent = msg + ' ×' + n;
+      last.classList.remove('again'); void last.offsetWidth; last.classList.add('again');
+      clearTimeout(last._t); last._t = setTimeout(() => last.remove(), 1900);
+      return;
+    }
     const t = document.createElement('div');
-    t.className = 'toast'; t.textContent = msg;
+    t.className = 'toast'; t.textContent = msg; t.dataset.msg = msg;
     t.style.color = color || '#e8eefb';
-    $('toasts').appendChild(t);
-    setTimeout(() => t.remove(), 1900);
+    box.appendChild(t);
+    /* 화면을 다 덮지 않도록 최대 3줄만 남긴다 */
+    while (box.children.length > 3) box.firstElementChild.remove();
+    t._t = setTimeout(() => t.remove(), 1900);
   },
 
   bossBanner(w) {
