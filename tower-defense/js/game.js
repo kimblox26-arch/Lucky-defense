@@ -235,13 +235,16 @@ const Game = {
   enemyScale(def, hpMul) {
     const w = this.wave + this.loop * 100;
     const diff = this.map.diff;
-    let hp = 24 * def.hp * Math.pow(1.16, w - 1) * diff * (hpMul || 1) * this.modNum('hpMul', 1);
+    let hp = 30 * def.hp * Math.pow(1.175, w - 1) * diff * (hpMul || 1) * this.modNum('hpMul', 1);
     /* 동적 난이도 보정: 웨이브 고정 곡선만으로는 합성/가챠로 인한 화력 스노우볼을
        따라잡지 못해(가챠 대박, 대량 합성 시 순식간에 수십~수백 배 화력 격차 발생),
        현재 전군 DPS를 웨이브별 기대 화력과 비교해 체력을 자동 보정한다.
        화력이 기대치보다 낮으면 오히려 체력을 낮춰 초반/불운 유저를 배려한다. */
     const dpsRef = 55 * Math.pow(1.075, w - 1);
-    const powerRatio = U.clamp(this.armyDPS() / dpsRef, .35, 60);
+    /* 하한을 .35 로 두면 화력이 약할 때 적 체력이 40% 수준까지 떨어져,
+       일반 등급 유닛만으로도 적이 우수수 녹았다. 하한을 올려 "약한 군대라도
+       기본 난이도는 감당해야" 하도록 바꾼다. */
+    const powerRatio = U.clamp(this.armyDPS() / dpsRef, .85, 60);
     /* 지수를 1보다 크게 잡아, 기대치보다 화력이 넘칠수록 체력이 그 이상으로 불어나게 한다
        (그냥 맞춰주기만 하면 물량으로 찍어누르는 스노우볼을 못 막는다). */
     hp *= Math.pow(powerRatio, 1.18);
@@ -470,9 +473,35 @@ const Game = {
     return total;
   },
 
+  /**
+   * 등급 추첨.
+   *
+   * 예전에는 행운을 Math.pow(1+luck, i) 로 곱해서, 등급이 올라갈수록 배수가
+   * 지수로 커졌다. 그 결과 연구/특성을 다 올리면 최고 등급(태초)이 9.6%,
+   * 신화가 24.8% 나왔다 — 희귀도가 사실상 사라진 상태였다.
+   *
+   * 지금은 등급 인덱스에 "선형" 으로만 붙이고, 상위 등급일수록 행운이 덜 먹도록
+   * 감쇠시킨다. 게다가 신화 이상은 총 확률에 상한을 둬서 아무리 올려도
+   * 대박이 대박으로 남게 한다.
+   */
+  RARE_CAP: [1, 1, 1, 1, .12, .04, .012, .003],   /* 등급별 최대 등장 확률 */
+
   rollRarity() {
     const luck = this.research.luck * .05 + (this.perks.luck || 0) * .08 + (this.luckBoost || 0);
-    const list = RARITY.map((r, i) => ({ r, w: r.w * Math.pow(1 + luck, i) }));
+    /* 상위 등급일수록 행운 효과를 줄인다 (i 가 클수록 감쇠) */
+    const list = RARITY.map((r, i) => ({
+      r, w: r.w * (1 + luck * i * .45 / (1 + i * .55)),
+    }));
+    /* 상한 적용 : 총합 대비 비율이 상한을 넘으면 눌러 준다 */
+    let total = list.reduce((a, x) => a + x.w, 0);
+    for (let i = list.length - 1; i >= 4; i--) {
+      const cap = this.RARE_CAP[i];
+      if (list[i].w / total > cap) {
+        total -= list[i].w;
+        list[i].w = cap * total / (1 - cap);
+        total += list[i].w;
+      }
+    }
     return U.weighted(list).r;
   },
 

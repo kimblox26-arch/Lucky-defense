@@ -129,6 +129,51 @@ const GFX = {
         c.restore();
       }
     },
+    /**
+     * 탈것에 앉은 다리.
+     * 그냥 눌러 그리면 탈것 몸통에 파묻혀 다리가 안 보인다.
+     * 허벅지를 앞으로 내밀고 정강이를 옆으로 늘어뜨려, 탈것 옆으로
+     * 다리가 확실히 삐져나오게 그린다.
+     */
+    riding(c, S, R, ph, style, t) {
+      const sway = Math.sin((t || 0) * 3.2) * S * .03;
+      /* 뒤쪽(먼) 다리 먼저 — 살짝 어둡게 */
+      for (const side of [-1, 1]) {
+        const far = side < 0;
+        /* 너무 벌리면 탈것을 가려 버린다 — 몸통 옆에 붙여 아래로 내린다 */
+        const w = S * .18;
+        const hipX = side * S * .12, hipY = S * .18;
+        const kneeX = side * S * .27, kneeY = S * .44 + sway;
+        const footX = side * S * .30, footY = S * .78 + sway;
+        c.save();
+        c.lineCap = 'round'; c.lineJoin = 'round';
+        /* 허벅지 → 정강이를 굵은 선으로 잇는다 */
+        c.strokeStyle = '#1b1218'; c.lineWidth = w * 1.42;
+        c.beginPath();
+        c.moveTo(hipX, hipY); c.lineTo(kneeX, kneeY); c.lineTo(footX, footY);
+        c.stroke();
+        c.strokeStyle = far ? R.sh : R.base; c.lineWidth = w;
+        c.beginPath();
+        c.moveTo(hipX, hipY); c.lineTo(kneeX, kneeY); c.lineTo(footX, footY);
+        c.stroke();
+        /* 무릎 하이라이트 */
+        c.strokeStyle = U.rgba(R.hi, .45); c.lineWidth = w * .3;
+        c.beginPath();
+        c.moveTo(hipX, hipY - w * .2); c.lineTo(kneeX, kneeY - w * .2);
+        c.stroke();
+        /* 신발 */
+        c.fillStyle = style === 'boot' ? R.deep : R.line;
+        c.beginPath();
+        c.ellipse(footX + side * S * .05, footY + S * .03, S * .14, S * .09, side * .3, 0, U.TAU);
+        c.fill();
+        c.strokeStyle = '#1b1218'; c.lineWidth = S * .05; c.stroke();
+        c.fillStyle = 'rgba(255,255,255,.25)';
+        c.beginPath();
+        c.ellipse(footX, footY + S * .01, S * .07, S * .03, 0, 0, U.TAU); c.fill();
+        c.restore();
+      }
+    },
+
     /** 4족 */
     quad(c, S, R, ph) {
       for (let i = 0; i < 4; i++) {
@@ -1582,12 +1627,10 @@ const GFX = {
 
     /* 날개(뒤) */
     if (look.wings && GFX.wings[look.wings]) GFX.wings[look.wings](c, S, look.wingCol || A.base, t);
-    /* 다리 — 탈것에 올라탔으면 다리를 접어(짧게) 앉은 자세로 */
+    /* 다리 — 탈것에 올라탔으면 옆으로 늘어뜨린 승마 자세 */
     if (mk) {
-      if (look.legs && look.legs !== 'none' && GFX.legs.biped) {
-        c.save(); c.scale(1, .55);
-        GFX.legs.biped(c, S, R, 0, look.legStyle);
-        c.restore();
+      if (look.legs && look.legs !== 'none') {
+        GFX.legs.riding(c, S, R, ph, look.legStyle, t);
       }
     } else if (look.legs && GFX.legs[look.legs]) {
       GFX.legs[look.legs](c, S, R, ph, look.legStyle, t);
@@ -1884,7 +1927,7 @@ const GFX = {
    *  구운 다음 imageSmoothingEnabled=false 로 PX 배 확대하면 도트가 그대로
    *  드러난다. 색도 단계를 줄여(posterize) 레트로 팔레트 느낌을 준다.
    * =================================================================== */
-  PIXEL: { on: true, scale: 3, levels: 8 },
+  PIXEL: { on: false, scale: 3, levels: 8 },
 
   /** 이 값으로 나눠 구운 뒤 같은 값으로 확대한다 */
   pxScale() { return this.PIXEL.on ? this.PIXEL.scale : 1; },
