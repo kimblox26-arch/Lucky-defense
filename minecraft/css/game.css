@@ -90,6 +90,13 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block
 .row input[type="range"] { flex: 1; accent-color: #7ce23a; }
 .row .val { flex: 0 0 68px; text-align: right; color: #9fe870; font-size: 12px; }
 .row input[type="checkbox"] { width: 18px; height: 18px; accent-color: #7ce23a; }
+.row select {
+  flex: 1; padding: 6px 8px;
+  background: #3a3a3a; color: #fff;
+  border: 1px solid #6a6a6a; border-bottom-width: 2px;
+  font-family: inherit; font-size: 12.5px;
+  cursor: pointer;
+}
 
 .keys { font-size: 12.5px; line-height: 1.95; color: #d8d8d8; }
 .keys b {

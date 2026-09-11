@@ -299,7 +299,7 @@ class Game {
 
     this.settings = Object.assign({
       renderDistance: 6, fov: 70, sensitivity: 2.2, volume: 70, music: 35,
-      smoothLighting: true, showFps: false, invertY: false,
+      smoothLighting: true, showFps: false, invertY: false, textureFilter: 'sharp',
     }, SaveSystem.loadSettings() || {});
 
     buildTextures();
@@ -308,6 +308,7 @@ class Game {
     this.renderer = new Renderer(this.glCanvas);
     this.renderer.renderDistance = this.settings.renderDistance;
     this.renderer.fov = this.settings.fov;
+    this.renderer.setTextureFilter(this.settings.textureFilter);
 
     this.gui = new GUI(this.guiCanvas, this);
     this.hud = new HUD(this.hudCanvas, this);
@@ -350,7 +351,8 @@ class Game {
       el.value = this.settings[key];
       const label = $(id + 'Val');
       const upd = () => {
-        const v = el.type === 'checkbox' ? el.checked : Number(el.value);
+        const v = el.tagName === 'SELECT' ? el.value
+          : (el.type === 'checkbox' ? el.checked : Number(el.value));
         this.settings[key] = v;
         if (label) label.textContent = fmt ? fmt(v) : v;
         if (apply) apply(v);
@@ -366,6 +368,7 @@ class Game {
       if (this.world) this.world.renderDistance = v;
     });
     bind('optFov', 'fov', (v) => `${v}°`, (v) => { this.renderer.fov = v; });
+    bind('optFilter', 'textureFilter', null, (v) => this.renderer.setTextureFilter(v));
     bind('optSens', 'sensitivity', (v) => `${v.toFixed(1)}`, (v) => { this.input.sensitivity = v * 0.001; });
     bind('optVolume', 'volume', (v) => `${v}%`, (v) => AudioSys.setVolume(v / 100));
     bind('optMusic', 'music', (v) => `${v}%`, (v) => AudioSys.setMusicVolume(v / 100));

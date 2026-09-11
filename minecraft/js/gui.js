@@ -10,34 +10,45 @@ const ItemIcons = {
   cache: new Map(),
   SIZE: 48,
 
-  get(id) {
-    if (this.cache.has(id)) return this.cache.get(id);
+  /**
+   * 아이콘 캔버스를 얻는다.
+   * size 는 "화면에 실제로 그려질 디바이스 픽셀 크기". 16의 배수로 맞춰서 캐시하므로
+   * 16x16 원본이 정수 배율로만 확대되어 픽셀이 일그러지지 않는다.
+   */
+  get(id, size) {
+    const px = Math.max(16, Math.round((size || this.SIZE) / TILE_SIZE) * TILE_SIZE);
+    const key = id + ':' + px;
+    const hit = this.cache.get(key);
+    if (hit) return hit;
+
     const c = document.createElement('canvas');
-    c.width = c.height = this.SIZE;
+    c.width = c.height = px;
     const g = c.getContext('2d');
     g.imageSmoothingEnabled = false;
     const def = getItem(id);
-    if (!def) { this.cache.set(id, c); return c; }
+    if (!def) { this.cache.set(key, c); return c; }
 
     if (def.isBlock) {
       const b = Blocks[id];
-      if (b.render === RENDER_CUBE && !b.itemTex) this._drawIsoCube(g, b);
-      else this._drawFlat(g, b.itemTex || Textures.tiles[b.tiles[FACE_SOUTH]].name);
+      if (b.render === RENDER_CUBE && !b.itemTex) this._drawIsoCube(g, b, px);
+      else this._drawFlat(g, b.itemTex || Textures.tiles[b.tiles[FACE_SOUTH]].name, px);
     } else {
-      this._drawFlat(g, def.tex);
+      this._drawFlat(g, def.tex, px);
     }
-    this.cache.set(id, c);
+    this.cache.set(key, c);
     return c;
   },
 
-  _drawFlat(g, texName) {
+  /** 평면 아이템: 16x16 을 정확히 N배로 확대 (여백 없음 = 배율이 정수) */
+  _drawFlat(g, texName, px) {
     const img = Textures.canvasOf(texName || 'missing');
-    g.drawImage(img, 2, 2, this.SIZE - 4, this.SIZE - 4);
+    g.imageSmoothingEnabled = false;
+    g.drawImage(img, 0, 0, TILE_SIZE, TILE_SIZE, 0, 0, px, px);
   },
 
-  _drawIsoCube(g, block) {
-    const S = this.SIZE;
-    const u = S * 0.42;
+  _drawIsoCube(g, block, px) {
+    const S = px;
+    const u = Math.round(S * 0.42);
     const cx = S / 2, cy = S / 2 + u * 0.18;
     const top = Textures.tiles[block.tiles[FACE_TOP]].canvas;
     const left = Textures.tiles[block.tiles[FACE_SOUTH]].canvas;
@@ -431,9 +442,10 @@ class GUI {
 
     /* 제목 */
     ctx.fillStyle = '#3f3f3f';
-    ctx.font = '8px "DungGeunMo", monospace';
+    ctx.font = '9px "DungGeunMo", monospace';
     ctx.textBaseline = 'middle';
-    ctx.fillText(this.title || '', 8, 11);
+    ctx.fillText(this.title || '', 8, 10);
+    ctx.font = '8px "DungGeunMo", monospace';
     ctx.textBaseline = 'top';
 
     /* 화로 진행 표시 */
@@ -491,7 +503,8 @@ class GUI {
   }
 
   _drawItem(ctx, st, x, y) {
-    const icon = ItemIcons.get(st.id);
+    /* 슬롯 한 칸은 화면에서 16 * scale 픽셀 → 같은 크기의 아이콘을 써서 1:1 로 찍는다 */
+    const icon = ItemIcons.get(st.id, 16 * this.scale);
     ctx.drawImage(icon, x, y, 16, 16);
     const def = getItem(st.id);
     if (st.count > 1) {

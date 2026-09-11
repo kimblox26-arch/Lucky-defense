@@ -41,9 +41,11 @@ uniform float uFogStart;
 uniform float uFogEnd;
 uniform float uAlphaTest;
 uniform vec4 uTint;
+uniform float uMipBias;
 out vec4 outColor;
 void main(){
-  vec4 c = texture(uTex, vec3(vUV, vLayer));
+  /* 음수 LOD 바이어스로 밉맵을 한 단계 늦게 적용 → 16x16 픽셀이 또렷하게 남는다 */
+  vec4 c = texture(uTex, vec3(vUV, vLayer), uMipBias);
   if (c.a < uAlphaTest) discard;
   float sky = vLight.x * uDayLight;
   float blk = vLight.y;
@@ -113,7 +115,8 @@ class Renderer {
     this.progLine = this._program(VS_LINE, FS_LINE);
 
     this.uWorld = this._uniforms(this.progWorld,
-      ['uVP', 'uModel', 'uCam', 'uTex', 'uDayLight', 'uFogColor', 'uFogStart', 'uFogEnd', 'uAlphaTest', 'uTint']);
+      ['uVP', 'uModel', 'uCam', 'uTex', 'uDayLight', 'uFogColor', 'uFogStart', 'uFogEnd',
+        'uAlphaTest', 'uTint', 'uMipBias']);
     this.uSky = this._uniforms(this.progSky, ['uInvVP', 'uTop', 'uBottom', 'uHorizon', 'uSunDir', 'uSunColor']);
     this.uLine = this._uniforms(this.progLine, ['uVP', 'uColor']);
 
@@ -167,25 +170,62 @@ class Renderer {
   }
 
   /* ---------------------------------------------------------- 텍스처 */
+  /**
+   * 16x16 타일을 TEXTURE_2D_ARRAY 로 올린다.
+   * 배열 텍스처는 레이어끼리 섞이지 않으므로 아틀라스와 달리 타일 경계 번짐이 없다.
+   */
   _initTexture() {
     const gl = this.gl;
     const tex = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D_ARRAY, tex);
     const n = Textures.tiles.length;
     const data = texturesToArrayBuffer();
-    gl.texImage3D(gl.TEXTURE_2D_ARRAY, 0, gl.RGBA8, TILE_SIZE, TILE_SIZE, n, 0,
+    /* 16x16 은 밉 레벨이 16→8→4→2→1 로 5단계. 1x1 까지 가면 멀리서 단색 뭉개짐이 되므로
+       레벨 수를 제한하고, 스토리지를 명시해 드라이버마다 다른 동작을 없앤다. */
+    this.mipLevels = 3;                       // 16, 8, 4
+    gl.texStorage3D(gl.TEXTURE_2D_ARRAY, this.mipLevels, gl.RGBA8, TILE_SIZE, TILE_SIZE, n);
+    gl.texSubImage3D(gl.TEXTURE_2D_ARRAY, 0, 0, 0, 0, TILE_SIZE, TILE_SIZE, n,
       gl.RGBA, gl.UNSIGNED_BYTE, data);
-    gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-    gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MIN_FILTER, gl.NEAREST_MIPMAP_LINEAR);
+    gl.generateMipmap(gl.TEXTURE_2D_ARRAY);
     gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gl.generateMipmap(gl.TEXTURE_2D_ARRAY);
-    const aniso = gl.getExtension('EXT_texture_filter_anisotropic');
-    if (aniso) {
-      const max = gl.getParameter(aniso.MAX_TEXTURE_MAX_ANISOTROPY_EXT);
-      gl.texParameterf(gl.TEXTURE_2D_ARRAY, aniso.TEXTURE_MAX_ANISOTROPY_EXT, Math.min(4, max));
-    }
+    gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_BASE_LEVEL, 0);
+    gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MAX_LEVEL, this.mipLevels - 1);
     this.texture = tex;
+    this.anisoExt = gl.getExtension('EXT_texture_filter_anisotropic');
+    this.setTextureFilter('sharp');
+  }
+
+  /**
+   * 텍스처 필터 모드
+   *  'pixel' — 밉맵 없음. 가장 또렷하지만 멀리서 반짝임(모아레)이 생긴다.
+   *  'sharp' — 밉맵 + 음수 LOD 바이어스. 또렷함과 안정감의 균형 (기본값)
+   *  'smooth'— 밉맵 + 이방성 필터. 멀리까지 잡티가 가장 적다.
+   */
+  setTextureFilter(mode) {
+    const gl = this.gl;
+    this.textureFilter = mode;
+    gl.bindTexture(gl.TEXTURE_2D_ARRAY, this.texture);
+    /* 확대는 항상 NEAREST — 16x16 픽셀이 뭉개지지 않는 핵심 */
+    gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    if (mode === 'pixel') {
+      gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+      this.mipBias = 0;
+    } else if (mode === 'smooth') {
+      gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MIN_FILTER, gl.NEAREST_MIPMAP_LINEAR);
+      this.mipBias = 0;
+    } else {
+      gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MIN_FILTER, gl.NEAREST_MIPMAP_LINEAR);
+      this.mipBias = -0.55;
+    }
+    /* 이방성 필터는 확대할 때도 여러 샘플을 섞는 구현이 있어 16x16 픽셀을 뭉갠다.
+       'smooth' 를 고른 경우에만 켠다. */
+    if (this.anisoExt) {
+      const max = gl.getParameter(this.anisoExt.MAX_TEXTURE_MAX_ANISOTROPY_EXT);
+      const want = mode === 'smooth' ? 4 : 1;
+      gl.texParameterf(gl.TEXTURE_2D_ARRAY,
+        this.anisoExt.TEXTURE_MAX_ANISOTROPY_EXT, Math.min(want, max));
+    }
   }
 
   _initSkyQuad() {
@@ -579,6 +619,7 @@ class Renderer {
     gl.uniform1f(this.uWorld.uFogEnd, o.fog === false ? 1e9 + 1 : this.fogEnd);
     gl.uniform1f(this.uWorld.uAlphaTest, o.alphaTest === undefined ? 0.5 : o.alphaTest);
     gl.uniform4f(this.uWorld.uTint, 1, 1, 1, 1);
+    gl.uniform1f(this.uWorld.uMipBias, this.mipBias || 0);
   }
 
   /** 지형(불투명) */

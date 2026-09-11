@@ -198,12 +198,12 @@ class HUD {
       const pu = this.pickups[i];
       const a = clamp(pu.time, 0, 1);
       ctx.globalAlpha = a;
-      const icon = ItemIcons.get(pu.id);
-      ctx.drawImage(icon, vw - 90, py, 10, 10);
+      const icon = ItemIcons.get(pu.id, 16 * this.scale);
+      ctx.drawImage(icon, vw - 96, py, 16, 16);
       ctx.fillStyle = '#ffffff';
-      this._shadowText(ctx, `${getItem(pu.id).display} x${pu.count}`, vw - 76, py + 1);
+      this._shadowText(ctx, `${getItem(pu.id).display} x${pu.count}`, vw - 77, py + 4);
       ctx.globalAlpha = 1;
-      py -= 12;
+      py -= 18;
     }
 
     /* 채팅 */
@@ -239,7 +239,7 @@ class HUD {
       const sx = x0 + 3 + i * 20;
       const st = p.inventory.get(i);
       if (st) {
-        const icon = ItemIcons.get(st.id);
+        const icon = ItemIcons.get(st.id, 16 * this.scale);
         ctx.drawImage(icon, sx, y0 + 3, 16, 16);
         if (st.count > 1) {
           const s = String(st.count);

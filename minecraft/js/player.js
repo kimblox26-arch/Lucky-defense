@@ -730,6 +730,11 @@ class Player extends Entity {
       Mat4.rotateY(m, m, -0.5 - sw * 0.5);
       Mat4.rotateZ(m, m, 0.12 + sw * 0.45);
       Mat4.rotateX(m, m, -0.18 - sw * 0.7 + this.bowCharge * 0.5);
+    } else if (!def) {
+      /* 맨손: 오른쪽 아래에서 화면 안쪽으로 뻗은 팔 */
+      Mat4.rotateY(m, m, -0.34);
+      Mat4.rotateX(m, m, -0.62 - sw * 0.8);
+      Mat4.rotateZ(m, m, 0.16 + sw * 0.2);
     } else {
       /* 아이템은 판면이 카메라를 향하도록 (살짝만 기울인다) */
       Mat4.rotateY(m, m, -0.22 - sw * 0.35);
@@ -750,9 +755,11 @@ class Player extends Entity {
       const layer = Textures.id(def.tex || 'missing');
       pushBox(mb, m, -0.15, -0.15, -0.008, 0.15, 0.15, 0.008, layer, light, blk, 1.25);
     } else {
-      /* 맨손 */
+      /* 맨손 — 소매(셔츠) + 손 */
       const skin = Textures.id('player_skin');
-      pushBox(mb, m, -0.06, -0.26, -0.06, 0.06, 0.14, 0.06, skin, light, blk, 1.2);
+      const shirt = Textures.id('player_shirt');
+      pushBox(mb, m, -0.055, -0.34, -0.055, 0.055, 0.02, 0.055, shirt, light, blk, 1.15);
+      pushBox(mb, m, -0.055, 0.0, -0.055, 0.055, 0.13, 0.055, skin, light, blk, 1.2);
     }
   }
 

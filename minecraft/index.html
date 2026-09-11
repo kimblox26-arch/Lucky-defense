@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Minecraft JS — 자바스크립트 마인크래프트</title>
 <meta name="description" content="외부 라이브러리 없이 JavaScript + WebGL2로 만든 마인크래프트 클론. 절차적 지형, 조명 전파, 제작, 몹, 물리까지.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' shape-rendering='crispEdges'%3E%3Crect width='16' height='16' fill='%238b6647'/%3E%3Crect width='16' height='5' fill='%2369a544'/%3E%3Crect x='2' y='5' width='3' height='2' fill='%2369a544'/%3E%3Crect x='9' y='5' width='4' height='2' fill='%2369a544'/%3E%3Crect x='3' y='9' width='3' height='3' fill='%236f4f36'/%3E%3Crect x='10' y='11' width='3' height='3' fill='%239d7a58'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="css/game.css">
 </head>
 <body>
@@ -37,6 +38,15 @@
       <label for="optFov">시야각(FOV)</label>
       <input type="range" id="optFov" min="50" max="110" step="1">
       <span class="val" id="optFovVal"></span>
+    </div>
+    <div class="row">
+      <label for="optFilter">텍스처 필터</label>
+      <select id="optFilter">
+        <option value="pixel">픽셀 (밉맵 없음)</option>
+        <option value="sharp">선명 (권장)</option>
+        <option value="smooth">부드럽게</option>
+      </select>
+      <span class="val"></span>
     </div>
     <div class="row">
       <label for="optSens">마우스 감도</label>

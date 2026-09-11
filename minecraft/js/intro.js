@@ -544,14 +544,15 @@ class Intro {
     /* 엔드 카드 (블록이 튀어오르는 연출) */
     if (t > 2.2) {
       const cards = ['grass_block', 'oak_planks', 'diamond_block', 'furnace', 'crafting_table'];
-      const cs = Math.max(28, Math.floor(H / 9));
+      /* 16의 배수로 맞춰 아이콘을 1:1 로 찍는다 */
+      const cs = Math.max(32, Math.round(H / 9 / 16) * 16);
       const totalW = cards.length * (cs + 8) - 8;
       for (let i = 0; i < cards.length; i++) {
         const lt = clamp((t - 2.2 - i * 0.12) / 0.45, 0, 1);
         if (lt <= 0) continue;
         const e = 1 - Math.pow(1 - lt, 3);
         const y = H * 0.72 + (1 - e) * 60;
-        const icon = ItemIcons.get(BlockIds[cards[i]]);
+        const icon = ItemIcons.get(BlockIds[cards[i]], cs);
         ctx.globalAlpha = e;
         ctx.drawImage(icon, W / 2 - totalW / 2 + i * (cs + 8), y, cs, cs);
         ctx.globalAlpha = 1;

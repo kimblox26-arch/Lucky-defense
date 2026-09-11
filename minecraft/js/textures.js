@@ -315,8 +315,11 @@ function texIce(g, rng) {
     g.fillStyle = `rgba(${(c >> 16) & 255},${(c >> 8) & 255},${c & 255},0.86)`;
     g.fillRect(x, y, 1, 1);
   }
-  g.strokeStyle = 'rgba(255,255,255,0.45)';
-  g.beginPath(); g.moveTo(2, 0); g.lineTo(9, 16); g.moveTo(14, 1); g.lineTo(6, 15); g.stroke();
+  /* 균열: 안티에일리어싱 없이 픽셀 단위로 (선 그리기 금지) */
+  for (let y = 0; y < 16; y++) {
+    P(g, clamp(2 + Math.floor(y * 0.44), 0, 15), y, 'rgba(255,255,255,0.5)');
+    P(g, clamp(14 - Math.floor(y * 0.5), 0, 15), y, 'rgba(255,255,255,0.38)');
+  }
 }
 
 function texSnow(g, rng) { noiseFill(g, rng, 0xf4fbfb, 0.05); speckle(g, rng, 0xdfeaf2, 10, 1, 0.5); }
@@ -344,10 +347,10 @@ function texBricks(g, rng) {
     const off = row % 2 ? 0 : 4;
     for (let x = off; x < 16; x += 8) R(g, x, y, 1, 3, mortar);
   }
-  for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) if (rng() < 0.12) {
-    const d = g.getImageData(x, y, 1, 1).data;
-    g.fillStyle = `rgba(0,0,0,0.10)`; g.fillRect(x, y, 1, 1);
-    void d;
+  for (let y = 0; y < 16; y++) {
+    for (let x = 0; x < 16; x++) {
+      if (rng() < 0.12) P(g, x, y, 'rgba(0,0,0,0.10)');
+    }
   }
 }
 
@@ -386,7 +389,7 @@ function texCraftingTop(g, rng) {
   R(g, 0, 0, 16, 1, '#6e4f2c'); R(g, 0, 0, 1, 16, '#6e4f2c');
   R(g, 1, 1, 14, 14, '#8a6438');
   const grid = '#5d4126';
-  for (let i = 1; i <= 3; i++) { R(g, 1 + i * 3.5, 1, 1, 14, grid); R(g, 1, 1 + i * 3.5, 14, 1, grid); }
+  for (const o of [4, 8, 12]) { R(g, o, 1, 1, 14, grid); R(g, 1, o, 14, 1, grid); }
   speckle(g, rng, 0x9c7341, 16, 1, 0.4);
 }
 function texCraftingSide(g, rng) {
