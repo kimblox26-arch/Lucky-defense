@@ -100,21 +100,36 @@ const Combat = {
     g.stats.totalDmg += applied;
     if (opts.source) { opts.source.dmgDone += applied; }
 
-    /* 대미지 숫자 */
+    /* 이 한 방이 얼마나 묵직한가 (0~1) — 연출 크기를 여기서 한 번에 정한다.
+       적 최대 체력 대비 비중이라, 후반 큰 적을 크게 깎을수록 화면이 크게 반응한다. */
+    const weight = U.clamp(applied / Math.max(1, enemy.maxHp) * 2.2, 0, 1);
+    /* 맞은 방향 — 투사체/공격자가 있으면 그 방향으로 튄다 */
+    let hitAng = opts.ang;
+    if (hitAng == null && opts.source && opts.source.px != null) {
+      hitAng = U.ang(opts.source.px, opts.source.py, enemy.x, enemy.y);
+    }
+
+    /* 대미지 숫자 — 클수록 크게, 치명타는 따로 */
     if (!opts.isDot || Math.random() < .25) {
       const col = crit ? '#ffd24d' : (ELEM[elem] ? ELEM[elem].color : '#fff');
+      const base = opts.isDot ? 10 : 13;
+      const size = crit ? 19 + weight * 16 : base + weight * 11;
       FX.popText(
         enemy.x + U.rand(-8, 8), enemy.y - g.ts * .35,
         (crit ? '✦' : '') + U.fmt(applied),
-        col, crit ? 19 : (opts.isDot ? 10 : 13)
+        col, size,
+        { life: crit ? 1 : .85, vy: -60 - weight * 46, big: crit || weight > .45 }
       );
     }
     if (crit) {
-      VFX.crit(enemy.x, enemy.y, g);
-      SFX.play('crit');
+      VFX.crit(enemy.x, enemy.y, g, weight, hitAng);
+      SFX.play(weight > .5 ? 'bigcrit' : 'crit');
     } else if (!opts.isDot && Math.random() < .5) {
       VFX.hit(elem, enemy.x, enemy.y, U.clamp(applied / Math.max(1, enemy.maxHp) * 6, .4, 2), g);
+      /* 한 방이 묵직하면 치명타가 아니어도 화면이 반응한다 */
+      if (weight > .3) FX.impact(enemy.x, enemy.y, ELEM[elem] ? ELEM[elem].color : '#fff', weight * .45, hitAng);
     }
+    enemy.lastHitAng = hitAng;
 
     if (enemy.hp <= 0) enemy.die(opts.source);
     return applied;
@@ -400,7 +415,7 @@ class Enemy {
     /* 이펙트 */
     const col = this.def.color;
     const r = g.ts * .36 * (this.def.scale || 1);
-    VFX.kill(this.x, this.y, col, this.boss, g);
+    VFX.kill(this.x, this.y, col, this.boss, g, this.lastHitAng);
     if (this.boss) {
       FX.explosion(this.x, this.y, r * 3.2, col, '#fff');
       FX.flash('#fff', .55); FX.shake(18); FX.stop(.12);

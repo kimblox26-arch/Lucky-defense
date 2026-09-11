@@ -158,22 +158,42 @@ const VFX = {
   /* =================================================================
    *  상황별 연출
    * ================================================================= */
-  crit(x, y, g) {
-    this.shockwave(x, y, 4, 40, '#ffd24d', .26, 3);
-    FX.sparks(x, y, '#ffd24d', 10, 340);
-    for (let i = 0; i < 4; i++) {
-      const a = i / 4 * U.TAU + .4;
-      this.streak(x, y, a, 34, '#ffe9a0');
+  /**
+   * 치명타 — 크기(power 0~1)에 따라 "툭" 부터 "쾅" 까지 같은 문법으로 커진다.
+   * 십자 섬광 + 조각 파편 + 히트스톱 + 색수차 + 카메라 킥.
+   */
+  crit(x, y, g, power, ang) {
+    const p = U.clamp(power == null ? .3 : power, 0, 1);
+    const R = 34 + p * 70;
+    this.shockwave(x, y, 4, R, '#ffd24d', .26 + p * .18, 3 + p * 4);
+    this.shockwave(x, y, 2, R * .55, '#ffffff', .18 + p * .1, 2 + p * 2);
+    FX.sparks(x, y, '#ffd24d', 10 + Math.round(p * 20), 340 + p * 340);
+    /* 십자 섬광 — 치명타는 "베였다" 는 느낌이 나야 한다 */
+    const base = ang != null ? ang : .4;
+    for (let i = 0; i < 4; i++) this.streak(x, y, base + i / 4 * U.TAU, 34 + p * 62, '#ffe9a0');
+    /* 노란 유리 조각 */
+    for (let i = 0; i < 4 + Math.round(p * 10); i++) {
+      const a = U.rand(U.TAU), sp = U.rand(180, 420 + p * 320);
+      FX.spawn({
+        x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp,
+        life: U.rand(.26, .5), size: 4 + p * 5, color: '#fff2b0', color2: '#ffa726',
+        shape: 'shard', vrot: U.rand(-14, 14), drag: .88
+      });
     }
-    FX.shake(2.6);
+    FX.spawn({ x, y, life: .22 + p * .16, size: R * .9, size2: 0, color: '#ffd24d', shape: 'glow' });
+    FX.impact(x, y, '#ffd24d', .18 + p * .42, ang);
   },
 
   execute(x, y, g) {
     this.shockwave(x, y, 6, 60, '#ff4f7e', .4, 4);
-    this.implode(x, y, 34, '#ff4f7e');
-    FX.burst(x, y, '#ff4f7e', 18, { speed: 300, shape: 'shard', size: 6 });
-    FX.stop(.05);
-    FX.shake(6);
+    this.shockwave(x, y, 2, 110, '#ffffff', .3, 2);
+    this.implode(x, y, 40, '#ff4f7e');
+    FX.burst(x, y, '#ff4f7e', 24, { speed: 340, shape: 'shard', size: 7 });
+    /* 위아래로 갈라지는 처형 섬광 */
+    this.streak(x, y, -Math.PI / 2, 90, '#ffffff');
+    this.streak(x, y, Math.PI / 2, 90, '#ffffff');
+    FX.spawn({ x, y, life: .3, size: 70, size2: 0, color: '#ff4f7e', shape: 'glow' });
+    FX.impact(x, y, '#ff4f7e', .6);
   },
 
   shieldBreak(x, y, g) {
@@ -188,19 +208,58 @@ const VFX = {
     FX.flash('#7fd8ff', .16);
   },
 
-  kill(x, y, color, boss, g) {
+  /**
+   * 처치.
+   *  - 잡몹 : 맞은 방향으로 튀는 비산 + 짧은 링
+   *  - 보스 : 화면을 훑는 3중 링 · 빛기둥 · 슬로우모션까지 가는 풀 시네마틱
+   */
+  kill(x, y, color, boss, g, ang) {
     if (boss) {
-      for (let ring = 0; ring < 3; ring++) {
-        setTimeout(() => this.shockwave(x, y, 10, 160 + ring * 60, color, .55, 5), ring * 110);
+      /* 빨려들었다가 터진다 — 사이에 슬로우모션이 끼면 체감이 몇 배가 된다 */
+      this.implode(x, y, 90, color);
+      FX.slowmo(.75, .2);
+      FX.stop(.16);
+      for (let ring = 0; ring < 4; ring++) {
+        setTimeout(() => {
+          this.shockwave(x, y, 10, 170 + ring * 70, ring % 2 ? '#ffffff' : color, .6, 6 - ring);
+          FX.ripple(x, y, ring % 2 ? '#ffffff' : color, 1500 + ring * 420, .55, 7 - ring);
+          FX.shake(14 - ring * 2);
+        }, 120 + ring * 110);
       }
-      FX.burst(x, y, color, 40, { speed: 380, size: 9, shape: 'star' });
-      FX.burst(x, y, '#ffffff', 26, { speed: 260, size: 6 });
-      this.decal(x, y, 60, color, 6);
-      FX.stop(.14); FX.shake(20); FX.flash('#ffffff', .5);
+      /* 사방으로 뻗는 빛줄기 */
+      for (let i = 0; i < 14; i++) this.streak(x, y, i / 14 * U.TAU, 130 + U.rand(0, 90), '#fff6d0');
+      FX.burst(x, y, color, 48, { speed: 420, size: 10, shape: 'star', drag: .92 });
+      FX.burst(x, y, '#ffffff', 34, { speed: 300, size: 7 });
+      for (let i = 0; i < 22; i++) {
+        const a = U.rand(U.TAU), sp = U.rand(120, 520);
+        FX.spawn({
+          x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 120,
+          life: U.rand(.8, 1.6), size: U.rand(4, 9), color, color2: '#fff2b0',
+          shape: 'shard', vrot: U.rand(-12, 12), gravity: 320, drag: .96
+        });
+      }
+      FX.spawn({ x, y, life: .5, size: 200, size2: 0, color: '#ffffff', shape: 'glow' });
+      this.decal(x, y, 70, color, 6);
+      FX.speedLines(1.5, color);
+      FX.aberrate(13);
+      FX.pulse(.06);
+      FX.flash('#ffffff', .62);
     } else {
-      this.shockwave(x, y, 3, 26, color, .22, 2);
-      FX.burst(x, y, color, 9, { speed: 160, size: 4.4, drag: .88 });
+      this.shockwave(x, y, 3, 30, color, .24, 2.4);
+      /* 맞은 방향으로 비산 — 대칭 폭발보다 "맞아서 날아갔다" 는 느낌이 산다 */
+      const n = 11;
+      for (let i = 0; i < n; i++) {
+        const a = ang != null ? ang + U.rand(-.85, .85) : U.rand(U.TAU);
+        const sp = U.rand(130, 330);
+        FX.spawn({
+          x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 40,
+          life: U.rand(.28, .55), size: U.rand(3, 5.5), color, color2: '#ffffff',
+          shape: i % 3 ? 'circle' : 'shard', drag: .87, gravity: 260, vrot: U.rand(-9, 9)
+        });
+      }
+      FX.spawn({ x, y, life: .16, size: 26, size2: 0, color, shape: 'glow' });
       this.decal(x, y, 9, color, 1.6);
+      FX.shake(1.4);
     }
   },
 
@@ -258,6 +317,66 @@ const VFX = {
    * 가챠의 재미는 터지는 순간보다 터지기 직전의 기대감에서 나온다.
    * 등급이 높을수록 오래, 여러 겹으로 빨려 들어왔다가 터진다.
    */
+  /** 합성 : 재료가 있던 자리에서 결과물 쪽으로 빛이 빨려 들어온다 */
+  mergeSuck(fx, fy, tx, ty, color) {
+    const d = Math.hypot(tx - fx, ty - fy) || 1;
+    const dur = .26;
+    for (let i = 0; i < 9; i++) {
+      const jx = fx + U.rand(-14, 14), jy = fy + U.rand(-14, 14);
+      FX.spawn({
+        x: jx, y: jy,
+        vx: (tx - jx) / dur, vy: (ty - jy) / dur,
+        life: dur * U.rand(.85, 1), size: U.rand(3, 6), size2: 0,
+        color, color2: '#ffffff', shape: i % 3 ? 'circle' : 'star', drag: 1
+      });
+    }
+    this.streak(fx, fy, U.ang(fx, fy, tx, ty), Math.min(140, d), color);
+    FX.ring(fx, fy, color, 22, .2);
+  },
+
+  /** 스킬 시전 링 — 발동 지점에서 빛이 솟고 링이 퍼진다 */
+  castRing(x, y, color, chain) {
+    const n = U.clamp(chain || 1, 1, 4);
+    this.shockwave(x, y, 6, 90 + n * 26, color, .42, 3 + n);
+    this.shockwave(x, y, 2, 46, '#ffffff', .26, 2);
+    /* 아래에서 위로 솟는 마력 기둥 */
+    for (let i = 0; i < 12 + n * 5; i++) {
+      const a = U.rand(U.TAU), d = U.rand(10, 62 + n * 12);
+      FX.spawn({
+        x: x + Math.cos(a) * d, y: y + Math.sin(a) * d * .5 + 16,
+        vx: Math.cos(a) * 18, vy: -U.rand(140, 300 + n * 60),
+        life: U.rand(.35, .7), size: U.rand(3, 6), color, color2: '#ffffff',
+        shape: i % 4 ? 'circle' : 'star', drag: .94
+      });
+    }
+    FX.spawn({ x, y, life: .3, size: 90 + n * 20, size2: 0, color, shape: 'glow' });
+    for (let i = 0; i < 6; i++) this.streak(x, y, i / 6 * U.TAU + .3, 60 + n * 16, color);
+  },
+
+  /**
+   * 고등급 소환 화면 장악 — 등급(ri)이 높을수록 화면 전체가 반응한다.
+   * revealSummon 이 뽑기 결과를 보여 줄 때 같이 터뜨린다.
+   */
+  jackpot(x, y, ri, color, g) {
+    const p = U.clamp((ri - 1) / 6, 0, 1);
+    if (ri < 2) return;
+    /* 사방으로 뻗는 빛기둥 */
+    const rays = 8 + ri * 3;
+    for (let i = 0; i < rays; i++)
+      this.streak(x, y, i / rays * U.TAU + U.rand(-.1, .1), 120 + p * 220, i % 2 ? '#ffffff' : color);
+    for (let i = 0; i < 3 + ri; i++)
+      setTimeout(() => {
+        this.shockwave(x, y, 8, 120 + i * 80 + p * 160, i % 2 ? '#ffffff' : color, .55, 6 - i * .6);
+        FX.ripple(x, y, i % 2 ? '#ffffff' : color, 1100 + i * 380, .5, 6 - i);
+      }, i * 95);
+    FX.burst(x, y, color, 24 + ri * 8, { speed: 260 + p * 320, size: 6 + p * 6, shape: 'star', drag: .93 });
+    FX.spawn({ x, y, life: .45, size: 120 + p * 160, size2: 0, color: '#ffffff', shape: 'glow' });
+    this.confetti(x, y, color, 30 + Math.round(p * 90));
+    FX.impact(x, y, color, .5 + p * .5);
+    FX.speedLines(.9 + p * .7, color);
+    if (ri >= 4) { FX.slowmo(.45 + p * .4, .26); FX.flash(color, .35 + p * .3); }
+  },
+
   gachaCharge(x, y, ri, color, g) {
     const dur = .18 + ri * .07;               /* 등급이 높을수록 길게 뜸 들인다 */
     const rings = 2 + ri;

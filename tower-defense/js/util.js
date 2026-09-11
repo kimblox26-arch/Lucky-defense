@@ -165,6 +165,7 @@ class Particle {
     this.glow = o.glow !== undefined ? o.glow : true;
     this.text = o.text || '';
     this.gravity = o.gravity || 0;
+    this.big = !!o.big;
     this.dead = false;
     return this;
   }
@@ -229,6 +230,26 @@ class Particle {
         const fs = Math.max(8, s * Math.max(.05, pop));
         ctx.font = `900 ${fs}px system-ui,sans-serif`;
         ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        if (this.big) {
+          /* 큰 한 방은 숫자부터 다르게 — 두꺼운 검은 테두리 + 아래로 흐르는 그라데이션,
+             갓 튀어나온 순간엔 흰빛이 번진다 */
+          const grad = ctx.createLinearGradient(0, this.y - fs * .6, 0, this.y + fs * .6);
+          grad.addColorStop(0, '#ffffff');
+          grad.addColorStop(.42, col);
+          grad.addColorStop(1, U.shade(col, -.34));
+          ctx.lineJoin = 'round';
+          ctx.lineWidth = Math.max(4, fs * .26); ctx.strokeStyle = 'rgba(0,0,0,.82)';
+          ctx.strokeText(this.text, this.x, this.y);
+          ctx.shadowColor = col; ctx.shadowBlur = 16 + (age < .18 ? 22 : 0);
+          ctx.fillStyle = grad;
+          ctx.fillText(this.text, this.x, this.y);
+          if (age < .16) {
+            ctx.globalAlpha = a * (1 - age / .16) * .85;
+            ctx.fillStyle = '#fff';
+            ctx.fillText(this.text, this.x, this.y);
+          }
+          break;
+        }
         ctx.lineWidth = 3.4; ctx.strokeStyle = 'rgba(0,0,0,.6)';
         ctx.strokeText(this.text, this.x, this.y); ctx.fillText(this.text, this.x, this.y); break;
       }
@@ -246,6 +267,11 @@ const FX = {
   hitStop: 0,
   chromatic: 0,
   zoomPulse: 0,
+  /* --- 임팩트 레이어 --- */
+  kickX: 0, kickY: 0,          /* 충격 방향으로 카메라가 툭 밀린다 */
+  rush: 0, rushCol: '#fff',    /* 화면 가장자리에서 중앙으로 빨려드는 속도선 */
+  slowT: 0, slowScale: 1,      /* 슬로우모션 남은 시간 / 배속 */
+  ripples: [],                 /* 화면 전체를 훑는 충격 링 */
   ripples: [],
   texts: [],
 
@@ -307,13 +333,54 @@ const FX = {
   popText(x, y, text, color, size = 15, opt = {}) {
     this.spawn({
       x, y, vx: opt.vx !== undefined ? opt.vx : U.rand(-24, 24), vy: opt.vy !== undefined ? opt.vy : U.rand(-72, -46),
-      ay: 90, life: opt.life || .85, size, size2: size * .8, color, shape: 'text', text, glow: opt.glow !== false, drag: .94
+      ay: 90, life: opt.life || .85, size, size2: size * .8, color, shape: 'text', text,
+      glow: opt.glow !== false, drag: .94, big: !!opt.big
     });
   },
   shake(a) { this.shakeAmt = Math.min(30, this.shakeAmt + a * this.shakeScale); },
   flash(color = '#fff', a = .5) { this.flashColor = color; this.flashAlpha = Math.max(this.flashAlpha, a); },
   stop(t) { this.hitStop = Math.max(this.hitStop, t); },
   pulse(a = .04) { this.zoomPulse = Math.max(this.zoomPulse, a); },
+
+  /* ---------------------------------------------------------- 임팩트 레이어 */
+  /** 색수차 — 큰 타격에서 화면이 잠깐 어긋나 보인다 */
+  aberrate(a = 3) { this.chromatic = Math.min(14, Math.max(this.chromatic, a * this.shakeScale)); },
+  /** 충격 방향으로 카메라를 툭 민다 (ang: 라디안, p: 픽셀) */
+  kick(ang, p = 8) {
+    const k = p * this.shakeScale;
+    this.kickX += Math.cos(ang) * k; this.kickY += Math.sin(ang) * k;
+    const m = Math.hypot(this.kickX, this.kickY);
+    if (m > 26) { this.kickX *= 26 / m; this.kickY *= 26 / m; }
+  },
+  /** 중앙으로 빨려드는 속도선 */
+  speedLines(a = 1, color = '#ffffff') {
+    this.rush = Math.min(1.6, Math.max(this.rush, a)); this.rushCol = color;
+  },
+  /** 슬로우모션 — 진짜 큰 순간에만 */
+  slowmo(dur = .5, scale = .28) {
+    if (dur > this.slowT) { this.slowT = dur; this.slowScale = scale; }
+  },
+  /** 화면 전체를 훑는 충격 링 */
+  ripple(x, y, color = '#ffffff', speed = 1400, life = .5, lw = 5) {
+    if (this.ripples.length > 8) this.ripples.shift();
+    this.ripples.push({ x, y, r: 0, speed, life, maxLife: life, color, lw });
+  },
+
+  /**
+   * 한 방에 쓰는 "묵직한 한 대" 세트.
+   * power 0~1 : 잡몹 타격 ~ 보스 처치
+   */
+  impact(x, y, color, power, ang) {
+    const p = U.clamp(power, 0, 1);
+    this.shake(3 + p * 22);
+    this.stop(.012 + p * .13);
+    this.pulse(.006 + p * .045);
+    this.aberrate(1.5 + p * 9);
+    if (ang != null) this.kick(ang, 3 + p * 14);
+    if (p > .35) this.ripple(x, y, color, 900 + p * 1400, .35 + p * .3, 2 + p * 6);
+    if (p > .55) this.speedLines(p, color);
+    if (p > .78) { this.flash(color, .18 + p * .3); this.slowmo(.18 + p * .5, .34 - p * .1); }
+  },
 
   update(dt) {
     for (let i = this.active.length - 1; i >= 0; i--) {
@@ -328,13 +395,68 @@ const FX = {
     } else { this.shakeX = this.shakeY = 0; }
     if (this.flashAlpha > 0) this.flashAlpha = Math.max(0, this.flashAlpha - dt * 2.6);
     if (this.zoomPulse > 0) this.zoomPulse = Math.max(0, this.zoomPulse - dt * .35);
-    if (this.chromatic > 0) this.chromatic = Math.max(0, this.chromatic - dt * 4);
+    if (this.chromatic > 0) this.chromatic = Math.max(0, this.chromatic - dt * 22);
+    /* 카메라 킥은 스프링처럼 제자리로 돌아온다 */
+    if (this.kickX || this.kickY) {
+      const k = Math.pow(.0016, dt);
+      this.kickX *= k; this.kickY *= k;
+      if (Math.abs(this.kickX) < .12) this.kickX = 0;
+      if (Math.abs(this.kickY) < .12) this.kickY = 0;
+    }
+    if (this.rush > 0) this.rush = Math.max(0, this.rush - dt * 3.4);
+    if (this.slowT > 0) this.slowT = Math.max(0, this.slowT - dt);
+    for (let i = this.ripples.length - 1; i >= 0; i--) {
+      const r = this.ripples[i];
+      r.life -= dt; r.r += r.speed * dt;
+      if (r.life <= 0) this.ripples.splice(i, 1);
+    }
+  },
+
+  /** 화면 위에 얹는 임팩트 오버레이 (충격 링 · 속도선) — 파티클 다음에 그린다 */
+  drawImpact(ctx, W, H) {
+    if (this.ripples.length) {
+      ctx.save();
+      for (const r of this.ripples) {
+        const t = r.life / r.maxLife;
+        ctx.globalAlpha = t * t * .85;
+        ctx.strokeStyle = r.color; ctx.lineWidth = r.lw * t;
+        ctx.shadowColor = r.color; ctx.shadowBlur = 18 * t;
+        ctx.beginPath(); ctx.arc(r.x, r.y, r.r, 0, U.TAU); ctx.stroke();
+        /* 안쪽에 얇은 흰 심 — 링이 더 날카롭게 읽힌다 */
+        ctx.globalAlpha = t * t * .5;
+        ctx.strokeStyle = '#fff'; ctx.lineWidth = Math.max(.6, r.lw * t * .32);
+        ctx.beginPath(); ctx.arc(r.x, r.y, Math.max(0, r.r - r.lw * t * .7), 0, U.TAU); ctx.stroke();
+      }
+      ctx.restore();
+    }
+    if (this.rush > 0) {
+      const a = U.clamp(this.rush, 0, 1);
+      const cx = W / 2, cy = H / 2, R = Math.hypot(W, H) * .55;
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.strokeStyle = this.rushCol; ctx.lineCap = 'round';
+      const n = Math.round(26 * a) + 6;
+      for (let i = 0; i < n; i++) {
+        const ang = (i / n) * Math.PI * 2 + i * 1.7;
+        const len = R * (.16 + (i % 3) * .07) * a;
+        const r0 = R * (.62 + (i % 5) * .06);
+        ctx.globalAlpha = a * .32 * (.5 + (i % 4) * .15);
+        ctx.lineWidth = 1 + a * 2.6;
+        ctx.beginPath();
+        ctx.moveTo(cx + Math.cos(ang) * r0, cy + Math.sin(ang) * r0);
+        ctx.lineTo(cx + Math.cos(ang) * (r0 + len), cy + Math.sin(ang) * (r0 + len));
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
   },
   draw(ctx) { for (const p of this.active) p.draw(ctx); },
   clear() {
     for (const p of this.active) { p.dead = true; if (this.pool.length < 900) this.pool.push(p); }
     this.active.length = 0;
     this.shakeAmt = 0; this.flashAlpha = 0;
+    this.kickX = this.kickY = 0; this.rush = 0; this.chromatic = 0;
+    this.slowT = 0; this.ripples.length = 0;
   }
 };
 

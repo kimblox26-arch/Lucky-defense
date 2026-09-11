@@ -468,11 +468,22 @@ const Game = {
     this.stats.maxCombo = Math.max(this.stats.maxCombo, this.combo);
     if (this.combo % 10 === 0) {
       SFX._combo = this.combo; SFX.play('combo');
-      FX.popText(this.W / 2, this.H * .3, this.combo + ' COMBO!', '#ffd24d', 22 + Math.min(20, this.combo * .06), { life: .8, vy: -20 });
-      FX.pulse(.02);
+      /* 콤보가 쌓일수록 글자색·크기·화면 반응이 같이 커진다 */
+      const tierCol = this.combo >= 200 ? '#ff5c4d' : this.combo >= 100 ? '#ff7ad0'
+        : this.combo >= 50 ? '#c48fff' : this.combo >= 20 ? '#7fd8ff' : '#ffd24d';
+      FX.popText(this.W / 2, this.H * .3, this.combo + ' COMBO!', tierCol,
+        24 + Math.min(26, this.combo * .09), { life: .9, vy: -22, big: this.combo >= 30 });
+      FX.pulse(.02 + Math.min(.03, this.combo * .0001));
+      FX.ripple(this.W / 2, this.H * .3, tierCol, 1500, .45, 3);
     }
     if (this.combo === 50 || this.combo === 100 || this.combo === 200 || this.combo === 500) {
-      FX.flash('#ffd24d', .3); FX.shake(6);
+      const c2 = this.combo >= 200 ? '#ff5c4d' : this.combo >= 100 ? '#ff7ad0' : '#c48fff';
+      FX.flash(c2, .38); FX.shake(10); FX.aberrate(8);
+      FX.speedLines(1.3, c2);
+      FX.slowmo(.28, .35);
+      for (let i = 0; i < 3; i++)
+        setTimeout(() => FX.ripple(this.W / 2, this.H * .38, c2, 1700, .5, 5 - i), i * 90);
+      if (window.VFX) VFX.confetti(this.W / 2, this.H * .38, c2, 50);
     }
   },
   resetCombo() { this.combo = 0; this.comboTimer = 0; },
@@ -627,14 +638,14 @@ const Game = {
   /** 뜸 들이기가 끝난 뒤 실제로 터뜨리는 부분 */
   revealSummon(u, def, rar, ri) {
     const col = rar.color;
-    FX.popText(u.px, u.py - this.ts * .8, def.name, col, 14 + ri);
+    FX.popText(u.px, u.py - this.ts * .8, def.name, col, 14 + ri * 2, { big: ri >= 3, life: 1.1 });
     /* 등급마다 다른 팡파레 — 소리만 듣고도 무엇이 나왔는지 알 수 있게 */
     SFX.playRarity(ri);
-    if (ri >= 6) { SFX.play('jackpot'); FX.flash(col, .6); FX.shake(14); FX.stop(.14); if (window.UI) UI.rarityBanner(def, rar); }
-    else if (ri >= 5) { SFX.play('jackpot'); FX.flash(col, .45); FX.shake(10); if (window.UI) UI.rarityBanner(def, rar); }
-    else if (ri >= 4) { FX.flash(col, .3); FX.shake(6); if (window.UI) UI.rarityBanner(def, rar); }
-    else if (ri >= 3) { FX.flash(col, .18); FX.shake(3); if (window.UI) UI.rarityBanner(def, rar); }
-    else if (ri >= 2) { if (window.UI) UI.rarityBanner(def, rar); }
+    /* 등급이 높을수록 화면 전체가 반응한다 (빛기둥·다중 링·꽃가루·슬로우모션) */
+    VFX.jackpot(u.px, u.py, ri, col, this);
+    if (ri >= 5) SFX.play('jackpot');
+    if (ri >= 6) FX.stop(.16);
+    if (ri >= 2 && window.UI) UI.rarityBanner(def, rar);
   },
 
   /** 운빨존많겜식 N연차 소환 — 결과를 모았다가 한 번에 화려하게 공개한다 */
@@ -732,14 +743,22 @@ const Game = {
     const grp = this.findMergeGroup(u);
     if (!grp) { SFX.play('error'); if (window.UI) UI.toast('같은 유닛 3기가 필요하다', '#ff6b6b'); return false; }
     const gx = u.gx, gy = u.gy;
+    /* 재료가 서 있던 자리를 기억해 둔다 — 거기서 빛이 빨려 들어오는 연출에 쓴다 */
+    const mergedFrom = grp.filter(x => x !== u).map(x => ({ x: x.px, y: x.py }));
     for (const x of grp) if (x !== u) this.removeUnit(x, false);
 
     this.stats.merges++;
     if (u.star < 3) {
       u.star++;
-      FX.explosion(u.px, u.py, this.ts * 1.2, RARITY[RARITY_IDX[u.def.rarity]].color, '#fff');
-      VFX.ascend(u.px, u.py, RARITY[RARITY_IDX[u.def.rarity]].color, this);
-      FX.popText(u.px, u.py - this.ts, U.roman(u.star) + '성 달성!', '#ffd24d', 18);
+      const mc = RARITY[RARITY_IDX[u.def.rarity]].color;
+      FX.explosion(u.px, u.py, this.ts * 1.2, mc, '#fff');
+      VFX.ascend(u.px, u.py, mc, this);
+      /* 재료가 있던 자리에서 빛이 빨려 들어온다 — 세 개가 하나가 됐다는 게 보이게 */
+      for (const m of mergedFrom) VFX.mergeSuck(m.x, m.y, u.px, u.py, mc);
+      VFX.castRing(u.px, u.py, mc, u.star);
+      FX.popText(u.px, u.py - this.ts, U.roman(u.star) + '성 달성!', '#ffd24d', 22 + u.star * 3,
+        { life: 1.2, big: u.star >= 3 });
+      FX.impact(u.px, u.py, mc, .28 + u.star * .1);
       SFX.play('merge');
       u.refresh(); u.spawnMinions();
     } else {
@@ -754,8 +773,11 @@ const Game = {
       this.units.push(nu);
       FX.explosion(nu.px, nu.py, this.ts * 2, nextRar.color, '#fff');
       VFX.ascend(nu.px, nu.py, nextRar.color, this);
-      FX.flash(nextRar.color, .45); FX.shake(12); FX.stop(.1);
-      FX.popText(nu.px, nu.py - this.ts, '승급! ' + nd.name, nextRar.color, 20, { life: 1.4 });
+      for (const m of mergedFrom) VFX.mergeSuck(m.x, m.y, nu.px, nu.py, nextRar.color);
+      /* 등급 승급은 판에서 손꼽히는 순간 — 소환 대박과 같은 급으로 터뜨린다 */
+      VFX.jackpot(nu.px, nu.py, nextIdx, nextRar.color, this);
+      FX.popText(nu.px, nu.py - this.ts, '승급!', nextRar.color, 30, { life: 1.5, vy: -34, big: true });
+      FX.popText(nu.px, nu.py - this.ts + 40, nd.name, nextRar.color, 22, { life: 1.4, vy: -24, big: true });
       SFX.play(nextIdx >= 5 ? 'mythic' : 'legendary');
       this.stats.bestRarity = Math.max(this.stats.bestRarity, nextIdx);
       this.collect(nd.key);
@@ -1106,14 +1128,21 @@ const Game = {
       (c.a === prevElem && c.b === curElem) || (c.a === curElem && c.b === prevElem));
     if (found) { mul = Math.max(mul, found.mul); name = found.name; col = found.col; }
 
-    /* 연출 : 이름을 크게 띄우고 화면을 흔든다 */
-    FX.popText(this.W / 2, this.H * .3, name + '!  x' + mul.toFixed(2), col, 26 + n * 2,
-      { life: 1.5, vy: -30 });
-    FX.flash(col, .18 + n * .05);
-    FX.shake(6 + n * 3);
+    /* 연출 : 이름을 크게 박고 화면 전체가 반응한다 */
+    FX.popText(this.W / 2, this.H * .28, name + '!', col, 30 + n * 3,
+      { life: 1.5, vy: -30, big: true });
+    FX.popText(this.W / 2, this.H * .28 + 40, '×' + mul.toFixed(2), col, 22 + n * 2,
+      { life: 1.4, vy: -22, big: true });
+    FX.flash(col, .2 + n * .06);
+    FX.shake(8 + n * 4);
+    FX.aberrate(5 + n * 2.5);
+    FX.speedLines(.8 + n * .2, col);
+    for (let i = 0; i < Math.min(3, n); i++)
+      setTimeout(() => FX.ripple(this.W / 2, this.H * .38, col, 1500 + i * 300, .5, 5 - i), i * 85);
+    if (found) { FX.slowmo(.34, .3); if (window.VFX) VFX.confetti(this.W / 2, this.H * .38, col, 46); }
     SFX.play(found ? 'combo3' : n >= 3 ? 'combo3' : 'combo2');
     if (window.UI) UI.toast('연계 ' + name + '  x' + mul.toFixed(2), col);
-    return { mul, n, name };
+    return { mul, n, name, col };
   },
   useSkill(key, wx, wy) {
     const s = SKILLS.find(x => x.key === key);
@@ -1135,6 +1164,12 @@ const Game = {
 
     /* 스킬 연계 — 짧은 시간 안에 이어 쓰면 위력이 붙는다 */
     const combo = this.pushSkillChain(key);
+
+    /* 시전 연출 — 스킬은 "발동했다" 가 몸으로 느껴져야 한다.
+       (연계 이름·배수 표시는 pushSkillChain 한 곳에서만 한다) */
+    const cx = wx != null ? wx : this.W / 2, cy = wy != null ? wy : this.H * .45;
+    VFX.castRing(cx, cy, s.color || '#fff', combo.n || 1);
+    FX.impact(cx, cy, s.color || '#fff', .4 + Math.min(.35, (combo.mul - 1) * .35));
     const dmgBase = 260 * Math.pow(1.19, this.wave) * (1 + this.research.atk * .06)
       * (1 + this.bless.skilldmg) * combo.mul;
 
@@ -1591,8 +1626,10 @@ const Game = {
     this.lastT = t;
     if (FX.hitStop > 0) { FX.hitStop -= raw; }
     else if (!this.paused && this.state === 'playing') {
+      /* 슬로우모션 — 큰 순간에만 시간이 늘어진다 (연출용이라 파티클은 그대로 흐른다) */
+      const slow = FX.slowT > 0 ? FX.slowScale : 1;
       const steps = this.speed > 1 ? this.speed : 1;
-      const dt = raw * (this.speed / steps);
+      const dt = raw * (this.speed / steps) * slow;
       for (let i = 0; i < steps; i++) this.update(dt);
     }
     FX.update(raw);
@@ -1657,8 +1694,47 @@ const Game = {
   },
 
   /* ---------------------------------------------------------- 렌더 */
+  /**
+   * 화면 그리기.
+   *
+   * 색수차가 켜져 있는 동안에만 오프스크린 캔버스에 한 번 그린 뒤 겹쳐 찍는다.
+   * 화면에 붙은 캔버스에서 픽셀을 되읽으면(drawImage(cv,…)) GPU 동기화가 걸려
+   * 목적지 크기와 무관하게 18~24ms/프레임이 나온다 — 60fps 예산을 혼자 다 먹는다.
+   * 오프스크린에 그리고 blit 하는 경로는 4.5ms 라, 효과가 도는 0.3~0.6초 동안만
+   * 그 값을 내고 평소에는 한 푼도 쓰지 않는다.
+   */
   render() {
-    const c = this.ctx, W = this.W, H = this.H;
+    const amt = FX.chromatic;
+    /* 이 경로는 효과가 도는 동안 6ms/프레임을 쓴다. 예산이 넉넉한 단계에서만 켠다
+       (Perf 가 28fps 밑으로 떨어지면 알아서 단계를 내리고, 그때 자동으로 꺼진다). */
+    const useChroma = amt >= .35 && (!window.Perf || Perf.quality >= 2);
+    if (!useChroma) { this.renderScene(this.ctx); return; }
+
+    /* 오프스크린은 CSS 해상도(=dpr 1)로 뜬다. 화면과 같은 배율로 뜨면 픽셀이 4배가
+       되고, 이 캔버스는 GPU 가속을 못 받아 시간이 픽셀 수에 그대로 비례한다.
+       0.3초짜리 충격 연출이라 살짝 무른 것은 오히려 색수차답게 보인다. */
+    const W = this.W, H = this.H;
+    let off = this._chromaCv;
+    if (!off) off = this._chromaCv = document.createElement('canvas');
+    if (off.width !== W || off.height !== H) { off.width = W; off.height = H; }
+    const ox = off.getContext('2d');
+    ox.setTransform(1, 0, 0, 1, 0, 0);
+    this.renderScene(ox);
+
+    const c = this.ctx;
+    c.clearRect(0, 0, W, H);
+    c.drawImage(off, 0, 0, W, H);
+    c.save();
+    c.globalCompositeOperation = 'lighter';
+    c.globalAlpha = U.clamp(amt * .06, 0, .42);
+    /* 붉은 쪽은 왼쪽으로, 푸른 쪽은 오른쪽으로 */
+    c.drawImage(off, -amt, 0, W, H);
+    c.drawImage(off, amt, 0, W, H);
+    c.restore();
+  },
+
+  renderScene(c) {
+    const W = this.W, H = this.H;
     /* 유닛이 아주 많을 때는 스티커 외곽선을 자동으로 생략해 프레임을 지킨다 */
     /* 유닛 스프라이트를 캐시하게 되면서 외곽선 비용이 사실상 사라져(20기 21ms → 1.2ms)
        기본은 항상 켠다. 단, 최적화 단계를 최저로 내리면 꺼서 프레임을 확보한다. */
@@ -1670,8 +1746,8 @@ const Game = {
     bg.addColorStop(0, '#0d1117'); bg.addColorStop(1, '#05070b');
     c.fillStyle = bg; c.fillRect(0, 0, W, H);
 
-    /* 화면 흔들림 */
-    c.translate(FX.shakeX, FX.shakeY);
+    /* 화면 흔들림 + 충격 방향 카메라 킥 */
+    c.translate(FX.shakeX + FX.kickX, FX.shakeY + FX.kickY);
     if (FX.zoomPulse > 0) {
       c.translate(W / 2, H / 2); c.scale(1 + FX.zoomPulse, 1 + FX.zoomPulse); c.translate(-W / 2, -H / 2);
     }
@@ -1768,6 +1844,9 @@ const Game = {
     }
 
     c.restore();
+
+    /* 충격 링 · 속도선 (흔들림 밖에서 화면 기준으로) */
+    FX.drawImpact(c, W, H);
 
     /* 저체력 비네트 */
     const lifePct = this.life / this.maxLife;
