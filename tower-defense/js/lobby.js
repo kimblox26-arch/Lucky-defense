@@ -404,6 +404,7 @@ const Lobby = {
       lbHeroNext: () => this.nextHero(),
       btnAccount: () => this.openPanel('account'),
       btnSwitch: () => this.openPanel('switch'),
+      btnRank: () => this.openPanel('rank'),
       btnLogout: () => this.doLogout(),
     };
     for (const id in menu) {
@@ -435,6 +436,7 @@ const Lobby = {
       map: '전장 선택', profile: '프로필 꾸미기', shop: '상점', codex: '도감',
       ach: '업적', perks: '명예 강화', daily: '출석 보상', quest: '일일 퀘스트',
       records: '전적', settings: '설정', account: '계정', switch: '계정 전환',
+      rank: '랭킹',
     };
     this.el.panelTitle.textContent = titles[this.panel] || '';
     const b = this.el.panelBody;
@@ -452,6 +454,7 @@ const Lobby = {
       case 'settings': this.renderSettingsPanel(b); break;
       case 'account': this.renderAccountPanel(b); break;
       case 'switch': this.renderSwitchPanel(b); break;
+      case 'rank': this.renderRankPanel(b); break;
     }
   },
 
@@ -1092,6 +1095,60 @@ const Lobby = {
     };
   },
 
+  /* --------------------------------------------------- 랭킹 */
+  rankFilter: { map: '*', diff: '*', limit: 50 },
+
+  async renderRankPanel(b) {
+    const f = this.rankFilter;
+    b.innerHTML = `
+      <div class="rk-filters">
+        <select class="rk-sel" id="rkMap">
+          <option value="*">모든 전장</option>
+          ${MAPS.map(m => `<option value="${m.key}"${f.map === m.key ? ' selected' : ''}>${this.esc(m.name)}</option>`).join('')}
+        </select>
+        <select class="rk-sel" id="rkDiff">
+          <option value="*">모든 난이도</option>
+          ${Game.DIFFS.map(d => `<option value="${d.key}"${f.diff === d.key ? ' selected' : ''}>${d.i} ${d.n}</option>`).join('')}
+        </select>
+      </div>
+      <div id="rkBody"><div class="p-note">불러오는 중…</div></div>`;
+
+    const reload = async () => {
+      const host = document.getElementById('rkBody');
+      const r = await Leaderboard.fetchTop(f);
+      const myUid = (Account.current && Account.current.uid) || 'anon';
+      const mode = r.mode === 'rest'
+        ? `<span class="rk-on">🌐 온라인</span> 전 세계 순위`
+        : `<span class="rk-off">📴 로컬</span> 이 기기의 기록만 — `
+          + `<code>config.js</code> 의 <code>LEADERBOARD_URL</code> 에 서버 주소를 넣으면 전 세계 순위가 된다`;
+      const err = r.error ? `<div class="rk-err">서버에 닿지 못했다 (${this.esc(r.error)}) — 로컬 기록을 보여 준다</div>` : '';
+
+      if (!r.entries.length) {
+        host.innerHTML = `<div class="p-note">${mode}</div>${err}
+          <div class="p-note">아직 기록이 없다. 한 판 돌고 오면 여기에 남는다.</div>`;
+        return;
+      }
+      const medal = i => i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1);
+      host.innerHTML = `<div class="p-note">${mode}</div>${err}
+        <div class="rk-list">` + r.entries.map((e, i) => {
+        const d = Game.DIFFS.find(x => x.key === e.diff) || Game.DIFFS[1];
+        const mp = MAPS.find(x => x.key === e.map);
+        return `<div class="rk-row${e.uid === myUid ? ' me' : ''}${i < 3 ? ' top' : ''}">
+          <div class="rk-i">${medal(i)}</div>
+          <div class="rk-n">${this.esc(e.name || '익명')}
+            ${e.uid === myUid ? '<em>나</em>' : ''}
+            <i>${this.esc(mp ? mp.name : e.mapName || '?')} · <b style="color:${d.col}">${d.i} ${d.n}</b></i></div>
+          <div class="rk-w"><b>W${e.wave}</b><i>${U.fmt(e.kills || 0)} 처치</i></div>
+        </div>`;
+      }).join('') + '</div>';
+    };
+
+    document.getElementById('rkMap').onchange = e => { f.map = e.target.value; reload(); };
+    document.getElementById('rkDiff').onchange = e => { f.diff = e.target.value; reload(); };
+    Leaderboard.flushQueue();
+    reload();
+  },
+
   /* --------------------------------------------------- 계정 전환 */
   renderSwitchPanel(b) {
     const list = Account.listAccounts();
@@ -1255,6 +1312,8 @@ const Lobby = {
     const r = Account.addExp(exp);
     Account.touch();
     Account.saveProfile();
+    /* 랭킹 제출 — 실패해도 게임 흐름을 막지 않는다 (로컬엔 이미 남았고, 나중에 재전송) */
+    if (window.Leaderboard) Leaderboard.submit().catch(() => { });
     return { exp, gem, levels: r.levels, level: r.level };
   },
 

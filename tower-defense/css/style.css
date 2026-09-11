@@ -1477,3 +1477,61 @@ button{ font:inherit; color:inherit; cursor:pointer; border:none; background:non
 .rc-b b{ display:block; font-size:14px; font-weight:900; color:#a8ffc4; }
 .rc-b i{ display:block; font-style:normal; font-size:10.5px; color:#9fb0cc; margin-top:2px; }
 .rc-x{ font-size:14px; color:#7f8ca3; text-align:center; padding:4px; }
+
+/* ------------------------------------------------------------- 분기 경로 */
+.up-paths{ display:flex; flex-direction:column; gap:5px; margin-top:8px; }
+.pt-row{ --c:#8fa8cc; position:relative; overflow:hidden; padding:7px 9px 8px;
+  border-radius:11px; background:rgba(255,255,255,.035);
+  border-left:3px solid color-mix(in srgb,var(--c) 55%,transparent); }
+.pt-row.done{ background:linear-gradient(90deg,color-mix(in srgb,var(--c) 14%,transparent),rgba(255,255,255,.03));
+  border-left-color:var(--c); box-shadow:inset 0 0 18px -10px var(--c); }
+.pt-head{ display:flex; align-items:center; gap:7px; }
+.pt-i{ font-size:15px; filter:drop-shadow(0 1px 2px rgba(0,0,0,.6)); }
+.pt-n{ font-size:12.5px; font-weight:900; color:var(--c); white-space:nowrap; }
+.pt-n em{ font-style:normal; font-size:10px; color:#7f8ca3; margin-left:4px; }
+.pt-pips{ display:flex; gap:3px; margin-left:auto; margin-right:4px; }
+.pt-pips i{ width:13px; height:5px; border-radius:3px; background:rgba(255,255,255,.12); }
+.pt-pips i.on{ background:var(--c); box-shadow:0 0 7px -1px var(--c); }
+.pt-pips i.ult{ width:17px; }
+.pt-pips i.ult.on{ background:linear-gradient(90deg,var(--c),#fff); }
+.pt-buy{ flex:0 0 auto; min-width:58px; padding:5px 8px; border-radius:9px; font-weight:900;
+  display:flex; align-items:baseline; justify-content:center; gap:1px;
+  color:#0d1a10; background:linear-gradient(180deg,#8dffab,#3fd472); border:none;
+  box-shadow:0 2px 0 #1f7d45; }
+.pt-buy b{ font-size:11.5px; } .pt-buy i{ font-style:normal; font-size:9px; opacity:.75; }
+.pt-buy:active{ transform:translateY(2px); box-shadow:none; }
+.pt-buy.dis{ color:#7f8ca3; background:rgba(255,255,255,.05); box-shadow:none;
+  border:1px solid rgba(150,175,225,.16); }
+.pt-max{ margin-left:auto; font-size:10px; font-weight:900; color:var(--c);
+  border:1px solid color-mix(in srgb,var(--c) 40%,transparent); border-radius:7px; padding:2px 7px; }
+.pt-d{ font-size:10.5px; color:#9fb0cc; margin-top:4px; line-height:1.35; }
+.pt-d b{ color:var(--c); font-weight:900; }
+
+/* ------------------------------------------------------------- 랭킹 */
+.rk-filters{ display:flex; gap:7px; margin-bottom:10px; }
+.rk-sel{ flex:1 1 0; padding:9px 10px; border-radius:12px; font-size:12.5px; font-weight:800;
+  color:var(--fg); background:rgba(30,36,56,.9);
+  border:1.5px solid rgba(150,175,225,.22); appearance:none; }
+.rk-on{ color:#7cff9c; font-weight:900; }
+.rk-off{ color:#ffb347; font-weight:900; }
+.rk-err{ margin-bottom:8px; padding:8px 11px; border-radius:11px; font-size:11px;
+  color:#ffc9c9; background:rgba(255,90,90,.1); border:1px solid rgba(255,90,90,.28); }
+.rk-list{ display:flex; flex-direction:column; gap:4px; }
+.rk-row{ display:grid; grid-template-columns:34px 1fr auto; gap:9px; align-items:center;
+  padding:8px 11px; border-radius:12px;
+  background:linear-gradient(180deg,rgba(30,36,56,.8),rgba(16,20,34,.8));
+  border:1px solid rgba(150,175,225,.12); }
+.rk-row.top{ border-color:rgba(255,210,77,.35);
+  background:linear-gradient(90deg,rgba(255,210,77,.1),rgba(16,20,34,.85)); }
+.rk-row.me{ border-color:rgba(124,255,156,.55);
+  box-shadow:0 0 16px -8px #7cff9c, inset 0 1px 0 rgba(255,255,255,.06); }
+.rk-i{ font-size:15px; font-weight:900; text-align:center; color:#9fb0cc; }
+.rk-row.top .rk-i{ font-size:19px; }
+.rk-n{ font-size:13px; font-weight:900; letter-spacing:-.2px; }
+.rk-n em{ font-style:normal; font-size:9px; font-weight:900; color:#0c1a10;
+  background:#7cff9c; border-radius:5px; padding:1px 4px; margin-left:4px; }
+.rk-n i{ display:block; font-style:normal; font-size:10px; color:#9fb0cc;
+  font-weight:700; margin-top:2px; }
+.rk-w{ text-align:right; }
+.rk-w b{ display:block; font-size:15px; font-weight:900; color:#ffd24d; letter-spacing:-.5px; }
+.rk-w i{ font-style:normal; font-size:9.5px; color:#7f8ca3; }

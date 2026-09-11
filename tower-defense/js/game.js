@@ -239,6 +239,7 @@ const Game = {
         key: u.key, star: u.star, level: u.level, gx: u.gx, gy: u.gy,
         invested: u.invested || 0, locked: !!u.locked, targetMode: u.targetMode,
         kills: u.kills || 0, dmgDone: u.dmgDone || 0,
+        paths: u.paths ? Object.assign({}, u.paths) : null,
       })),
     };
   },
@@ -317,6 +318,7 @@ const Game = {
       n.locked = !!u.locked;
       if (u.targetMode) n.targetMode = u.targetMode;
       n.kills = u.kills || 0; n.dmgDone = u.dmgDone || 0;
+      if (u.paths) n.paths = Object.assign({}, u.paths);
       this.units.push(n);
     }
     this.waveActive = false;

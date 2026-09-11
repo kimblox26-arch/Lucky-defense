@@ -328,6 +328,8 @@ const UI = {
       ${r[3] != null ? `<u style="width:${(r[3] * 100).toFixed(0)}%"></u>` : ''}
     </div>`).join('');
 
+    this.renderPaths(u);
+
     document.querySelectorAll('#upTargets button').forEach(b =>
       b.classList.toggle('on', b.dataset.mode === u.targetMode));
 
@@ -606,6 +608,49 @@ const UI = {
   },
 
   /* ------------------------------------------------------ 알림 */
+  /**
+   * 분기 경로 — 3갈래 × 4티어.
+   * 한 경로만 끝까지, 두 번째는 2티어까지. 막힌 칸은 왜 막혔는지 보여 준다.
+   */
+  renderPaths(u) {
+    const host = $('upPaths');
+    if (!host || !window.Path) return;
+    const st = Path.state(u);
+    host.innerHTML = PATHS.map(p => {
+      const lv = st[p.key] || 0;
+      const chk = Path.canBuy(u, p.key, Game);
+      const next = p.tiers[lv];
+      const pips = p.tiers.map((t, i) =>
+        `<i class="${i < lv ? 'on' : ''}${i === 3 ? ' ult' : ''}" title="${t.n} — ${t.d}"></i>`).join('');
+      const btn = !next
+        ? `<span class="pt-max">MAX</span>`
+        : chk.ok
+          ? `<button class="pt-buy" data-path="${p.key}"><b>${U.fmt(chk.cost)}</b><i>G</i></button>`
+          : `<button class="pt-buy dis" data-path="${p.key}"
+              title="${this.escAttr(chk.reason)}">${chk.reason === '골드 부족'
+                ? `<b>${U.fmt(chk.cost)}</b><i>G</i>` : '🔒'}</button>`;
+      return `<div class="pt-row${lv >= 4 ? ' done' : ''}" style="--c:${p.col}">
+        <div class="pt-head">
+          <span class="pt-i">${p.i}</span>
+          <span class="pt-n">${p.n}<em>${lv}/4</em></span>
+          <div class="pt-pips">${pips}</div>
+          ${btn}
+        </div>
+        <div class="pt-d">${next ? `<b>${next.n}</b> — ${next.d}`
+          : `<b>${p.tiers[3].n}</b> 개방 완료`}</div>
+      </div>`;
+    }).join('');
+
+    host.querySelectorAll('[data-path]').forEach(el => {
+      el.onclick = () => {
+        if (Path.buy(u, el.dataset.path, Game)) this.showUnitPanel(u);
+        else this.renderPaths(u);
+      };
+    });
+  },
+
+  escAttr(s) { return String(s || '').replace(/"/g, '&quot;'); },
+
   /**
    * 적 정보 카드 — 탭한 적의 실제 수치를 보여 준다.
    * 도감은 "원본 스펙"이라면 여기는 "지금 이 판에서 이 개체"의 값이다.

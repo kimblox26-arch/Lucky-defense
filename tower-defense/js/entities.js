@@ -44,6 +44,8 @@ const Combat = {
     if (opts.bossBonus && enemy.boss) dmg *= (1 + opts.bossBonus);
     /* 보스 피해 연구 */
     if (enemy.boss) dmg *= (1 + g.research.boss * .06);
+    /* 경로 4티어 「저격」 — 보스에게 크게 꽂힌다 */
+    if (enemy.boss && opts.source && window.Path && Path.hasFlag(opts.source, 'sniper')) dmg *= 1.6;
 
     /* 방어력 */
     if (!opts.trueDmg) {
@@ -124,6 +126,15 @@ const Combat = {
     if (crit) {
       VFX.crit(enemy.x, enemy.y, g, weight, hitAng);
       SFX.play(weight > .5 ? 'bigcrit' : 'crit');
+      /* 경로 4티어 「일격필살」 — 치명타가 터질 때 주변까지 함께 터진다.
+         splashChild 로 표시해 폭발이 또 폭발을 부르는 무한 재귀를 막는다. */
+      if (!opts.splashChild && opts.source && window.Path && Path.hasFlag(opts.source, 'critBlast')) {
+        const R = g.ts * 1.35;
+        FX.explosion(enemy.x, enemy.y, R * .8, '#ffd24d', '#fff2b0');
+        this.splash(g, enemy.x, enemy.y, R, applied * .55, {
+          elem, pen: opts.pen || 0, source: opts.source, splashChild: true, skip: enemy,
+        });
+      }
     } else if (!opts.isDot && Math.random() < .5) {
       VFX.hit(elem, enemy.x, enemy.y, U.clamp(applied / Math.max(1, enemy.maxHp) * 6, .4, 2), g);
       /* 한 방이 묵직하면 치명타가 아니어도 화면이 반응한다 */
@@ -142,6 +153,7 @@ const Combat = {
     for (const e of g.enemies) {
       if (e.dead) continue;
       const d2 = U.dist2(x, y, e.x, e.y);
+      if (e === opts.skip) continue;
       if (d2 <= r2) {
         const falloff = opts.falloff === false ? 1 : U.lerp(.55, 1, 1 - Math.sqrt(d2) / radius);
         Combat.hit(g, e, base * falloff, opts);
@@ -538,36 +550,45 @@ class Unit {
     const syn = g.synergyFor(d);
 
     const bl = g.bless || {};
+    /* 분기 경로에 투자한 만큼의 가산치 */
+    const pb = window.Path ? Path.bonus(this) : {};
     let dmg = d.dmg * rar.mul * starMul * lvMul;
     dmg *= (1 + g.research.atk * .06);
-    dmg *= (1 + syn.dmg + g.bonus.dmg + (bl.dmg || 0));
+    dmg *= (1 + syn.dmg + g.bonus.dmg + (bl.dmg || 0) + (pb.dmg || 0));
     dmg *= (1 + this.auraVal('dmg'));
     if (g.buffs.overdrive > 0) dmg *= 1.6;
     if (g.buffs.bloodpact > 0) dmg *= 1.7;
 
-    let spd = d.spd * (1 + g.research.spd * .04) * (1 + (syn.spd || 0) + (bl.spd || 0)) * (1 + this.auraVal('spd'));
+    let spd = d.spd * (1 + g.research.spd * .04)
+      * (1 + (syn.spd || 0) + (bl.spd || 0) + (pb.spd || 0)) * (1 + this.auraVal('spd'));
     if (g.buffs.overdrive > 0) spd *= 2.2;
 
-    let rng = d.rng * (1 + g.research.rng * .04) * (1 + (syn.rng || 0) + (bl.rng || 0)) * (1 + this.auraVal('rng'))
+    let rng = d.rng * (1 + g.research.rng * .04)
+      * (1 + (syn.rng || 0) + (bl.rng || 0) + (pb.rng || 0)) * (1 + this.auraVal('rng'))
       * g.modNum('rngMul', 1);
 
-    let crit = (d.crit || 0) + g.research.crit * .02 + (syn.crit || 0) + g.bonus.crit + (bl.crit || 0);
-    let critMul = (d.critMul || 2) + g.research.critdmg * .12 + (syn.critdmg || 0) + (bl.critdmg || 0);
-    let pen = (d.pen || 0) + g.research.pen * .03 + (syn.pen || 0) + (bl.pen || 0);
-    let splash = (d.splash || 0) * (1 + g.research.splash * .05 + (syn.splash || 0) + (bl.splash || 0)) * g.modNum('splashMul', 1);
+    let crit = (d.crit || 0) + g.research.crit * .02 + (syn.crit || 0) + g.bonus.crit + (bl.crit || 0) + (pb.crit || 0);
+    let critMul = (d.critMul || 2) + g.research.critdmg * .12 + (syn.critdmg || 0) + (bl.critdmg || 0) + (pb.critdmg || 0);
+    let pen = (d.pen || 0) + g.research.pen * .03 + (syn.pen || 0) + (bl.pen || 0) + (pb.pen || 0);
+    /* 광역이 없던 유닛도 '파괴' 경로를 타면 광역이 생긴다 */
+    let splashBase = d.splash || 0;
+    if ((pb.splash || 0) > 0 && splashBase <= 0) splashBase = .6;
+    let splash = splashBase
+      * (1 + g.research.splash * .05 + (syn.splash || 0) + (bl.splash || 0) + (pb.splash || 0))
+      * g.modNum('splashMul', 1);
 
     /* 다중 사격 : 연구/시너지로 확률적 추가 발사 */
-    const msBonus = g.research.multishot * .3 + (syn.multishot || 0) + (bl.multishot || 0);
+    const msBonus = g.research.multishot * .3 + (syn.multishot || 0) + (bl.multishot || 0) + (pb.multishot || 0);
     let multishot = (d.multishot || 1) + Math.floor(msBonus);
     this.msChance = msBonus % 1;
 
     this.stat = {
       dmg, spd: Math.min(14, spd), rng, crit: U.clamp(crit, 0, .95), critMul, pen: U.clamp(pen, 0, 1),
       splash,
-      chain: (d.chain || 0) + (syn.chain || 0) + Math.floor(g.research.chain * .5) + (bl.chain || 0),
+      chain: (d.chain || 0) + (syn.chain || 0) + Math.floor(g.research.chain * .5) + (bl.chain || 0) + (pb.chain || 0),
       pierce: d.pierce || 0,
       multishot,
-      execute: (d.execute || 0) + g.research.exec * .01 + (bl.execute || 0),
+      execute: (d.execute || 0) + g.research.exec * .01 + (bl.execute || 0) + (pb.execute || 0),
       summonMul: 1 + g.research.summon * .08 + (syn.summon || 0),
     };
     this.goldAura = this.auraVal('gold') + (syn.gold || 0) + g.bonus.gold;
