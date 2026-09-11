@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Minecraft JS — 자바스크립트 마인크래프트</title>
+<meta name="description" content="외부 라이브러리 없이 JavaScript + WebGL2로 만든 마인크래프트 클론. 절차적 지형, 조명 전파, 제작, 몹, 물리까지.">
+<link rel="stylesheet" href="css/game.css">
+</head>
+<body>
+<div id="app">
+  <canvas id="gl"></canvas>
+  <canvas id="hud"></canvas>
+  <canvas id="gui"></canvas>
+  <canvas id="intro"></canvas>
+  <div id="overlay" tabindex="0"></div>
+
+  <!-- 일시정지 메뉴 -->
+  <div class="panel" id="pauseMenu">
+    <h2>게임 일시정지</h2>
+    <button class="mcbtn" id="btnResume">게임으로 돌아가기</button>
+    <button class="mcbtn" id="btnOptions">설정</button>
+    <button class="mcbtn" id="btnHelp">조작법</button>
+    <button class="mcbtn" id="btnSaveQuit">저장하고 타이틀로</button>
+    <p class="hint">진행 상황은 60초마다 자동 저장됩니다.</p>
+  </div>
+
+  <!-- 설정 -->
+  <div class="panel" id="optionsPanel">
+    <h2>설정</h2>
+    <div class="row">
+      <label for="optRender">렌더 거리</label>
+      <input type="range" id="optRender" min="2" max="12" step="1">
+      <span class="val" id="optRenderVal"></span>
+    </div>
+    <div class="row">
+      <label for="optFov">시야각(FOV)</label>
+      <input type="range" id="optFov" min="50" max="110" step="1">
+      <span class="val" id="optFovVal"></span>
+    </div>
+    <div class="row">
+      <label for="optSens">마우스 감도</label>
+      <input type="range" id="optSens" min="0.4" max="6" step="0.1">
+      <span class="val" id="optSensVal"></span>
+    </div>
+    <div class="row">
+      <label for="optVolume">효과음</label>
+      <input type="range" id="optVolume" min="0" max="100" step="1">
+      <span class="val" id="optVolumeVal"></span>
+    </div>
+    <div class="row">
+      <label for="optMusic">음악</label>
+      <input type="range" id="optMusic" min="0" max="100" step="1">
+      <span class="val" id="optMusicVal"></span>
+    </div>
+    <div class="row">
+      <label for="optInvert">상하 반전</label>
+      <input type="checkbox" id="optInvert">
+      <span class="val"></span>
+    </div>
+    <button class="mcbtn" id="btnCloseOptions">닫기</button>
+  </div>
+
+  <!-- 조작법 -->
+  <div class="panel" id="helpPanel">
+    <h2>조작법 &amp; 플레이 가이드</h2>
+    <h3>이동</h3>
+    <div class="keys">
+      <b>이동</b><span class="kbd">W</span><span class="kbd">A</span><span class="kbd">S</span><span class="kbd">D</span><br>
+      <b>점프 / 수영</b><span class="kbd">Space</span><br>
+      <b>웅크리기</b><span class="kbd">Shift</span> — 모서리에서 떨어지지 않습니다<br>
+      <b>달리기</b><span class="kbd">Ctrl</span> + 전진<br>
+      <b>비행 전환</b><span class="kbd">Space</span> 두 번 (크리에이티브) 또는 <span class="kbd">F</span>
+    </div>
+    <h3>상호작용</h3>
+    <div class="keys">
+      <b>채굴 / 공격</b>마우스 왼쪽 버튼 (누르고 있기)<br>
+      <b>설치 / 사용</b>마우스 오른쪽 버튼<br>
+      <b>블록 복사</b>마우스 가운데 버튼<br>
+      <b>아이템 선택</b><span class="kbd">1</span>~<span class="kbd">9</span> 또는 휠<br>
+      <b>버리기</b><span class="kbd">Q</span> (<span class="kbd">Shift</span>+<span class="kbd">Q</span> 전부)
+    </div>
+    <h3>화면</h3>
+    <div class="keys">
+      <b>인벤토리</b><span class="kbd">E</span><br>
+      <b>채팅/명령어</b><span class="kbd">T</span> / <span class="kbd">/</span><br>
+      <b>디버그 정보</b><span class="kbd">F3</span><br>
+      <b>UI 숨기기</b><span class="kbd">F1</span><br>
+      <b>일시정지</b><span class="kbd">Esc</span><br>
+      <b>리스폰</b><span class="kbd">R</span>
+    </div>
+    <h3>명령어</h3>
+    <div class="keys">
+      <b>/gamemode</b>0 서바이벌 · 1 크리에이티브<br>
+      <b>/time</b>day · night · noon · midnight · 숫자<br>
+      <b>/give</b>아이템 이름 + 개수 (예: <span class="kbd">/give diamond_pickaxe 1</span>)<br>
+      <b>/summon</b>zombie · skeleton · creeper · spider · pig · cow · sheep · chicken<br>
+      <b>/tp</b>좌표 이동 · <b>/seed</b> · <b>/save</b> · <b>/heal</b> · <b>/kill</b> · <b>/clear</b>
+    </div>
+    <h3>생존 요령</h3>
+    <p class="hint">
+      나무를 캐 판자 → 막대기 → 제작대를 만들고, 곡괭이로 돌을 캐세요.
+      밤에는 좀비·크리퍼가 나타납니다. 횃불(석탄+막대기)로 주변을 밝히면 몹이 덜 생성됩니다.
+      철은 화로에서 제련하고, 다이아몬드는 Y=16 아래 깊은 곳에 있습니다.
+      물 근처 흙을 괭이로 갈고 씨앗을 심으면 밀을 수확해 빵을 만들 수 있습니다.
+    </p>
+    <button class="mcbtn" id="btnCloseHelp">닫기</button>
+  </div>
+
+  <div id="toast"></div>
+  <div id="boot">텍스처 생성 중...</div>
+</div>
+
+<!-- ==================== 엔진 ==================== -->
+<script src="js/util.js"></script>
+<script src="js/noise.js"></script>
+<script src="js/pixelfont.js"></script>
+<script src="js/textures.js"></script>
+<script src="js/blocks.js"></script>
+<script src="js/items.js"></script>
+<script src="js/chunk.js"></script>
+<script src="js/worldgen.js"></script>
+<script src="js/world.js"></script>
+<script src="js/mesher.js"></script>
+<script src="js/renderer.js"></script>
+<script src="js/particles.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/inventory.js"></script>
+<script src="js/entity.js"></script>
+<script src="js/player.js"></script>
+<script src="js/gui.js"></script>
+<script src="js/hud.js"></script>
+<script src="js/intro.js"></script>
+<script src="js/save.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
