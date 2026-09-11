@@ -131,6 +131,17 @@ const Game = {
     if (gx < 0 || gy < 0 || gx >= this.gw || gy >= this.gh) return true;
     return this.pathTiles.has(gx + ',' + gy);
   },
+  /** 화면 좌표에서 가장 가까운 적 (탭 판정) */
+  enemyAt(x, y) {
+    const r = this.ts * .55, r2 = r * r;
+    let best = null, bd = Infinity;
+    for (const e of this.enemies) {
+      const d = U.dist2(x, y, e.x, e.y);
+      if (d < r2 && d < bd) { bd = d; best = e; }
+    }
+    return best;
+  },
+
   unitAt(gx, gy) {
     for (const u of this.units) if (u.gx === gx && u.gy === gy) return u;
     return null;
@@ -157,7 +168,8 @@ const Game = {
     this.buildRunPool();
 
     const boost = this.boosters || {};
-    this.maxLife = 20 + (this.perks.life || 0) * 5 + (boost.startlife ? 10 : 0);
+    this.maxLife = Math.max(5, 20 + (this.perks.life || 0) * 5 + (boost.startlife ? 10 : 0)
+      + this.diffDef().life);
     this.life = this.maxLife;
     this.gold = 260 + (this.perks.gold0 || 0) * 120 + (boost.startgold ? 1000 : 0);
     this.freeSummons = boost.freeSummon ? 5 : 0;
@@ -197,11 +209,133 @@ const Game = {
     if (window.UI) UI.onRunStart();
   },
 
+  /* =================================================================
+   *  이어하기 — 판 도중에 나가도 그 자리에서 다시 시작할 수 있게
+   *  진행 중인 판 전체(유닛 배치·웨이브·연구·축복)를 프로필에 담아 둔다.
+   * ================================================================= */
+  RUN_KEY: 'itd_run_v1',
+
+  snapshotRun() {
+    if (this.state !== 'playing' || this.wave < 1) return null;
+    return {
+      v: 1, at: Date.now(),
+      map: this.map.key, difficulty: this.difficulty,
+      wave: this.wave, loop: this.loop,
+      life: this.life, maxLife: this.maxLife,
+      gold: this.gold, mana: this.mana,
+      summonCount: this.summonCount, freeSummons: this.freeSummons || 0,
+      autoWave: !!this.autoWave, speed: this.speed,
+      research: Object.assign({}, this.research),
+      skillCd: Object.assign({}, this.skillCd),
+      loadout: (this.loadout || []).slice(),
+      glassCannon: !!this.glassCannon,
+      bless: this.bless ? JSON.parse(JSON.stringify(this.bless)) : null,
+      runMods: this.runMods ? JSON.parse(JSON.stringify(this.runMods)) : [],
+      runPool: this.runPool ? Object.keys(this.runPool).reduce((o, k) => {
+        o[k] = this.runPool[k].map(d => d.key); return o;
+      }, {}) : null,
+      stats: Object.assign({}, this.stats),
+      units: this.units.map(u => ({
+        key: u.key, star: u.star, level: u.level, gx: u.gx, gy: u.gy,
+        invested: u.invested || 0, locked: !!u.locked, targetMode: u.targetMode,
+        kills: u.kills || 0, dmgDone: u.dmgDone || 0,
+      })),
+    };
+  },
+
+  saveRun() {
+    const snap = this.snapshotRun();
+    if (!snap) return false;
+    try {
+      if (window.Account && Account.profile) {
+        Account.profile.run = snap; Account.saveProfile();
+      } else localStorage.setItem(this.RUN_KEY, JSON.stringify(snap));
+    } catch (e) { return false; }
+    return true;
+  },
+
+  loadRunSnapshot() {
+    try {
+      if (window.Account && Account.profile) return Account.profile.run || null;
+      const raw = localStorage.getItem(this.RUN_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) { return null; }
+  },
+
+  clearRun() {
+    try {
+      if (window.Account && Account.profile) { Account.profile.run = null; Account.saveProfile(); }
+      localStorage.removeItem(this.RUN_KEY);
+    } catch (e) { }
+  },
+
+  hasRun() {
+    const r = this.loadRunSnapshot();
+    return !!(r && r.units && MAPS.some(m => m.key === r.map));
+  },
+
+  /** 저장해 둔 판을 그 자리에서 다시 연다 */
+  resumeRun() {
+    const r = this.loadRunSnapshot();
+    if (!r) return false;
+    const map = MAPS.find(m => m.key === r.map);
+    if (!map) return false;
+
+    this.difficulty = r.difficulty || 'normal';
+    this.resetRun(map);                 /* 판 구조부터 새로 깔고 */
+
+    /* 그 위에 저장된 상태를 덮는다 */
+    this.wave = r.wave; this.loop = r.loop || 0;
+    this.maxLife = r.maxLife; this.life = r.life;
+    this.gold = r.gold; this.mana = r.mana;
+    this.summonCount = r.summonCount || 0;
+    this.freeSummons = r.freeSummons || 0;
+    this.autoWave = !!r.autoWave; this.speed = r.speed || 1;
+    this.glassCannon = !!r.glassCannon;
+    if (r.research) Object.assign(this.research, r.research);
+    if (r.skillCd) Object.assign(this.skillCd, r.skillCd);
+    if (r.loadout && r.loadout.length) this.loadout = r.loadout.slice();
+    if (r.bless) this.bless = r.bless;
+    if (r.runMods) this.runMods = r.runMods;
+    if (r.stats) Object.assign(this.stats, r.stats);
+    /* 이번 판 명단도 그대로 되살린다 — 안 그러면 합성이 갑자기 막힌다 */
+    if (r.runPool) {
+      const pool = {};
+      for (const k in r.runPool) {
+        pool[k] = r.runPool[k].map(key => UNIT_MAP[key]).filter(Boolean);
+        if (!pool[k].length) pool[k] = UNITS_BY_RARITY[k];
+      }
+      this.runPool = pool;
+    }
+
+    this.units.length = 0;
+    for (const u of r.units) {
+      if (!UNIT_MAP[u.key]) continue;
+      const n = new Unit(this, u.key, u.star, u.gx, u.gy);
+      n.level = u.level || 1;
+      n.invested = u.invested || 0;
+      n.locked = !!u.locked;
+      if (u.targetMode) n.targetMode = u.targetMode;
+      n.kills = u.kills || 0; n.dmgDone = u.dmgDone || 0;
+      this.units.push(n);
+    }
+    this.waveActive = false;
+    this.spawnQueue = [];
+    this.breakTime = 5;
+    this.nextWaveList = null; this.nextWaveNo = 0;
+    this.refreshAll();
+    for (const u of this.units) u.spawnMinions();
+    this.prepareNextWave();
+    if (window.UI) { UI.onRunStart(); UI.buildSkillBar(); }
+    return true;
+  },
+
   /* ---------------------------------------------------------- 메타 저장 */
   loadMeta() {
     const d = (window.Account && Account.current) ? Account.loadProfileData() : Store.load();
     this.gems = d && d.gems || 0;
     this.perks = d && d.perks || { atk: 0, gold: 0, luck: 0, life: 0, gold0: 0 };
+    this.difficulty = (d && d.difficulty) || 'normal';
     this.unlockedMaps = d && d.unlockedMaps || { meadow: 1 };
     this.achieved = d && d.achieved || {};
     this.collection = d && d.collection || {};
@@ -222,6 +356,7 @@ const Game = {
     this.metaStats.mapsUnlocked = Object.keys(this.unlockedMaps).length;
     const data = {
       gems: this.gems, perks: this.perks, unlockedMaps: this.unlockedMaps,
+      difficulty: this.difficulty,
       achieved: this.achieved, metaStats: this.metaStats, settings: this.settings,
       collection: this.collection, boosters: this.boosters,
       rouletteDay: this.rouletteDay, rouletteFree: this.rouletteFree, loadout: this.loadout,
@@ -229,6 +364,18 @@ const Game = {
     if (window.Account && Account.current) Account.saveProfileData(data);
     else Store.save(data);
   },
+
+  /* ----------------------------------------------------------- 난이도
+   * 맵마다 고정 난이도(diff)가 따로 있고, 이건 플레이어가 판마다 고르는 축이다.
+   * 쉬움은 연습·도감 채우기용, 악몽은 보상을 노리는 판. */
+  DIFFS: [
+    { key: 'easy',      n: '쉬움',   i: '🌱', col: '#7cff9c', hp: .68, spd: .92, gold: 1.10, gem: .6, life: 10, desc: '적 체력 -32% · 시작 목숨 +10' },
+    { key: 'normal',    n: '보통',   i: '⚔',  col: '#4ea8ff', hp: 1,   spd: 1,   gold: 1,    gem: 1,  life: 0,  desc: '기준 난이도' },
+    { key: 'hard',      n: '어려움', i: '🔥', col: '#ffb347', hp: 1.45, spd: 1.08, gold: 1.35, gem: 1.6, life: -5, desc: '적 체력 +45% · 이동 +8% · 목숨 -5 · 보상 +35%' },
+    { key: 'nightmare', n: '악몽',   i: '💀', col: '#ff5c4d', hp: 2.10, spd: 1.18, gold: 1.80, gem: 2.6, life: -10, desc: '적 체력 +110% · 이동 +18% · 목숨 -10 · 보상 +80%' },
+  ],
+  difficulty: 'normal',
+  diffDef() { return this.DIFFS.find(d => d.key === this.difficulty) || this.DIFFS[1]; },
 
   /* ---------------------------------------------------------- 스케일 */
   /** 현재 배치된 전군의 총 DPS (합성/레벨/연구 반영된 실전력) */
@@ -249,7 +396,8 @@ const Game = {
   enemyScale(def, hpMul) {
     const w = this.wave + this.loop * 100;
     const diff = this.map.diff;
-    let hp = 30 * def.hp * Math.pow(1.175, w - 1) * diff * (hpMul || 1) * this.modNum('hpMul', 1);
+    let hp = 30 * def.hp * Math.pow(1.175, w - 1) * diff * (hpMul || 1)
+      * this.diffDef().hp * this.modNum('hpMul', 1);
     /* 동적 난이도 보정: 웨이브 고정 곡선만으로는 합성/가챠로 인한 화력 스노우볼을
        따라잡지 못해(가챠 대박, 대량 합성 시 순식간에 수십~수백 배 화력 격차 발생),
        현재 전군 DPS를 웨이브별 기대 화력과 비교해 체력을 자동 보정한다.
@@ -347,8 +495,29 @@ const Game = {
     if (window.UI) UI.renderWavePreview();
   },
 
+  /**
+   * 조기 호출 보너스.
+   * 쉬는 시간이 남았는데 웨이브를 당겨 부르면, 남은 초에 비례해 골드를 준다.
+   * "준비를 더 할까, 지금 불러서 돈을 벌까" 라는 선택이 매 웨이브마다 생긴다.
+   */
+  earlyBonus() {
+    if (this.waveActive || this.breakTime <= .3) return 0;
+    const t = U.clamp(this.breakTime / 5, 0, 1);
+    return Math.floor((28 + this.wave * 11) * t * this.goldMul);
+  },
+
   startWave() {
     if (this.waveActive) return;
+    /* 당겨 부른 만큼 보너스 */
+    const early = this.earlyBonus();
+    if (early > 0) {
+      this.addGold(early);
+      FX.popText(this.W / 2, this.H * .34, '⏩ 조기 호출  +' + U.fmt(early) + 'G', '#ffd24d', 24,
+        { life: 1.3, vy: -30, big: true });
+      FX.ripple(this.W / 2, this.H * .34, '#ffd24d', 1400, .45, 4);
+      SFX.play('coin');
+    }
+    this.breakTime = 0;
     this.wave++;
     if (this.wave > 100) { this.loop++; this.wave = 1; }
     this.waveActive = true;
@@ -457,7 +626,7 @@ const Game = {
   },
   get goldMul() {
     return (1 + this.research.gold * .07) * (1 + (this.perks.gold || 0) * .1)
-      * (1 + this.bless.gold) * this.modNum('goldMul', 1);
+      * (1 + this.bless.gold) * this.diffDef().gold * this.modNum('goldMul', 1);
   },
   get manaMul() { return (1 + this.research.mana * .09) * this.modNum('manaMul', 1); },
 
@@ -998,7 +1167,8 @@ const Game = {
       if (t.curse) this.bonus.curse += t.curse;
       if (t.dot) this.bonus.dot += t.dot;
     }
-    this.maxLife = Math.max(1, 20 + this.research.hp * 2 + (this.perks.life || 0) * 5 + this.bless.life);
+    this.maxLife = Math.max(1, 20 + this.research.hp * 2 + (this.perks.life || 0) * 5
+      + this.bless.life + this.diffDef().life);
     if (this.glassCannon) this.maxLife = Math.min(this.maxLife, 5);
     this.life = Math.min(this.life, this.maxLife);
 
@@ -1493,6 +1663,7 @@ const Game = {
       return;
     }
     this.state = 'gameover';
+    this.clearRun();
     this.mergeMetaStats();
     SFX.play('lose');
     FX.flash('#ff2a2a', .8); FX.shake(26);
@@ -1501,6 +1672,7 @@ const Game = {
   },
   victory() {
     this.mergeMetaStats();
+    this.clearRun();
     this.metaStats.wins++;
     /* 다음 맵 해금 */
     const idx = MAPS.findIndex(m => m.key === this.map.key);
@@ -1562,6 +1734,9 @@ const Game = {
       } else {
         this.selected = null;
         if (window.UI) UI.showUnitPanel(null);
+        /* 빈 칸을 눌렀는데 그 자리에 적이 있으면 적 정보를 띄운다 */
+        const e = this.enemyAt(p.x, p.y);
+        if (e && window.UI) UI.showEnemyInfo(e);
       }
     };
     const onMove = (ev) => {
@@ -1614,8 +1789,10 @@ const Game = {
     });
   },
 
+  SPEEDS: [1, 2, 3, 4],
   cycleSpeed() {
-    this.speed = this.speed === 1 ? 2 : this.speed === 2 ? 3 : 1;
+    const i = this.SPEEDS.indexOf(this.speed);
+    this.speed = this.SPEEDS[(i + 1) % this.SPEEDS.length];
     SFX.play('click');
     if (window.UI) UI.refresh();
   },

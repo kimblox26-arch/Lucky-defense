@@ -161,6 +161,68 @@ const Account = {
     this.writeSession(null);
   },
 
+  /* =================================================================
+   *  계정 전환
+   *  이 기기에 저장된 계정들을 훑어 요약을 만든다. 프로필은 계정별로
+   *  따로 저장돼 있으므로, 현재 로그인과 무관하게 미리 읽어 볼 수 있다.
+   * ================================================================= */
+  listAccounts() {
+    const out = [];
+    for (const uid in this.users) {
+      const u = this.users[uid];
+      let p = null;
+      try { p = JSON.parse(localStorage.getItem(this.KEY_PROFILE + uid) || 'null'); } catch (e) { }
+      const save = p && p.save;
+      out.push({
+        uid, kind: u.kind, id: u.id, nick: u.nick, picture: u.picture || null,
+        created: u.created || 0,
+        level: (p && p.level) || 1,
+        gems: (save && save.gems) || 0,
+        maxWave: (save && save.maxWave) || 0,
+        collected: save && save.collection ? Object.keys(save.collection).length : 0,
+        lastPlay: (p && p.lastPlay) || (p && p.lastLogin) || 0,
+        avatar: p && p.avatar || null,
+        current: !!(this.current && this.current.uid === uid),
+      });
+    }
+    /* 최근에 논 순서 → 그다음 만든 순서 */
+    out.sort((a, b) => (b.lastPlay - a.lastPlay) || (b.created - a.created));
+    return out;
+  },
+
+  /** 비밀번호 없이 바로 넘어갈 수 있는 계정인가 (게스트 / Google 은 기기에 이미 인증됨) */
+  canSwitchDirect(uid) {
+    const u = this.users[uid];
+    return !!u && u.kind !== 'local';
+  },
+
+  /**
+   * 계정 전환. 로컬 계정은 비밀번호를 확인한다.
+   * 현재 진행도를 먼저 저장하고 넘어가므로 왔다 갔다 해도 잃지 않는다.
+   */
+  async switchTo(uid, pw) {
+    const u = this.users[uid];
+    if (!u) return { ok: false, error: '없는 계정이다' };
+    if (this.current && this.current.uid === uid) return { ok: false, error: '이미 이 계정이다' };
+    if (u.kind === 'local') {
+      const h = await this.hash(pw || '', u.salt);
+      if (h !== u.hash) return { ok: false, error: '비밀번호가 일치하지 않는다' };
+    }
+    this.saveProfile();            /* 떠나기 전에 지금 계정을 저장 */
+    this.current = u;
+    this.writeSession(uid);
+    this.loadProfile();
+    this.touch();
+    return { ok: true, user: u };
+  },
+
+  /** 마지막으로 논 시각 기록 (계정 목록 정렬용) */
+  touch() {
+    if (!this.profile) return;
+    this.profile.lastPlay = Date.now();
+    this.saveProfile();
+  },
+
   async changePassword(oldPw, newPw) {
     if (!this.current || this.current.kind !== 'local') return { ok: false, error: '로컬 계정만 변경할 수 있다' };
     const h = await this.hash(oldPw, this.current.salt);
@@ -305,7 +367,7 @@ const Account = {
         frame: { none: 1 }, badge: { star: 1 },
       },
       level: 1, exp: 0,
-      lastLogin: 0, loginStreak: 0, dailyClaimed: 0,
+      lastLogin: 0, lastPlay: 0, loginStreak: 0, dailyClaimed: 0,
       quests: null, questDay: 0, questBase: null,
       save: null,      // 게임 진행도 (Game.saveMeta 형태)
       createdAt: Date.now(),

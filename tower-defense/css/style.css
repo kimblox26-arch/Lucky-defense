@@ -1381,3 +1381,99 @@ button{ font:inherit; color:inherit; cursor:pointer; border:none; background:non
   drop-shadow(0 0 9px color-mix(in srgb,var(--c) 60%,transparent)); }
 .lb-menu .lmbtn .lm-n{ color:color-mix(in srgb,var(--c) 62%,#e8eefb); }
 .lb-menu .lmbtn:active{ border-color:var(--c); }
+
+/* ------------------------------------------------------------- 계정 전환 */
+.acc-list{ display:flex; flex-direction:column; gap:7px; }
+.acc-card{ display:grid; grid-template-columns:48px 1fr auto; gap:11px; align-items:center;
+  padding:10px 12px; border-radius:15px; text-align:left; color:var(--fg);
+  background:linear-gradient(180deg,rgba(30,36,56,.85),rgba(16,20,34,.85));
+  border:1.5px solid rgba(150,175,225,.16); transition:transform .08s, border-color .12s; }
+.acc-card:active{ transform:scale(.985); }
+.acc-card.on{ border-color:rgba(124,255,156,.55);
+  box-shadow:0 0 18px -8px #7cff9c, inset 0 1px 0 rgba(255,255,255,.06); }
+.acc-av{ width:48px; height:48px; border-radius:13px; background:rgba(0,0,0,.35);
+  border:1.5px solid rgba(150,175,225,.2); }
+.acc-nick{ font-size:14px; font-weight:900; letter-spacing:-.3px;
+  display:flex; align-items:center; gap:5px; flex-wrap:wrap; }
+.acc-nick em{ font-style:normal; font-size:9.5px; font-weight:900; color:#0c1a10;
+  background:#7cff9c; border-radius:6px; padding:1px 5px; }
+.acc-nick i{ font-style:normal; font-size:9.5px; font-weight:800; color:#8fa8cc;
+  border:1px solid rgba(150,175,225,.28); border-radius:6px; padding:1px 5px; }
+.acc-sub{ font-size:10.5px; color:#9fb0cc; margin-top:2px; }
+.acc-time{ font-size:9.5px; color:#6d7b94; margin-top:1px; }
+.acc-go{ font-size:11px; font-weight:900; color:#7fd8ff; white-space:nowrap; }
+.menu-acts{ display:flex; gap:7px; margin:10px 0 8px; }
+.menu-acts .minibtn{ flex:1 1 0; }
+
+/* ------------------------------------------------------------- 난이도 선택 */
+.diffrow{ display:grid; grid-template-columns:repeat(4,1fr); gap:5px; margin-bottom:8px; }
+.diffbtn{ --c:#8fa8cc; display:flex; flex-direction:column; align-items:center; gap:1px;
+  padding:9px 3px; border-radius:13px; color:var(--fg);
+  background:linear-gradient(180deg,rgba(30,36,56,.85),rgba(16,20,34,.85));
+  border:1.5px solid rgba(150,175,225,.16); transition:transform .08s,border-color .12s; }
+.diffbtn span{ font-size:18px; line-height:1; filter:drop-shadow(0 2px 3px rgba(0,0,0,.5)); }
+.diffbtn b{ font-size:12px; font-weight:900; }
+.diffbtn i{ font-style:normal; font-size:9px; color:#7f8ca3; font-weight:800; }
+.diffbtn:active{ transform:translateY(2px); }
+.diffbtn.on{ border-color:var(--c); color:var(--c);
+  background:linear-gradient(180deg,color-mix(in srgb,var(--c) 16%,rgba(30,36,56,.9)),rgba(16,20,34,.9));
+  box-shadow:0 0 16px -6px var(--c); }
+.diffbtn.on i{ color:color-mix(in srgb,var(--c) 70%,#fff); }
+.res-diff{ margin-top:5px; font-size:11px; font-weight:900; color:var(--c); }
+.res-diff i{ font-style:normal; color:#9fb0cc; font-weight:800; }
+
+/* 조기 호출 가능하면 웨이브 버튼이 금색으로 */
+.bbtn.wavebtn.early{ background:linear-gradient(180deg,#6b5a2f,#3d3018); border-color:var(--gold); }
+.bbtn.wavebtn.early .bsub{ color:var(--gold); font-weight:900; }
+
+/* ------------------------------------------------------------- 적 정보 카드 */
+.enemy-info{ position:fixed; left:50%; transform:translateX(-50%);
+  bottom:calc(env(safe-area-inset-bottom) + 160px); z-index:7;
+  width:min(360px,92vw); padding:11px 12px 12px; border-radius:17px;
+  background:linear-gradient(178deg,rgba(34,22,26,.985),rgba(13,11,18,.985));
+  border:1.5px solid rgba(255,120,110,.32);
+  box-shadow:0 0 24px -14px #ff6b6b,0 18px 40px -14px rgba(0,0,0,.85);
+  animation:slideUp .18s ease; }
+.enemy-info .close{ position:absolute; top:6px; right:8px; z-index:5;
+  font-size:15px; color:var(--dim); padding:4px 8px; }
+.ei-head{ display:flex; gap:10px; align-items:center; }
+#eiPortrait{ width:52px; height:52px; border-radius:13px; background:rgba(0,0,0,.4);
+  border:1.5px solid rgba(255,120,110,.25); }
+.ei-n{ font-size:15px; font-weight:900; letter-spacing:-.3px; }
+.ei-tags{ display:flex; gap:4px; flex-wrap:wrap; margin-top:3px; }
+.ei-tags span{ --c:#8fa8cc; font-size:9.5px; font-weight:800; color:var(--c);
+  border:1px solid color-mix(in srgb,var(--c) 40%,transparent); border-radius:6px; padding:1px 5px; }
+.ei-hp{ position:relative; height:15px; margin-top:8px; border-radius:8px; overflow:hidden;
+  background:rgba(0,0,0,.45); border:1px solid rgba(255,255,255,.08); }
+.ei-hp div{ position:absolute; inset:0 auto 0 0; border-radius:8px;
+  background:linear-gradient(90deg,#c0392b,#ff6b5a); transition:width .2s; }
+.ei-hp.sh div{ background:linear-gradient(90deg,#2f6fd0,#7fd8ff); }
+.ei-hp b{ position:relative; display:block; text-align:center; font-size:10px;
+  line-height:15px; text-shadow:0 1px 2px rgba(0,0,0,.9); }
+.ei-grid{ display:grid; grid-template-columns:1fr 1fr; gap:4px 7px; margin-top:8px; }
+.ei-grid div{ display:flex; justify-content:space-between; align-items:baseline;
+  padding:5px 9px; border-radius:9px; background:rgba(255,255,255,.04); }
+.ei-grid span{ font-size:10.5px; color:#a89098; }
+.ei-grid b{ font-size:12.5px; font-weight:900; }
+.ei-res{ margin-top:7px; font-size:10.5px; color:#a89098; }
+.ei-res span:first-child{ margin-right:5px; }
+.ei-st{ display:flex; gap:4px; flex-wrap:wrap; margin-top:7px; }
+.ei-st i{ font-style:normal; font-size:10px; font-weight:800; color:#ffd9d0;
+  background:rgba(255,120,110,.14); border:1px solid rgba(255,120,110,.26);
+  border-radius:7px; padding:2px 6px; }
+
+/* ------------------------------------------------------------- 이어하기 */
+.resumecard{ display:grid; grid-template-columns:38px 1fr 28px; gap:10px; align-items:center;
+  width:100%; margin-bottom:10px; padding:11px 12px; border-radius:15px; text-align:left;
+  color:var(--fg);
+  background:linear-gradient(135deg,rgba(40,58,44,.95),rgba(14,22,18,.95));
+  border:1.5px solid rgba(124,255,156,.42);
+  box-shadow:0 0 20px -9px #7cff9c, inset 0 1px 0 rgba(255,255,255,.07); }
+.resumecard:active{ transform:translateY(2px); }
+.rc-i{ display:flex; align-items:center; justify-content:center; width:38px; height:38px;
+  border-radius:12px; font-size:15px; color:#0c1a10;
+  background:linear-gradient(180deg,#8dffab,#3fd472);
+  box-shadow:0 0 14px -4px #7cff9c; }
+.rc-b b{ display:block; font-size:14px; font-weight:900; color:#a8ffc4; }
+.rc-b i{ display:block; font-style:normal; font-size:10.5px; color:#9fb0cc; margin-top:2px; }
+.rc-x{ font-size:14px; color:#7f8ca3; text-align:center; padding:4px; }

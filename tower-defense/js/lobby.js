@@ -403,6 +403,8 @@ const Lobby = {
       btnSetting: () => this.openPanel('settings'),
       lbHeroNext: () => this.nextHero(),
       btnAccount: () => this.openPanel('account'),
+      btnSwitch: () => this.openPanel('switch'),
+      btnLogout: () => this.doLogout(),
     };
     for (const id in menu) {
       const el = document.getElementById(id);
@@ -432,7 +434,7 @@ const Lobby = {
     const titles = {
       map: '전장 선택', profile: '프로필 꾸미기', shop: '상점', codex: '도감',
       ach: '업적', perks: '명예 강화', daily: '출석 보상', quest: '일일 퀘스트',
-      records: '전적', settings: '설정', account: '계정',
+      records: '전적', settings: '설정', account: '계정', switch: '계정 전환',
     };
     this.el.panelTitle.textContent = titles[this.panel] || '';
     const b = this.el.panelBody;
@@ -449,6 +451,7 @@ const Lobby = {
       case 'records': this.renderRecordsPanel(b); break;
       case 'settings': this.renderSettingsPanel(b); break;
       case 'account': this.renderAccountPanel(b); break;
+      case 'switch': this.renderSwitchPanel(b); break;
     }
   },
 
@@ -463,8 +466,39 @@ const Lobby = {
         </div>
         <button class="bigbtn msb-start" id="startBattle">⚔ 전투 시작</button>
       </div>
+      ${Game.hasRun() ? (() => {
+        const r = Game.loadRunSnapshot();
+        const mp = MAPS.find(m => m.key === r.map);
+        const dd = Game.DIFFS.find(d => d.key === r.difficulty) || Game.DIFFS[1];
+        return `<button class="resumecard" id="btnResumeRun">
+          <span class="rc-i">▶</span>
+          <span class="rc-b"><b>이어하기</b>
+            <i>${this.esc(mp ? mp.name : '?')} · ${dd.i} ${dd.n} · 웨이브 ${r.wave} · 유닛 ${r.units.length}기</i></span>
+          <span class="rc-x" id="btnDropRun">✕</span>
+        </button>`;
+      })() : ''}
+      <div class="synsec">난이도</div>
+      <div class="diffrow" id="diffRow">` + Game.DIFFS.map(d => `
+        <button class="diffbtn${Game.difficulty === d.key ? ' on' : ''}" data-diff="${d.key}"
+          style="--c:${d.col}"><span>${d.i}</span><b>${d.n}</b>
+          ${d.gem !== 1 ? `<i>보상 ×${d.gem.toFixed(1)}</i>` : '<i>기준</i>'}</button>`).join('') + `</div>
+      <div class="p-note" id="diffDesc"></div>
       <div class="p-note">이전 맵을 100웨이브까지 클리어하면 다음 전장이 열린다. 맵을 탭해서 고른 뒤, 위 버튼이나 카드를 한 번 더 탭하면 바로 시작한다.</div>
       <div class="maplist" id="mapList"></div>`;
+
+    const setDiffDesc = () => {
+      const d = Game.diffDef();
+      document.getElementById('diffDesc').innerHTML =
+        `<b style="color:${d.col}">${d.i} ${d.n}</b> — ${d.desc}`;
+    };
+    setDiffDesc();
+    b.querySelectorAll('[data-diff]').forEach(el => el.onclick = () => {
+      Game.difficulty = el.dataset.diff;
+      Game.saveMeta();
+      b.querySelectorAll('[data-diff]').forEach(x => x.classList.toggle('on', x === el));
+      setDiffDesc();
+      SFX.play('click');
+    });
     const list = document.getElementById('mapList');
     MAPS.forEach((m, i) => {
       const unlocked = i === 0 || Game.unlockedMaps[m.key];
@@ -491,6 +525,23 @@ const Lobby = {
       this.drawMapThumb(d.querySelector('canvas'), m);
     });
     document.getElementById('startBattle').onclick = () => this.startBattle();
+
+    const rb = document.getElementById('btnResumeRun');
+    if (rb) {
+      rb.onclick = e => {
+        if (e.target.id === 'btnDropRun') {
+          if (!confirm('저장된 판을 버릴까?')) return;
+          Game.clearRun(); this.renderMapPanel(b); SFX.play('click'); return;
+        }
+        SFX.init(); SFX.resume();
+        if (!Game.resumeRun()) { this.toast('이어할 수 없다', '#ff6b6b'); SFX.play('error'); return; }
+        this.closePanel(); this.hideLobby();
+        Game.paused = false;
+        UI.refresh();
+        this.toast('웨이브 ' + Game.wave + ' 부터 이어한다', '#7cff9c');
+        SFX.play('wave');
+      };
+    }
   },
 
   weatherName(w) {
@@ -530,6 +581,7 @@ const Lobby = {
 
   startBattle() {
     SFX.init(); SFX.resume();
+    Game.clearRun();          /* 새 판을 시작하면 이어하기 데이터는 버린다 */
     this.hideLobby();
     Game.resetRun(this.selectedMap);
     Game.paused = false;
@@ -1040,6 +1092,84 @@ const Lobby = {
     };
   },
 
+  /* --------------------------------------------------- 계정 전환 */
+  renderSwitchPanel(b) {
+    const list = Account.listAccounts();
+    const kind = k => k === 'google' ? 'Google' : k === 'guest' ? '게스트' : '로컬';
+    const ago = t => {
+      if (!t) return '기록 없음';
+      const m = Math.floor((Date.now() - t) / 60000);
+      if (m < 1) return '방금';
+      if (m < 60) return m + '분 전';
+      const h = Math.floor(m / 60);
+      if (h < 24) return h + '시간 전';
+      return Math.floor(h / 24) + '일 전';
+    };
+    b.innerHTML = `
+      <div class="p-note">이 기기에 저장된 계정이다. 전환해도 지금 계정의 진행도는
+        그대로 남는다 — 언제든 되돌아올 수 있다.</div>
+      <div class="acc-list">` + list.map(a => `
+        <button class="acc-card${a.current ? ' on' : ''}" data-uid="${this.esc(a.uid)}">
+          <canvas class="acc-av" width="120" height="120" data-av="${this.esc(a.uid)}"></canvas>
+          <div class="acc-main">
+            <div class="acc-nick">${this.esc(a.nick)}
+              ${a.current ? '<em>현재</em>' : ''}
+              <i>${kind(a.kind)}</i></div>
+            <div class="acc-sub">Lv.${a.level} · 최고 W${a.maxWave} · 💎${U.fmt(a.gems)} · 도감 ${a.collected}</div>
+            <div class="acc-time">${ago(a.lastPlay)}</div>
+          </div>
+          <span class="acc-go">${a.current ? '' : Account.canSwitchDirect(a.uid) ? '전환 →' : '🔒 전환 →'}</span>
+        </button>`).join('') + `</div>
+      <div class="synsec">다른 계정</div>
+      <button class="bigbtn" id="swAdd">＋ 새 계정으로 로그인 / 가입</button>
+      <button class="bigbtn alt" id="swLogout">로그아웃</button>`;
+
+    /* 아바타 미리 그리기 */
+    b.querySelectorAll('[data-av]').forEach(cv => {
+      const a = list.find(x => x.uid === cv.dataset.av);
+      if (a && a.avatar) Draw.portraitAvatar(cv, a.avatar, performance.now() / 1000);
+    });
+
+    b.querySelectorAll('.acc-card').forEach(el => {
+      el.onclick = () => this.doSwitch(el.dataset.uid);
+    });
+    document.getElementById('swAdd').onclick = () => {
+      Account.saveProfile();
+      this.closePanel();
+      this.showAuth('login');
+      this.toast('다른 계정으로 로그인하라', '#9fd2ff');
+    };
+    document.getElementById('swLogout').onclick = () => this.doLogout();
+  },
+
+  /** 계정 전환 — 로컬 계정은 비밀번호를 한 번 묻는다 */
+  async doSwitch(uid) {
+    if (Account.current && Account.current.uid === uid) {
+      this.toast('이미 이 계정이다', '#8fa8cc'); return;
+    }
+    let pw = null;
+    if (!Account.canSwitchDirect(uid)) {
+      pw = prompt('비밀번호를 입력하라');
+      if (pw == null) return;
+    }
+    const r = await Account.switchTo(uid, pw);
+    if (!r.ok) { this.toast(r.error, '#ff6b6b'); SFX.play('error'); return; }
+    /* 전환한 계정의 저장 데이터로 갈아끼운다 */
+    Game.loadMeta();
+    Game.refreshAll && Game.refreshAll();
+    this.closePanel();
+    this.renderLobby();
+    SFX.play('levelup');
+    this.toast(r.user.nick + ' 계정으로 전환했다', '#7cff9c');
+  },
+
+  doLogout() {
+    Account.logout();
+    this.closePanel();
+    this.showAuth('login');
+    this.toast('로그아웃되었다', '#9fd2ff');
+  },
+
   /* --------------------------------------------------- 계정 */
   renderAccountPanel(b) {
     const u = Account.current;
@@ -1059,6 +1189,7 @@ const Lobby = {
       ${u.kind === 'guest' ? `<div class="p-note">게스트 계정은 이 브라우저에만 저장된다.
         진행도를 지키려면 회원가입하거나 Google 계정으로 로그인하라.</div>` : ''}
       <div class="synsec">계정 관리</div>
+      <button class="bigbtn" id="doSwitch">🔄 계정 전환</button>
       <button class="bigbtn alt" id="doLogout">로그아웃</button>
       <button class="dangerbtn" id="doDelete">이 계정 삭제</button>`;
 
@@ -1070,12 +1201,8 @@ const Lobby = {
       this.toast('비밀번호가 변경되었다', '#7cff9c'); SFX.play('upgrade');
       document.getElementById('pwOld').value = ''; document.getElementById('pwNew').value = '';
     };
-    document.getElementById('doLogout').onclick = () => {
-      Account.logout();
-      this.closePanel();
-      this.showAuth('login');
-      this.toast('로그아웃되었다', '#9fd2ff');
-    };
+    document.getElementById('doSwitch').onclick = () => this.openPanel('switch');
+    document.getElementById('doLogout').onclick = () => this.doLogout();
     document.getElementById('doDelete').onclick = () => {
       if (!confirm('정말 이 계정과 모든 진행도를 삭제할까?')) return;
       Account.deleteAccount();
@@ -1112,16 +1239,23 @@ const Lobby = {
     const p = Account.profile;
     if (!p) return;
     if (!p.records) p.records = [];
+    const dd = Game.diffDef();
     p.records.push({
       wave: Game.wave + Game.loop * 100, map: Game.map.name,
       kills: Game.stats.kills, date: Date.now(), win: !!win,
+      diff: Game.difficulty,
     });
     if (p.records.length > 100) p.records = p.records.slice(-100);
-    /* 경험치 : 웨이브 + 처치 */
-    const exp = Math.floor(Game.wave * 12 + Game.stats.kills * .35 + Game.stats.bossKills * 40 + (win ? 300 : 0));
+    /* 경험치 : 웨이브 + 처치. 난이도가 높을수록 더 준다 */
+    const exp = Math.floor((Game.wave * 12 + Game.stats.kills * .35
+      + Game.stats.bossKills * 40 + (win ? 300 : 0)) * dd.gem);
+    /* 판을 마치면 젬 정산 — 난이도 배수가 여기에 붙는다 */
+    const gem = Math.floor((Game.wave * .35 + Game.stats.bossKills * 3 + (win ? 25 : 0)) * dd.gem);
+    if (gem > 0) { Game.gems += gem; Game.saveMeta(); }
     const r = Account.addExp(exp);
+    Account.touch();
     Account.saveProfile();
-    return { exp, levels: r.levels, level: r.level };
+    return { exp, gem, levels: r.levels, level: r.level };
   },
 
   esc(s) {

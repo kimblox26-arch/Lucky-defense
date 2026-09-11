@@ -245,8 +245,13 @@ const UI = {
     this.refreshButtons();
 
     $('btnWave').classList.toggle('auto', Game.autoWave && Game.waveActive);
-    $('waveSub').textContent = Game.waveActive ? (Game.autoWave ? '자동ON' : '자동OFF') : '시작';
-    $('speedIco').textContent = Game.speed === 1 ? '▶' : Game.speed === 2 ? '▶▶' : '▶▶▶';
+    /* 쉬는 시간에 당겨 부르면 얼마를 받는지 버튼에 그대로 보여 준다 */
+    const early = Game.earlyBonus ? Game.earlyBonus() : 0;
+    $('btnWave').classList.toggle('early', early > 0);
+    $('waveSub').textContent = Game.waveActive
+      ? (Game.autoWave ? '자동ON' : '자동OFF')
+      : (early > 0 ? '+' + U.fmt(early) + 'G' : '시작');
+    $('speedIco').textContent = '▶'.repeat(Math.min(3, Game.speed)) + (Game.speed >= 4 ? '⏩' : '');
     $('btnSpeed').querySelector('.tn').textContent = 'x' + Game.speed;
     $('btnPause').querySelector('.ti').textContent = Game.paused ? '▶' : '⏸';
     $('btnPause').querySelector('.tn').textContent = Game.paused ? '재개' : '정지';
@@ -567,22 +572,100 @@ const UI = {
       <div><span>최고 콤보</span><b>${s.maxCombo}</b></div>
       <div><span>유닛</span><b>${Game.units.length}/${Game.slotMax()}</b></div>
     </div>
+    <div class="menu-acts">
+      <button class="minibtn" id="btnMSwitch">🔄 계정 전환</button>
+      <button class="minibtn" id="btnMLogout">🚪 로그아웃</button>
+    </div>
     <button class="dangerbtn" id="btnGiveUp" style="margin-bottom:8px">이번 판 포기하고 로비로</button>
     <button class="bigbtn" id="btnResume">계속하기</button>`;
   },
   bindMenu() {
     const g = $('btnGiveUp');
     if (g) g.onclick = () => {
-      if (!confirm('현재 진행도를 포기하고 로비로 돌아갈까?')) return;
+      if (!confirm('로비로 돌아갈까? 이 판은 저장되어 나중에 이어할 수 있다.')) return;
+      Game.saveRun();
       Game.mergeMetaStats(); Game.saveMeta();
       if (window.Lobby) Lobby.onRunFinished(false);
       this.closeModal(); Lobby.showLobby();
     };
     const r = $('btnResume');
     if (r) r.onclick = () => this.closeModal();
+    /* 전투 중에도 계정 전환·로그아웃을 할 수 있게 (진행도는 먼저 저장한다) */
+    const sw = $('btnMSwitch');
+    if (sw) sw.onclick = () => {
+      if (!confirm('진행도를 저장하고 로비로 나가 계정을 전환할까?')) return;
+      Game.saveRun(); Game.mergeMetaStats(); Game.saveMeta();
+      this.closeModal(); Lobby.showLobby(); Lobby.openPanel('switch');
+    };
+    const lo = $('btnMLogout');
+    if (lo) lo.onclick = () => {
+      if (!confirm('진행도를 저장하고 로그아웃할까?')) return;
+      Game.saveRun(); Game.mergeMetaStats(); Game.saveMeta();
+      this.closeModal(); Lobby.doLogout();
+    };
   },
 
   /* ------------------------------------------------------ 알림 */
+  /**
+   * 적 정보 카드 — 탭한 적의 실제 수치를 보여 준다.
+   * 도감은 "원본 스펙"이라면 여기는 "지금 이 판에서 이 개체"의 값이다.
+   */
+  showEnemyInfo(e) {
+    const el = $('enemyInfo');
+    if (!el) return;
+    const d = e.def;
+    const pct = U.clamp(e.hp / e.maxHp, 0, 1);
+    const tag = e.boss ? ['👑 보스', '#ffd24d'] : e.treasure ? ['💰 보물', '#ffd24d']
+      : e.elite ? ['🔺 정예', '#ff5c4d'] : ['티어 ' + d.tier, '#8fa8cc'];
+    const flags = (d.flags || []).map(f => Lobby.flagName(f)).filter(Boolean);
+    const res = d.resist ? Object.keys(d.resist).map(k =>
+      `<span style="color:${ELEM[k] ? ELEM[k].color : '#fff'}">${ELEM[k] ? ELEM[k].name : k} ${Math.round(d.resist[k] * 100)}%</span>`) : [];
+    /* 지금 걸려 있는 상태이상 */
+    const st = [];
+    if (e.frozen > 0) st.push('🧊 빙결'); else if (e.chill > 0) st.push('❄ 둔화');
+    if (e.burn > 0) st.push('🔥 화상');
+    if (e.poisonStacks > 0) st.push('☠ 중독 ×' + e.poisonStacks);
+    if (e.bleedStacks > 0) st.push('🩸 출혈 ×' + e.bleedStacks);
+    if (e.stun > 0) st.push('💫 기절');
+    if (e.curse > 0) st.push('🟣 저주');
+    if (e.raging) st.push('💢 격노');
+
+    el.innerHTML = `
+      <button class="close" id="eiClose">✕</button>
+      <div class="ei-head">
+        <canvas id="eiPortrait" width="120" height="120"></canvas>
+        <div>
+          <div class="ei-n" style="color:${d.color}">${d.name}</div>
+          <div class="ei-tags"><span style="--c:${tag[1]}">${tag[0]}</span>
+            ${flags.map(f => `<span>${f}</span>`).join('')}</div>
+        </div>
+      </div>
+      <div class="ei-hp"><div style="width:${pct * 100}%"></div>
+        <b>${U.fmt(Math.ceil(e.hp))} / ${U.fmt(Math.ceil(e.maxHp))}</b></div>
+      ${e.maxShield > 0 ? `<div class="ei-hp sh"><div style="width:${U.clamp(e.shield / e.maxShield, 0, 1) * 100}%"></div>
+        <b>보호막 ${U.fmt(Math.ceil(e.shield))}</b></div>` : ''}
+      <div class="ei-grid">
+        <div><span>방어력</span><b>${e.armor.toFixed(1)}</b></div>
+        <div><span>이동속도</span><b>${(e.baseSpeed / Game.ts).toFixed(2)}</b></div>
+        <div><span>처치 보상</span><b>${U.fmt(Math.round(e.bounty * Game.goldMul))}G</b></div>
+        <div><span>진행도</span><b>${Math.round(e.dist / Math.max(1, Game.pathLen) * 100)}%</b></div>
+      </div>
+      ${res.length ? `<div class="ei-res"><span>저항</span>${res.join(' · ')}</div>` : ''}
+      ${st.length ? `<div class="ei-st">${st.map(x => `<i>${x}</i>`).join('')}</div>` : ''}`;
+    el.classList.remove('hidden');
+    this.enemyInfoFor = e;
+    $('eiClose').onclick = () => this.hideEnemyInfo();
+    Draw.portraitEnemy($('eiPortrait'), d);
+    clearTimeout(this._eiT);
+    this._eiT = setTimeout(() => this.hideEnemyInfo(), 6000);
+  },
+  hideEnemyInfo() {
+    const el = $('enemyInfo');
+    if (el) el.classList.add('hidden');
+    this.enemyInfoFor = null;
+    clearTimeout(this._eiT);
+  },
+
   /* 적을 놓쳤을 때 화면 가장자리가 붉게 번쩍 — 남은 목숨이 적을수록 진하다 */
   hitVignette(pct) {
     const v = $('vign');
@@ -783,8 +866,12 @@ const UI = {
     const s = Game.stats;
     const res = window.Lobby ? Lobby.onRunFinished(win) : null;
     if (Account.profile) Draw.portraitAvatar($('resAvatar'), Account.profile.avatar, performance.now() / 1000);
+    const dd = Game.diffDef();
     $('resExp').innerHTML = res
-      ? `<b>+${U.fmt(res.exp)} EXP</b>${res.levels ? ` · <span style="color:#ffd24d">LEVEL UP! Lv.${res.level}</span>` : ''}`
+      ? `<b>+${U.fmt(res.exp)} EXP</b>${res.gem ? ` · <span style="color:#7fd8ff">💎 +${res.gem}</span>` : ''}`
+        + `${res.levels ? ` · <span style="color:#ffd24d">LEVEL UP! Lv.${res.level}</span>` : ''}`
+        + `<div class="res-diff" style="--c:${dd.col}">${dd.i} ${dd.n}`
+        + `${dd.gem !== 1 ? ` <i>보상 ×${dd.gem.toFixed(1)}</i>` : ''}</div>`
       : '';
     $('resGrid').innerHTML = `
       <div><span>도달 웨이브</span><b>${Game.wave}${Game.loop ? ' (+' + Game.loop + '회차)' : ''}</b></div>
