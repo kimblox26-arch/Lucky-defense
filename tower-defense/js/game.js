@@ -181,6 +181,10 @@ const Game = {
     this.enemySpeedMul = 1;
     this.slots = 20;
     this.glassCannon = false;
+    this.dailyCostMul = 1; this.dailyCountMul = 1;
+    this.dailyLife = null; this.dailyLifeMul = 0;
+    this.shopBuff = {};
+    if (window.Shop) Shop.reset();
     this.resetBless();
 
     this.research = {};
@@ -341,6 +345,7 @@ const Game = {
     this.unlockedMaps = d && d.unlockedMaps || { meadow: 1 };
     this.achieved = d && d.achieved || {};
     this.collection = d && d.collection || {};
+    this.collMile = d && d.collMile || {};
     this.boosters = d && d.boosters || {};
     this.loadout = (d && d.loadout && d.loadout.length) ? d.loadout.slice() : this.DEFAULT_LOADOUT.slice();
     this.rouletteDay = (d && d.rouletteDay) || '';
@@ -360,7 +365,7 @@ const Game = {
       gems: this.gems, perks: this.perks, unlockedMaps: this.unlockedMaps,
       difficulty: this.difficulty,
       achieved: this.achieved, metaStats: this.metaStats, settings: this.settings,
-      collection: this.collection, boosters: this.boosters,
+      collection: this.collection, collMile: this.collMile, boosters: this.boosters,
       rouletteDay: this.rouletteDay, rouletteFree: this.rouletteFree, loadout: this.loadout,
     };
     if (window.Account && Account.current) Account.saveProfileData(data);
@@ -393,6 +398,12 @@ const Game = {
     if (!b) return 1;
     return (1 + b.dmg) * (1 + b.spd) * (1 + b.multishot * .55)
       * (1 + b.crit * (b.critdmg || 1)) * (1 + b.chain * .22);
+  },
+
+  /** 상점 임시 버프 값 (없으면 0) */
+  shopBuffVal(k) {
+    const b = this.shopBuff && this.shopBuff[k];
+    return b ? b.amt : 0;
   },
 
   enemyScale(def, hpMul) {
@@ -448,7 +459,7 @@ const Game = {
       const elites = ENEMIES.filter(e => e.elite && e.tier <= 3 + Math.floor(w / 30)).map(e => e.key);
       if (elites.length && w % 5 === 0) pool = pool.concat(elites);
     }
-    const budget = 6 + w * 1.9 + Math.pow(w, 1.25) * .5;
+    const budget = (6 + w * 1.9 + Math.pow(w, 1.25) * .5) * (this.dailyCountMul || 1);
     let spent = 0;
     /* 보스 */
     const bossEvery = this.modVal('bossEvery', 10);
@@ -602,6 +613,7 @@ const Game = {
 
     this.checkAchievements();
     if (this.wave >= 100 && this.loop === 0) this.victory();
+    if (window.Shop) Shop.onWaveEnd(this);
     this.prepareNextWave();
     if (window.UI) UI.onWaveEnd(w);
     this.saveMeta();
@@ -628,7 +640,8 @@ const Game = {
   },
   get goldMul() {
     return (1 + this.research.gold * .07) * (1 + (this.perks.gold || 0) * .1)
-      * (1 + this.bless.gold) * this.diffDef().gold * this.modNum('goldMul', 1);
+      * (1 + this.bless.gold + ((this.collBonus && this.collBonus.gold) || 0))
+      * this.diffDef().gold * this.modNum('goldMul', 1);
   },
   get manaMul() { return (1 + this.research.mana * .09) * this.modNum('manaMul', 1); },
 
@@ -666,7 +679,7 @@ const Game = {
   summonCost() {
     const base = 30 + this.summonCount * 7.4;
     const off = Math.min(.7, this.research.summoncost * .02 + this.bless.cost);
-    return Math.max(12, Math.floor(base * (1 - off)));
+    return Math.max(12, Math.floor(base * (1 - off) * (this.dailyCostMul || 1)));
   },
 
   /**
@@ -724,7 +737,7 @@ const Game = {
 
   rollRarity() {
     const luck = this.research.luck * .05 + (this.perks.luck || 0) * .08
-      + (this.luckBoost || 0) + this.bless.luck;
+      + (this.luckBoost || 0) + this.bless.luck + ((this.collBonus && this.collBonus.luck) || 0);
     /* 상위 등급일수록 행운 효과를 줄인다 (i 가 클수록 감쇠) */
     const list = RARITY.map((r, i) => ({
       r, w: r.w * (1 + luck * i * .45 / (1 + i * .55)),
@@ -891,6 +904,8 @@ const Game = {
     this.collection[key] = 1;
     const def = UNIT_MAP[key];
     if (window.UI && def) UI.toast('📖 신규 발견 : ' + def.name, RARITY[RARITY_IDX[def.rarity]].color);
+    if (window.Collection) Collection.checkMilestones(this);
+    this.refreshAll();          /* 수집 보너스가 바로 반영되도록 */
     this.saveMeta();
     return true;
   },
@@ -1154,9 +1169,13 @@ const Game = {
       }
     }
 
+    /* 도감 수집 보너스 — 한 번만 계산해 캐시 (매 유닛 refresh 마다 404종을 세면 낭비다) */
+    this.collBonus = window.Collection ? Collection.bonus(this)
+      : { dmg: 0, spd: 0, crit: 0, gold: 0, luck: 0 };
+
     /* 전역 보너스 */
-    this.bonus.dmg = (this.perks.atk || 0) * .08;
-    this.bonus.crit = 0; this.bonus.gold = 0;
+    this.bonus.dmg = (this.perks.atk || 0) * .08 + this.collBonus.dmg;
+    this.bonus.crit = this.collBonus.crit; this.bonus.gold = 0;
     this.bonus.dot = this.research.dot * .10;
     this.bonus.slow = this.research.slow * .04;
     this.bonus.freeze = 0; this.bonus.stun = 0;
@@ -1171,6 +1190,10 @@ const Game = {
     }
     this.maxLife = Math.max(1, 20 + this.research.hp * 2 + (this.perks.life || 0) * 5
       + this.bless.life + this.diffDef().life);
+    /* 일일 도전 규칙 — refreshAll 이 목숨을 다시 계산하므로 여기서 마지막에 덮는다.
+       (start() 에서 maxLife 를 직접 쓰면 이 줄에 곧바로 지워졌다) */
+    if (this.dailyLife != null) this.maxLife = this.dailyLife;
+    if (this.dailyLifeMul) this.maxLife = Math.max(1, Math.round(this.maxLife * this.dailyLifeMul));
     if (this.glassCannon) this.maxLife = Math.min(this.maxLife, 5);
     this.life = Math.min(this.life, this.maxLife);
 
@@ -1666,6 +1689,7 @@ const Game = {
     }
     this.state = 'gameover';
     this.clearRun();
+    if (window.Daily && Daily.active) Daily.finish();
     this.mergeMetaStats();
     SFX.play('lose');
     FX.flash('#ff2a2a', .8); FX.shake(26);
@@ -1675,6 +1699,7 @@ const Game = {
   victory() {
     this.mergeMetaStats();
     this.clearRun();
+    if (window.Daily && Daily.active) Daily.finish();
     this.metaStats.wins++;
     /* 다음 맵 해금 */
     const idx = MAPS.findIndex(m => m.key === this.map.key);

@@ -76,6 +76,8 @@ const UI = {
     $('btnSkills').onclick = () => this.openModal('skills');
     $('btnCodexIn').onclick = () => this.openModal('codex');
     $('btnToolsIn').onclick = () => this.openModal('tools');
+    /* 로비의 젬 상점(#btnShop)과 id 가 겹치지 않게 In 접미사를 쓴다 */
+    $('btnShopIn').onclick = () => { SFX.init(); SFX.resume(); Shop.show(); };
     $('btnRouletteIn').onclick = () => { SFX.init(); SFX.resume(); Roulette.open(); };
     $('btnSpeed').onclick = () => Game.cycleSpeed();
     $('btnPause').onclick = () => { Game.paused = !Game.paused; this.refresh(); SFX.play('click'); };
@@ -235,6 +237,15 @@ const UI = {
     }
     const dq = $('dotRoulette');
     if (dq) dq.classList.toggle('hidden', !(window.Roulette && !Roulette.freeUsed()));
+    this.refreshShopDot();
+  },
+
+  /** 상점에 살 수 있는 물건이 있으면 점을 켠다 */
+  refreshShopDot() {
+    const d = $('dotShop');
+    if (!d || !window.Shop) return;
+    const can = Shop.stock.some(s => !s.sold && Game.gold >= s.cost);
+    d.classList.toggle('hidden', !can);
   },
 
   refresh() {
@@ -478,6 +489,7 @@ const UI = {
           <em style="width:${x.t ? x.n / x.t * 100 : 0}%"></em></span>`).join('') + `</div>
       <div class="cxs-leg">` + per.map(x =>
         `<span style="color:${x.r.color}">${x.r.name} <b>${x.n}/${x.t}</b></span>`).join('') + `</div>
+      ${this.htmlCollBonus()}
     </div>`;
 
     host.innerHTML = bar + '<div class="cxgrid">' + UNITS.map((u, i) => {
@@ -650,6 +662,27 @@ const UI = {
   },
 
   escAttr(s) { return String(s || '').replace(/"/g, '&quot;'); },
+
+  /** 도감이 지금 주고 있는 보너스와 다음 목표 */
+  htmlCollBonus() {
+    if (!window.Collection) return '';
+    const b = Collection.bonus(Game);
+    const items = [
+      ['⚔', '공격력', b.dmg], ['⏱', '공격속도', b.spd],
+      ['💥', '치명타', b.crit], ['🪙', '골드', b.gold], ['🍀', '행운', b.luck],
+    ].filter(x => x[2] > 0);
+    const nm = Collection.nextMilestone(Game);
+    const tot = Collection.total(Game);
+    return `<div class="cxs-bonus">
+      <div class="cxb-t">수집 보너스 <i>영구 적용</i></div>
+      ${items.length
+        ? `<div class="cxb-list">` + items.map(x =>
+            `<span>${x[0]} ${x[1]} <b>+${(x[2] * 100).toFixed(1)}%</b></span>`).join('') + `</div>`
+        : `<div class="cxb-none">아직 없다 — 등급별로 조금씩 모으면 영구 보너스가 붙는다</div>`}
+      ${nm ? `<div class="cxb-next">다음 이정표 <b>${nm.n}종</b>
+        (${nm.n - tot}종 남음) → ${nm.d} · 💎${nm.gem}</div>` : ''}
+    </div>`;
+  },
 
   /**
    * 적 정보 카드 — 탭한 적의 실제 수치를 보여 준다.

@@ -53,6 +53,7 @@
     <button class="qbtn" id="btnResearch"><span class="ti">⚗</span><span class="tn">연구</span><i class="tdot hidden" id="dotResearch"></i></button>
     <button class="qbtn" id="btnCodexIn" data-tip="도감"><span class="ti">📖</span><span class="tn">도감</span></button>
     <button class="qbtn" id="btnRouletteIn"><span class="ti">🎡</span><span class="tn">룰렛</span><i class="tdot hidden" id="dotRoulette"></i></button>
+    <button class="qbtn" id="btnShopIn"><span class="ti">🛒</span><span class="tn">상점</span><i class="tdot hidden" id="dotShop"></i></button>
     <button class="qbtn" id="btnToolsIn"><span class="ti">🛠</span><span class="tn">도구</span></button>
     <span class="tsep"></span>
     <button class="qbtn sm" id="btnSpeed"><span class="ti" id="speedIco">▶</span><span class="tn">x1</span></button>
@@ -102,6 +103,9 @@
 
 <!-- ======================================================= 적 정보 -->
 <div id="enemyInfo" class="enemy-info hidden"></div>
+
+<!-- ======================================================= 보급 상점 -->
+<div id="shopWrap" class="shop-wrap hidden"></div>
 
 <!-- ======================================================= 인게임 모달 -->
 <div id="modalWrap" class="modal-wrap hidden">
@@ -206,6 +210,7 @@
     <button class="lmbtn" id="btnDaily" style="--c:#ff9a3c"><span class="lm-i">📅</span><span class="lm-n">출석</span><i class="dot hidden" id="badgeDaily"></i></button>
     <button class="lmbtn" id="btnQuest" style="--c:#c48fff"><span class="lm-i">📜</span><span class="lm-n">퀘스트</span><i class="dot hidden" id="badgeQuest"></i></button>
     <button class="lmbtn" id="btnRoulette" style="--c:#ffd24d"><span class="lm-i">🎡</span><span class="lm-n">룰렛</span><i class="dot hidden" id="badgeRoulette"></i></button>
+    <button class="lmbtn" id="btnDailyRun" style="--c:#ff7ad0"><span class="lm-i">🗓</span><span class="lm-n">일일 도전</span><i class="dot hidden" id="badgeDailyRun"></i></button>
     <button class="lmbtn" id="btnRank" style="--c:#ffd24d"><span class="lm-i">🏅</span><span class="lm-n">랭킹</span></button>
     <button class="lmbtn" id="btnRecords" style="--c:#8fd0ff"><span class="lm-i">📊</span><span class="lm-n">전적</span></button>
     <button class="lmbtn" id="btnSetting" style="--c:#9fb0cc"><span class="lm-i">⚙</span><span class="lm-n">설정</span></button>
@@ -258,6 +263,9 @@
 <script src="js/blessing.js"></script>
 <script src="js/paths.js"></script>
 <script src="js/leaderboard.js"></script>
+<script src="js/collection.js"></script>
+<script src="js/daily.js"></script>
+<script src="js/shop.js"></script>
 <script src="js/admin.js"></script>
 </body>
 </html>

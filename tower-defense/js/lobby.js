@@ -384,6 +384,8 @@ const Lobby = {
     const qs = Account.ensureQuests(false);
     const anyQuest = qs.some(q => !q.claimed && Account.questProgress(q.key).pct >= 1);
     document.getElementById('badgeQuest').classList.toggle('hidden', !anyQuest);
+    const bd = document.getElementById('badgeDailyRun');
+    if (bd) bd.classList.toggle('hidden', !(window.Daily && !Daily.done()));
 
     document.getElementById('lbTip').textContent = '💡 ' + U.pick(TIPS);
   },
@@ -405,6 +407,7 @@ const Lobby = {
       btnAccount: () => this.openPanel('account'),
       btnSwitch: () => this.openPanel('switch'),
       btnRank: () => this.openPanel('rank'),
+      btnDailyRun: () => this.openPanel('dailyrun'),
       btnLogout: () => this.doLogout(),
     };
     for (const id in menu) {
@@ -436,7 +439,7 @@ const Lobby = {
       map: '전장 선택', profile: '프로필 꾸미기', shop: '상점', codex: '도감',
       ach: '업적', perks: '명예 강화', daily: '출석 보상', quest: '일일 퀘스트',
       records: '전적', settings: '설정', account: '계정', switch: '계정 전환',
-      rank: '랭킹',
+      rank: '랭킹', dailyrun: '일일 도전',
     };
     this.el.panelTitle.textContent = titles[this.panel] || '';
     const b = this.el.panelBody;
@@ -455,6 +458,7 @@ const Lobby = {
       case 'account': this.renderAccountPanel(b); break;
       case 'switch': this.renderSwitchPanel(b); break;
       case 'rank': this.renderRankPanel(b); break;
+      case 'dailyrun': this.renderDailyRunPanel(b); break;
     }
   },
 
@@ -1095,6 +1099,51 @@ const Lobby = {
     };
   },
 
+  /* --------------------------------------------------- 일일 도전 */
+  renderDailyRunPanel(b) {
+    const c = Daily.build();
+    const done = Daily.done();
+    const best = Daily.best();
+    const dd = Game.DIFFS.find(x => x.key === c.diff) || Game.DIFFS[1];
+    b.innerHTML = `
+      <div class="dc-head">
+        <div class="dc-day">${c.day}</div>
+        <h3>오늘의 도전</h3>
+        <p>전 세계가 같은 맵 · 같은 난이도 · 같은 규칙으로 달린다.<br>
+           운이 아니라 실력이 남는 판이다.</p>
+      </div>
+      <div class="dc-set">
+        <div class="dc-cell"><span>전장</span><b>${this.esc(c.map.name)}</b></div>
+        <div class="dc-cell"><span>난이도</span><b style="color:${dd.col}">${dd.i} ${dd.n}</b></div>
+      </div>
+      <div class="synsec">오늘의 규칙</div>
+      <div class="dc-rules">` + c.rules.map(r => `
+        <div class="dc-rule"><span class="dcr-i">${r.i}</span>
+          <span class="dcr-b"><b>${r.n}</b><i>${r.d}</i></span></div>`).join('') + `</div>
+      ${best ? `<div class="dc-best">오늘 최고 기록 <b>웨이브 ${best.wave}</b>
+        · ${U.fmt(best.kills)} 처치</div>` : ''}
+      <button class="bigbtn" id="dcStart">${done ? '다시 도전 (연습)' : '⚔ 도전 시작'}</button>
+      ${done ? `<div class="p-note">오늘 공식 기록은 이미 남겼다. 지금부터는 연습이라
+        순위에 반영되지 않는다.</div>`
+        : `<div class="p-note">하루에 한 번만 순위에 기록된다. 신중하게.</div>`}
+      <button class="bigbtn alt" id="dcRank">🏅 오늘의 순위 보기</button>`;
+
+    document.getElementById('dcStart').onclick = () => {
+      SFX.init(); SFX.resume();
+      Daily.start(done);
+      this.closePanel(); this.hideLobby();
+      Game.paused = false;
+      UI.refresh();
+      this.toast(done ? '연습 모드 — 순위에 반영되지 않는다' : '오늘의 도전 시작!',
+        done ? '#8fa8cc' : '#ff7ad0');
+      SFX.play('wave');
+    };
+    document.getElementById('dcRank').onclick = () => {
+      this.rankFilter = { map: 'daily:' + c.day, diff: '*', limit: 50 };
+      this.openPanel('rank');
+    };
+  },
+
   /* --------------------------------------------------- 랭킹 */
   rankFilter: { map: '*', diff: '*', limit: 50 },
 
@@ -1104,6 +1153,7 @@ const Lobby = {
       <div class="rk-filters">
         <select class="rk-sel" id="rkMap">
           <option value="*">모든 전장</option>
+          ${window.Daily ? `<option value="daily:${Daily.today()}"${f.map === 'daily:' + Daily.today() ? ' selected' : ''}>🗓 오늘의 도전</option>` : ''}
           ${MAPS.map(m => `<option value="${m.key}"${f.map === m.key ? ' selected' : ''}>${this.esc(m.name)}</option>`).join('')}
         </select>
         <select class="rk-sel" id="rkDiff">

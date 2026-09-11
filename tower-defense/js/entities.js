@@ -230,7 +230,8 @@ class Enemy {
     this.bounty = scale.bounty;
     const waveSpdMul = 1 + Math.min(1.6, (w + g.loop * 100 - 1) * .014);
     this.baseSpeed = def.spd * g.ts * .95 * (g.map.diff > 1.6 ? 1.06 : 1)
-      * (g.diffDef ? g.diffDef().spd : 1) * g.modNum('spdMul', 1) * waveSpdMul;
+      * (g.diffDef ? g.diffDef().spd : 1) * g.modNum('spdMul', 1) * waveSpdMul
+      * (1 - (g.shopBuffVal ? g.shopBuffVal('enemySlow') : 0));
 
     this.maxShield = (def.shield || 0) * this.maxHp * .3 * g.modNum('shieldMul', 1);
     this.shield = this.maxShield;
@@ -554,13 +555,17 @@ class Unit {
     const pb = window.Path ? Path.bonus(this) : {};
     let dmg = d.dmg * rar.mul * starMul * lvMul;
     dmg *= (1 + g.research.atk * .06);
-    dmg *= (1 + syn.dmg + g.bonus.dmg + (bl.dmg || 0) + (pb.dmg || 0));
+    dmg *= (1 + syn.dmg + g.bonus.dmg + (bl.dmg || 0) + (pb.dmg || 0)
+      + (g.shopBuffVal ? g.shopBuffVal('dmg') : 0));
     dmg *= (1 + this.auraVal('dmg'));
     if (g.buffs.overdrive > 0) dmg *= 1.6;
     if (g.buffs.bloodpact > 0) dmg *= 1.7;
 
+    const cb = g.collBonus || {};
     let spd = d.spd * (1 + g.research.spd * .04)
-      * (1 + (syn.spd || 0) + (bl.spd || 0) + (pb.spd || 0)) * (1 + this.auraVal('spd'));
+      * (1 + (syn.spd || 0) + (bl.spd || 0) + (pb.spd || 0) + (cb.spd || 0)
+        + (g.shopBuffVal ? g.shopBuffVal('spd') : 0))
+      * (1 + this.auraVal('spd'));
     if (g.buffs.overdrive > 0) spd *= 2.2;
 
     let rng = d.rng * (1 + g.research.rng * .04)
